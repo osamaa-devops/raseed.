@@ -132,9 +132,97 @@ export type Sale = {
   createdAt: string;
 };
 
-export type Invoice = Sale & {
+export type Invoice = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  invoiceNumber: string;
+  total: number;
+  createdAt: string;
+  cashierId?: Id;
+  shiftId?: Id | null;
+  customerId?: Id | null;
   customerName?: string;
-  status: "paid" | "returned" | "void";
+  status: "PAID" | "VOID" | "REFUNDED" | "PARTIALLY_REFUNDED";
+  subtotal: number;
+  discountTotal: number;
+  taxTotal: number;
+  paidAmount: number;
+  changeAmount: number;
+  notes?: string | null;
+  branch?: Branch;
+  cashier?: { id: Id; name: string; email?: string | null };
+  items?: InvoiceItem[];
+  payments?: Payment[];
+  updatedAt?: string;
+};
+
+export type InvoiceItem = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  invoiceId: Id;
+  productId: Id;
+  product?: Product;
+  productName: string;
+  productBarcode?: string | null;
+  quantity: number;
+  purchasePriceSnapshot?: number | null;
+  unitPrice: number;
+  discount: number;
+  lineTotal: number;
+  createdAt: string;
+};
+
+export type Payment = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  invoiceId: Id;
+  method: "CASH" | "CARD" | "WALLET";
+  amount: number;
+  createdAt: string;
+};
+
+export type CashierShift = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  cashierId: Id;
+  branch?: Branch;
+  cashier?: { id: Id; name: string; email?: string | null };
+  openingCash: number;
+  closingCash?: number | null;
+  expectedCash?: number | null;
+  actualCash?: number | null;
+  difference?: number | null;
+  status: "OPEN" | "CLOSED";
+  openedAt: string;
+  closedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type HeldOrder = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  cashierId: Id;
+  data: Record<string, unknown>;
+  note?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateSaleRequest = {
+  branchId: Id;
+  shiftId?: Id;
+  items: Array<{ productId: Id; quantity: number; unitPrice?: number; discount?: number }>;
+  payments: Array<{ method: Payment["method"]; amount: number }>;
+  invoiceDiscount?: number;
+  taxAmount?: number;
+  notes?: string;
 };
 
 export type Expense = {

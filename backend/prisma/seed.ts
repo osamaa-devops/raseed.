@@ -6,6 +6,9 @@ const prisma = new PrismaClient();
 const permissions = [
   "dashboard.view",
   "pos.access",
+  "pos.sell",
+  "pos.hold_order",
+  "pos.view_recent_invoices",
   "products.view",
   "products.create",
   "products.update",
@@ -22,6 +25,10 @@ const permissions = [
   "inventory.view_alerts",
   "sales.view",
   "invoices.view",
+  "invoices.print",
+  "shifts.open",
+  "shifts.close",
+  "shifts.view",
   "returns.create",
   "expenses.manage",
   "reports.view",
@@ -37,6 +44,9 @@ const rolePermissions: Record<string, string[]> = {
   manager: [
     "dashboard.view",
     "pos.access",
+    "pos.sell",
+    "pos.hold_order",
+    "pos.view_recent_invoices",
     "products.view",
     "products.create",
     "products.update",
@@ -51,13 +61,17 @@ const rolePermissions: Record<string, string[]> = {
     "inventory.view_alerts",
     "sales.view",
     "invoices.view",
+    "invoices.print",
+    "shifts.open",
+    "shifts.close",
+    "shifts.view",
     "returns.create",
     "expenses.manage",
     "reports.view",
     "users.manage",
     "activity_logs.view",
   ],
-  cashier: ["pos.access", "sales.view", "invoices.view", "returns.create"],
+  cashier: ["pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "shifts.open", "shifts.close", "shifts.view", "returns.create"],
   inventory: [
     "products.view",
     "categories.view",
@@ -312,7 +326,7 @@ async function main() {
     password: "RaseedManager!2026",
   });
 
-  await findOrCreateUser({
+  const cashierUser = await findOrCreateUser({
     storeId: store.id,
     branchId: branch.id,
     roleId: roles.cashier.id,
@@ -331,6 +345,21 @@ async function main() {
     phone: "01000000040",
     password: "RaseedInventory!2026",
   });
+
+  const openShift = await prisma.cashierShift.findFirst({
+    where: { storeId: store.id, branchId: branch.id, cashierId: cashierUser.id, status: "OPEN" },
+  });
+  if (!openShift) {
+    await prisma.cashierShift.create({
+      data: {
+        storeId: store.id,
+        branchId: branch.id,
+        cashierId: cashierUser.id,
+        openingCash: 500,
+        notes: "Seeded demo open shift",
+      },
+    });
+  }
 
   const categoryByName = new Map<string, { id: string }>();
   for (const category of demoCategories) {

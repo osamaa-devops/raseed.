@@ -11,6 +11,9 @@ import { PermissionsModule } from "./modules/permissions/permissions.module";
 import { CategoriesModule } from "./modules/categories/categories.module";
 import { ProductsModule } from "./modules/products/products.module";
 import { InventoryModule } from "./modules/inventory/inventory.module";
+import { ShiftsModule } from "./modules/shifts/shifts.module";
+import { PosModule } from "./modules/pos/pos.module";
+import { InvoicesModule } from "./modules/invoices/invoices.module";
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { InventoryModule } from "./modules/inventory/inventory.module";
     CategoriesModule,
     ProductsModule,
     InventoryModule,
+    ShiftsModule,
+    PosModule,
+    InvoicesModule,
   ],
 })
 export class AppModule {}

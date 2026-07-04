@@ -55,6 +55,24 @@ enum InventoryMovementType {
   TRANSFER_OUT
 }
 
+enum CashierShiftStatus {
+  OPEN
+  CLOSED
+}
+
+enum InvoiceStatus {
+  PAID
+  VOID
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  WALLET
+}
+
 model Store {
   id            String         @id @default(cuid())
   name          String
@@ -74,6 +92,11 @@ model Store {
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
+  cashierShifts CashierShift[]
+  invoices Invoice[]
+  invoiceItems InvoiceItem[]
+  payments Payment[]
+  heldOrders HeldOrder[]
   subscriptions Subscription[]
   activityLogs  ActivityLog[]
 
@@ -97,6 +120,11 @@ model Branch {
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
+  cashierShifts CashierShift[]
+  invoices Invoice[]
+  invoiceItems InvoiceItem[]
+  payments Payment[]
+  heldOrders HeldOrder[]
   activityLogs ActivityLog[]
 
   @@unique([storeId, name])
@@ -121,6 +149,9 @@ model User {
   role            Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
   permissions     UserPermission[]
   inventoryMovements InventoryMovement[]
+  cashierShifts CashierShift[]
+  invoices Invoice[]
+  heldOrders HeldOrder[]
   activityLogs    ActivityLog[]
 
   @@unique([storeId, email])
@@ -220,6 +251,7 @@ model Product {
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
+  invoiceItems InvoiceItem[]
 
   @@unique([storeId, barcode])
   @@unique([storeId, sku])
@@ -292,6 +324,122 @@ model InventoryBatch {
   @@index([storeId, branchId])
   @@index([storeId, productId])
   @@index([expiryDate])
+}
+
+model CashierShift {
+  id           String             @id @default(cuid())
+  storeId      String
+  branchId     String
+  cashierId    String
+  openingCash  Decimal            @db.Decimal(10, 2)
+  closingCash  Decimal?           @db.Decimal(10, 2)
+  expectedCash Decimal?           @db.Decimal(10, 2)
+  actualCash   Decimal?           @db.Decimal(10, 2)
+  difference   Decimal?           @db.Decimal(10, 2)
+  status       CashierShiftStatus @default(OPEN)
+  openedAt     DateTime           @default(now())
+  closedAt     DateTime?
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  store        Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch       Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cashier      User               @relation(fields: [cashierId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+
+  @@index([storeId, branchId])
+  @@index([cashierId])
+  @@index([status])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  storeId       String
+  branchId      String
+  cashierId     String
+  shiftId       String?
+  customerId    String?
+  invoiceNumber String
+  status        InvoiceStatus @default(PAID)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discountTotal Decimal       @default(0) @db.Decimal(10, 2)
+  taxTotal      Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  paidAmount    Decimal       @db.Decimal(10, 2)
+  changeAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch        Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cashier       User          @relation(fields: [cashierId], references: [id], onDelete: Restrict)
+  shift         CashierShift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  items         InvoiceItem[]
+  payments      Payment[]
+
+  @@unique([storeId, branchId, invoiceNumber])
+  @@index([storeId, branchId])
+  @@index([cashierId])
+  @@index([shiftId])
+  @@index([createdAt])
+}
+
+model InvoiceItem {
+  id                    String   @id @default(cuid())
+  storeId               String
+  branchId              String
+  invoiceId             String
+  productId             String
+  productName           String
+  productBarcode        String?
+  quantity              Decimal  @db.Decimal(14, 3)
+  purchasePriceSnapshot Decimal? @db.Decimal(10, 2)
+  unitPrice             Decimal  @db.Decimal(10, 2)
+  discount              Decimal  @default(0) @db.Decimal(10, 2)
+  lineTotal             Decimal  @db.Decimal(10, 2)
+  createdAt             DateTime @default(now())
+  store                 Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch                Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  invoice               Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product               Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([storeId, branchId])
+  @@index([invoiceId])
+  @@index([productId])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  storeId   String
+  branchId  String
+  invoiceId String
+  method    PaymentMethod
+  amount    Decimal       @db.Decimal(10, 2)
+  createdAt DateTime      @default(now())
+  store     Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch    Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, branchId])
+  @@index([invoiceId])
+  @@index([method])
+}
+
+model HeldOrder {
+  id        String   @id @default(cuid())
+  storeId   String
+  branchId  String
+  cashierId String
+  data      Json
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cashier   User     @relation(fields: [cashierId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, branchId])
+  @@index([cashierId])
 }
 
 model SubscriptionPlan {

@@ -99,7 +99,10 @@ Current state:
 - `frontend/src/services/productsService.ts` integrates store-scoped product CRUD.
 - `frontend/src/services/categoriesService.ts` integrates store-scoped category CRUD.
 - `frontend/src/services/inventoryService.ts` integrates branch-scoped inventory stock, movements, and alerts.
-- Sales, reports, and advanced admin business integrations remain placeholders.
+- `frontend/src/services/posService.ts` integrates sale creation, recent invoices, and held orders.
+- `frontend/src/services/shiftsService.ts` integrates cashier shift open/close/history.
+- `frontend/src/services/invoicesService.ts` integrates invoice listing and details.
+- Reports and advanced admin business integrations remain placeholders.
 
 ## Frontend Routes
 
@@ -241,6 +244,18 @@ Current backend implementation:
 - `POST /api/inventory/adjust`
 - `GET /api/inventory/low-stock`
 - `GET /api/inventory/expiry-alerts`
+- `GET /api/shifts/current`
+- `POST /api/shifts/open`
+- `POST /api/shifts/close`
+- `GET /api/shifts`
+- `POST /api/pos/sale`
+- `GET /api/pos/recent-invoices`
+- `GET /api/pos/held-orders`
+- `POST /api/pos/held-orders`
+- `DELETE /api/pos/held-orders/:id`
+- `GET /api/invoices`
+- `GET /api/invoices/:id`
+- `GET /api/invoices/by-number/:invoiceNumber`
 - global `/api` prefix
 - CORS
 - validation pipe
@@ -272,6 +287,11 @@ Prisma foundational models:
 - `InventoryStock`
 - `InventoryMovement`
 - `InventoryBatch`
+- `CashierShift`
+- `Invoice`
+- `InvoiceItem`
+- `Payment`
+- `HeldOrder`
 
 Auth-related seed data:
 
@@ -279,8 +299,8 @@ Auth-related seed data:
 - Demo store: `ماركت المدينة`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
-- Permission keys for dashboard, POS, categories, products, inventory, inventory stock actions, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
+- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
 - Demo product categories and products for local frontend/API validation
 - Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
 
-Business entities such as invoices, sales, returns, expenses, and reports are intentionally not modeled yet. Products and categories are catalog master data. Inventory now owns branch-level stock balances and movement history, but it does not implement POS checkout or invoice stock consumption yet.
+Business entities such as returns, expenses, and reports are intentionally not modeled yet. Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS now creates paid invoices, payment rows, and `SALE` inventory movements transactionally.

@@ -11,12 +11,16 @@ export const demoSalesTrend = [
 ];
 
 export const demoInvoices: Invoice[] = [
-  { id: "s1", storeId: "store_city_market", branchId: "branch_main", invoiceNumber: "INV-0891", customerName: "محمد علي", total: 187, paymentMethod: "cash", status: "paid", createdAt: "10:32" },
-  { id: "s2", storeId: "store_city_market", branchId: "branch_main", invoiceNumber: "INV-0892", total: 63, paymentMethod: "card", status: "paid", createdAt: "11:05" },
-  { id: "s3", storeId: "store_city_market", branchId: "branch_1", invoiceNumber: "INV-0894", total: 95, paymentMethod: "wallet", status: "returned", createdAt: "12:10" },
+  { id: "s1", storeId: "store_city_market", branchId: "branch_main", invoiceNumber: "INV-0891", customerName: "محمد علي", subtotal: 187, discountTotal: 0, taxTotal: 0, total: 187, paidAmount: 187, changeAmount: 0, status: "PAID", createdAt: "2026-07-04T10:32:00.000Z" },
+  { id: "s2", storeId: "store_city_market", branchId: "branch_main", invoiceNumber: "INV-0892", subtotal: 63, discountTotal: 0, taxTotal: 0, total: 63, paidAmount: 63, changeAmount: 0, status: "PAID", createdAt: "2026-07-04T11:05:00.000Z" },
+  { id: "s3", storeId: "store_city_market", branchId: "branch_1", invoiceNumber: "INV-0894", subtotal: 95, discountTotal: 0, taxTotal: 0, total: 95, paidAmount: 95, changeAmount: 0, status: "REFUNDED", createdAt: "2026-07-04T12:10:00.000Z" },
 ];
 
-export const demoSales: Sale[] = demoInvoices;
+export const demoSales: Sale[] = [
+  { id: "s1", storeId: "store_city_market", branchId: "branch_main", invoiceNumber: "INV-0891", total: 187, paymentMethod: "cash", createdAt: "2026-07-04T10:32:00.000Z" },
+  { id: "s2", storeId: "store_city_market", branchId: "branch_main", invoiceNumber: "INV-0892", total: 63, paymentMethod: "card", createdAt: "2026-07-04T11:05:00.000Z" },
+  { id: "s3", storeId: "store_city_market", branchId: "branch_1", invoiceNumber: "INV-0894", total: 95, paymentMethod: "wallet", createdAt: "2026-07-04T12:10:00.000Z" },
+];
 
 export const demoExpenses: Expense[] = [
   { id: "e1", storeId: "store_city_market", branchId: "branch_main", title: "كهرباء الشهر", category: "كهرباء", amount: 650, date: "2026-07-01" },

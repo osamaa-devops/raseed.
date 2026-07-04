@@ -31,10 +31,11 @@
 - Product/category polish: import/export, barcode validation helpers, richer units, and catalog test coverage.
 - Inventory stock balances and stock movements. Completed: branch-level balances, add/remove/adjust flows, low-stock alerts, expiry alerts, and movement history.
 - Inventory polish: automated tests, stock transfer workflow, purchase receiving workflow, and later POS-safe stock consumption.
+- POS sessions, cashier shifts, paid invoices, payments, held orders, and stock decrement on sale. Completed: first real end-to-end POS sale flow.
+- POS polish: receipt layout, barcode focus flow, mixed-payment UX, offline queue, and automated sale rollback tests.
 - Suppliers and purchase orders.
 - Customers and debts.
-- POS sessions and shifts.
-- Sales, invoices, payments, returns, expenses, and end-of-day closing.
+- Returns, expenses, and end-of-day closing.
 
 ## Phase 5: Reporting And Operations
 

@@ -130,12 +130,15 @@ Implemented in this foundation step:
 - Inventory add/remove/adjust flows with transactional stock updates
 - Low-stock and expiry alert endpoints
 - Frontend Inventory page integrated with the API
+- Real POS sale flow with transactional invoices, payments, stock decrement, and `SALE` inventory movements
+- Basic cashier shifts and held orders
+- Frontend POS, Shifts, and Sales & Invoices pages integrated with the API
 
 Not implemented yet:
 
-- POS logic
-- Sales and invoices
+- Advanced returns/refunds
 - Reports
+- Loyalty, coupons, offers, and purchase orders
 - Subscription billing
 
 ## Catalog Endpoints
@@ -181,3 +184,33 @@ Inventory permissions:
 - `inventory.view_alerts`
 
 Seeded inventory examples include low-stock products such as `لبن جهينة`, `زبادي`, and `صابون`, plus near-expiry batches for expiry alert testing.
+
+## POS And Invoices
+
+`POST /api/pos/sale` creates a paid invoice in one PostgreSQL transaction:
+
+1. Creates the invoice.
+2. Creates invoice items with product name, barcode, purchase price, and selling price snapshots.
+3. Creates payment rows.
+4. Decreases branch inventory stock.
+5. Creates `InventoryMovement` rows of type `SALE`.
+6. Writes activity logs.
+
+If stock is insufficient or any validation fails, the transaction rolls back and no invoice or stock movement is saved.
+
+POS and invoice endpoints:
+
+- `POST /api/pos/sale`
+- `GET /api/pos/recent-invoices`
+- `GET /api/pos/held-orders`
+- `POST /api/pos/held-orders`
+- `DELETE /api/pos/held-orders/:id`
+- `GET /api/invoices`
+- `GET /api/invoices/:id`
+- `GET /api/invoices/by-number/:invoiceNumber`
+- `GET /api/shifts/current`
+- `POST /api/shifts/open`
+- `POST /api/shifts/close`
+- `GET /api/shifts`
+
+POS permissions include `pos.access`, `pos.sell`, `pos.hold_order`, `pos.view_recent_invoices`, `shifts.open`, `shifts.close`, `shifts.view`, `invoices.view`, and `invoices.print`.
