@@ -35,6 +35,11 @@ enum BranchStatus {
   INACTIVE
 }
 
+enum CatalogStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model Store {
   id            String         @id @default(cuid())
   name          String
@@ -49,6 +54,8 @@ model Store {
   branches      Branch[]
   users         User[]
   roles         Role[]
+  categories    Category[]
+  products      Product[]
   subscriptions Subscription[]
   activityLogs  ActivityLog[]
 
@@ -149,6 +156,51 @@ model UserPermission {
 
   @@unique([userId, permissionId])
   @@index([permissionId])
+}
+
+model Category {
+  id          String        @id @default(cuid())
+  storeId     String
+  name        String
+  description String?
+  color       String?
+  icon        String?
+  status      CatalogStatus @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  store       Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+  @@index([status])
+}
+
+model Product {
+  id            String        @id @default(cuid())
+  storeId       String
+  categoryId    String?
+  name          String
+  barcode       String?
+  sku           String?
+  description   String?
+  imageUrl      String?
+  purchasePrice Decimal       @db.Decimal(10, 2)
+  sellingPrice  Decimal       @db.Decimal(10, 2)
+  unitType      String
+  minStock      Int           @default(0)
+  expiryDate    DateTime?
+  status        CatalogStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([storeId, barcode])
+  @@unique([storeId, sku])
+  @@index([storeId])
+  @@index([storeId, categoryId])
+  @@index([status])
 }
 
 model SubscriptionPlan {

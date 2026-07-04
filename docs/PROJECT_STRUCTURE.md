@@ -94,9 +94,11 @@ Current state:
 - `frontend/src/components/navigation` contains the dashboard and super-admin navigation.
 - `frontend/src/styles` contains Arabic RTL, Tailwind, and light/dark theme foundations.
 - `frontend/src/data/demo` contains static UI preview data.
-- `frontend/src/services` contains API service placeholders and an optional backend health check helper.
+- `frontend/src/services` contains API clients and route-level service modules.
 - `frontend/src/services/authService.ts` integrates login and `/auth/me`.
-- Product, inventory, sales, reports, and admin business integrations remain placeholders.
+- `frontend/src/services/productsService.ts` integrates store-scoped product CRUD.
+- `frontend/src/services/categoriesService.ts` integrates store-scoped category CRUD.
+- Inventory, sales, reports, and advanced admin business integrations remain placeholders.
 
 ## Frontend Routes
 
@@ -218,6 +220,18 @@ Current backend implementation:
 - `PATCH /api/branches/:id/status`
 - `GET /api/roles`
 - `GET /api/permissions`
+- `GET /api/categories`
+- `GET /api/categories/:id`
+- `POST /api/categories`
+- `PATCH /api/categories/:id`
+- `PATCH /api/categories/:id/status`
+- `DELETE /api/categories/:id`
+- `GET /api/products`
+- `GET /api/products/:id`
+- `POST /api/products`
+- `PATCH /api/products/:id`
+- `PATCH /api/products/:id/status`
+- `DELETE /api/products/:id`
 - global `/api` prefix
 - CORS
 - validation pipe
@@ -244,6 +258,8 @@ Prisma foundational models:
 - `SubscriptionPlan`
 - `Subscription`
 - `ActivityLog`
+- `Category`
+- `Product`
 
 Auth-related seed data:
 
@@ -251,6 +267,7 @@ Auth-related seed data:
 - Demo store: `ماركت المدينة`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
-- Permission keys for dashboard, POS, products, inventory, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
+- Permission keys for dashboard, POS, categories, products, inventory, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
+- Demo product categories and products for local frontend/API validation
 
-Business entities such as products, invoices, sales, inventory movements, returns, expenses, and reports are intentionally not modeled yet.
+Business entities such as invoices, sales, inventory movements, returns, expenses, and reports are intentionally not modeled yet. Products and categories are modeled only as catalog master data; they do not perform stock movements or POS checkout logic yet.

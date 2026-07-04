@@ -121,15 +121,36 @@ Implemented in this foundation step:
 - Validation pipe
 - Global exception filter
 - Prisma + PostgreSQL setup
-- Foundational Prisma models only
+- Foundational Prisma models
+- JWT login foundation with role/permission guards
+- Store-scoped Products and Categories CRUD
+- Seeded demo categories and products for the demo store
+- Frontend Products and Categories pages integrated with the API
 
 Not implemented yet:
 
-- Authentication
-- Product CRUD
 - POS logic
 - Sales and invoices
 - Inventory movements
 - Reports
 - Subscription billing
-- Frontend API integration
+
+## Catalog Endpoints
+
+Products and categories are the first real store-owned business modules. Every request is scoped by the authenticated user's `storeId`.
+
+- `GET /api/categories`
+- `GET /api/categories/:id`
+- `POST /api/categories`
+- `PATCH /api/categories/:id`
+- `PATCH /api/categories/:id/status`
+- `DELETE /api/categories/:id`
+- `GET /api/products`
+- `GET /api/products/:id`
+- `POST /api/products`
+- `PATCH /api/products/:id`
+- `PATCH /api/products/:id/status`
+- `DELETE /api/products/:id`
+
+Category permissions use `categories.view`, `categories.create`, `categories.update`, and `categories.delete`.
+Product permissions use `products.view`, `products.create`, `products.update`, and `products.delete`.

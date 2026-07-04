@@ -10,7 +10,7 @@ type CartItem = { product: Product; quantity: number };
 
 export function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const total = useMemo(() => cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [cart]);
+  const total = useMemo(() => cart.reduce((sum, item) => sum + item.product.sellingPrice * item.quantity, 0), [cart]);
 
   const addProduct = (product: Product) => {
     setCart((items) => {
@@ -43,7 +43,7 @@ export function PosPage() {
                 <p className="font-bold">{item.product.name}</p>
                 <p className="text-sm text-muted-foreground">x{item.quantity}</p>
               </div>
-              <p className="font-bold">{(item.product.price * item.quantity).toLocaleString("ar-EG")} ج</p>
+              <p className="font-bold">{(item.product.sellingPrice * item.quantity).toLocaleString("ar-EG")} ج</p>
             </div>
           ))}
         </div>

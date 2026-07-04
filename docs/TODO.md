@@ -15,14 +15,15 @@
 - Add password reset and invitation flows.
 - Add more complete role/permission management endpoints.
 - Expand store/branch guards as business modules are added.
-- Add DTO patterns and module conventions before business CRUD.
+- Add automated tests for auth, permissions, tenant isolation, products, and categories.
 
 ## Prisma And PostgreSQL
 
 - Keep all store-owned business tables scoped by `storeId`.
 - Add `branchId` only where workflows are branch-specific.
-- Add business models in a later phase, not during foundation setup.
-- Add seed data for development roles and permissions later.
+- Products and categories now exist as catalog master data.
+- Do not add inventory movements, invoices, sales, or POS transaction models until the next dedicated phase.
+- Expand seed data only when it supports a real workflow being implemented.
 
 ## Frontend
 
@@ -32,14 +33,14 @@
 - Keep route configuration in `frontend/src/app/routes/routeConfig.tsx`.
 - Keep demo-only fixtures in `frontend/src/data/demo`.
 - Auth service and login integration now use the backend.
-- Keep product/POS/inventory/report services as placeholders until those backend modules exist.
+- Products and categories pages now use the backend API.
+- Keep POS, inventory, sales, invoice, and report services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
 
 - Authentication
-- Products CRUD
-- Categories CRUD
+- Product/category import and bulk editing
 - Inventory movements
 - POS checkout
 - Sales and invoices

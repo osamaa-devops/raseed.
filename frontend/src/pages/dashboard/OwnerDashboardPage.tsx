@@ -24,12 +24,12 @@ export function OwnerDashboardPage() {
           </div>
         </AppCard>
         <AppCard>
-          <h2 className="mb-4 flex items-center gap-2 font-bold"><Package size={18} /> مخزون يحتاج متابعة</h2>
+          <h2 className="mb-4 flex items-center gap-2 font-bold"><Package size={18} /> حدود إعادة الطلب</h2>
           <div className="space-y-3">
-            {demoProducts.filter((product) => product.stock <= product.minStock).map((product) => (
+            {demoProducts.slice(0, 3).map((product) => (
               <div key={product.id} className="flex items-center justify-between rounded-lg bg-warning/10 p-3">
                 <span className="font-semibold">{product.name}</span>
-                <span className="text-sm text-warning">{product.stock} وحدة</span>
+                <span className="text-sm text-warning">الحد الأدنى {product.minStock} {product.unitType}</span>
               </div>
             ))}
           </div>

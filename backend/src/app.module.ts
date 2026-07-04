@@ -8,6 +8,8 @@ import { StoresModule } from "./modules/stores/stores.module";
 import { BranchesModule } from "./modules/branches/branches.module";
 import { RolesModule } from "./modules/roles/roles.module";
 import { PermissionsModule } from "./modules/permissions/permissions.module";
+import { CategoriesModule } from "./modules/categories/categories.module";
+import { ProductsModule } from "./modules/products/products.module";
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { PermissionsModule } from "./modules/permissions/permissions.module";
     BranchesModule,
     RolesModule,
     PermissionsModule,
+    CategoriesModule,
+    ProductsModule,
   ],
 })
 export class AppModule {}

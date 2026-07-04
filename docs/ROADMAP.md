@@ -27,7 +27,8 @@
 
 ## Phase 4: Retail Core Data Model
 
-- Products and categories.
+- Products and categories master data. Completed: first store-scoped CRUD foundation.
+- Product/category polish: import/export, barcode validation helpers, richer units, and catalog test coverage.
 - Suppliers and purchase orders.
 - Customers and debts.
 - Inventory movements.

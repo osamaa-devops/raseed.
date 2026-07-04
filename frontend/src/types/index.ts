@@ -29,20 +29,35 @@ export type User = {
 export type Product = {
   id: Id;
   storeId: Id;
+  categoryId?: Id | null;
+  category?: Category | null;
   name: string;
-  barcode: string;
-  categoryId: Id;
-  price: number;
-  cost: number;
-  stock: number;
+  barcode?: string | null;
+  sku?: string | null;
+  description?: string | null;
+  imageUrl?: string | null;
+  purchasePrice: number;
+  sellingPrice: number;
+  profitMargin: number;
+  unitType: string;
   minStock: number;
+  expiryDate?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Category = {
   id: Id;
   storeId: Id;
   name: string;
-  color: string;
+  description?: string | null;
+  color?: string | null;
+  icon?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+  _count?: { products: number };
 };
 
 export type InventoryMovement = {

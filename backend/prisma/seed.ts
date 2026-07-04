@@ -10,6 +10,10 @@ const permissions = [
   "products.create",
   "products.update",
   "products.delete",
+  "categories.view",
+  "categories.create",
+  "categories.update",
+  "categories.delete",
   "inventory.view",
   "inventory.adjust",
   "sales.view",
@@ -32,6 +36,9 @@ const rolePermissions: Record<string, string[]> = {
     "products.view",
     "products.create",
     "products.update",
+    "categories.view",
+    "categories.create",
+    "categories.update",
     "inventory.view",
     "inventory.adjust",
     "sales.view",
@@ -43,8 +50,35 @@ const rolePermissions: Record<string, string[]> = {
     "activity_logs.view",
   ],
   cashier: ["pos.access", "sales.view", "invoices.view", "returns.create"],
-  inventory: ["products.view", "inventory.view", "inventory.adjust"],
+  inventory: ["products.view", "categories.view", "inventory.view", "inventory.adjust"],
 };
+
+const demoCategories = [
+  { name: "ألبان", color: "#0f766e", icon: "milk" },
+  { name: "بقالة", color: "#d97706", icon: "package" },
+  { name: "مشروبات", color: "#2563eb", icon: "cup" },
+  { name: "منظفات", color: "#7c3aed", icon: "sparkles" },
+  { name: "معلبات", color: "#dc2626", icon: "archive" },
+  { name: "مجمدات", color: "#0891b2", icon: "snowflake" },
+];
+
+const demoProducts = [
+  { name: "لبن جهينة", barcode: "6223001234567", category: "ألبان", purchasePrice: 13, sellingPrice: 18, minStock: 20, unitType: "كرتونة" },
+  { name: "سكر أبيض", barcode: "6223001234568", category: "بقالة", purchasePrice: 28, sellingPrice: 35, minStock: 30, unitType: "كيلو" },
+  { name: "أرز مصري", barcode: "6223001234569", category: "بقالة", purchasePrice: 35, sellingPrice: 45, minStock: 25, unitType: "كيلو" },
+  { name: "زيت خليط", barcode: "6223001234570", category: "بقالة", purchasePrice: 42, sellingPrice: 55, minStock: 15, unitType: "لتر" },
+  { name: "شاي العروسة", barcode: "6223001234571", category: "بقالة", purchasePrice: 16, sellingPrice: 22, minStock: 20, unitType: "علبة" },
+  { name: "مياه معدنية", barcode: "6223001234572", category: "مشروبات", purchasePrice: 3, sellingPrice: 5, minStock: 50, unitType: "عبوة" },
+  { name: "جبنة بيضاء", barcode: "6223001234573", category: "ألبان", purchasePrice: 50, sellingPrice: 65, minStock: 15, unitType: "كيلو" },
+  { name: "مكرونة", barcode: "6223001234574", category: "بقالة", purchasePrice: 9, sellingPrice: 12, minStock: 40, unitType: "كيس" },
+  { name: "بسكويت", barcode: "6223001234575", category: "بقالة", purchasePrice: 6, sellingPrice: 8, minStock: 30, unitType: "علبة" },
+  { name: "مسحوق غسيل", barcode: "6223001234576", category: "منظفات", purchasePrice: 32, sellingPrice: 42, minStock: 10, unitType: "كيلو" },
+  { name: "عصير مانجو", barcode: "6223001234577", category: "مشروبات", purchasePrice: 10, sellingPrice: 15, minStock: 20, unitType: "علبة" },
+  { name: "بيبسي", barcode: "6223001234578", category: "مشروبات", purchasePrice: 7, sellingPrice: 10, minStock: 48, unitType: "علبة" },
+  { name: "زبادي", barcode: "6223001234579", category: "ألبان", purchasePrice: 4, sellingPrice: 6, minStock: 12, unitType: "كوب" },
+  { name: "تونة", barcode: "6223001234580", category: "معلبات", purchasePrice: 14, sellingPrice: 20, minStock: 24, unitType: "علبة" },
+  { name: "صابون", barcode: "6223001234581", category: "منظفات", purchasePrice: 9, sellingPrice: 14, minStock: 20, unitType: "قطعة" },
+];
 
 async function upsertPermission(key: string) {
   return prisma.permission.upsert({
@@ -262,6 +296,52 @@ async function main() {
     phone: "01000000040",
     password: "RaseedInventory!2026",
   });
+
+  const categoryByName = new Map<string, { id: string }>();
+  for (const category of demoCategories) {
+    const savedCategory = await prisma.category.upsert({
+      where: { storeId_name: { storeId: store.id, name: category.name } },
+      update: {
+        color: category.color,
+        icon: category.icon,
+        status: "ACTIVE",
+      },
+      create: {
+        storeId: store.id,
+        name: category.name,
+        color: category.color,
+        icon: category.icon,
+        status: "ACTIVE",
+      },
+    });
+    categoryByName.set(category.name, savedCategory);
+  }
+
+  for (const product of demoProducts) {
+    const category = categoryByName.get(product.category);
+    await prisma.product.upsert({
+      where: { storeId_barcode: { storeId: store.id, barcode: product.barcode } },
+      update: {
+        categoryId: category?.id,
+        purchasePrice: product.purchasePrice,
+        sellingPrice: product.sellingPrice,
+        minStock: product.minStock,
+        unitType: product.unitType,
+        status: "ACTIVE",
+      },
+      create: {
+        storeId: store.id,
+        categoryId: category?.id,
+        name: product.name,
+        barcode: product.barcode,
+        purchasePrice: product.purchasePrice,
+        sellingPrice: product.sellingPrice,
+        minStock: product.minStock,
+        unitType: product.unitType,
+        status: "ACTIVE",
+      },
+    });
+  }
 }
 
 main()
