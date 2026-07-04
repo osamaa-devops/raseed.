@@ -42,6 +42,14 @@ const permissions = [
   "reports.export",
   "closing.view",
   "closing.create",
+  "customers.view",
+  "customers.create",
+  "customers.update",
+  "customers.delete",
+  "debts.view",
+  "debts.add",
+  "debts.pay",
+  "debts.adjust",
   "users.manage",
   "settings.manage",
   "activity_logs.view",
@@ -88,10 +96,18 @@ const rolePermissions: Record<string, string[]> = {
     "reports.export",
     "closing.view",
     "closing.create",
+    "customers.view",
+    "customers.create",
+    "customers.update",
+    "customers.delete",
+    "debts.view",
+    "debts.add",
+    "debts.pay",
+    "debts.adjust",
     "users.manage",
     "activity_logs.view",
   ],
-  cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view"],
+  cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay"],
   inventory: [
     "products.view",
     "categories.view",
@@ -148,6 +164,14 @@ const demoInventory: Record<string, { quantity: number; batchNumber?: string; ex
   "تونة": { quantity: 28 },
   "صابون": { quantity: 9 },
 };
+
+const demoCustomers = [
+  { name: "محمد علي", phone: "01010000001", address: "شارع النصر", currentDebt: 250, creditLimit: 1000, notes: "عميل دائم" },
+  { name: "أحمد حسن", phone: "01010000002", address: "مدينة نصر", currentDebt: 120, creditLimit: 750 },
+  { name: "مصطفى السيد", phone: "01010000003", address: "المعادي", currentDebt: 0, creditLimit: 500 },
+  { name: "كريم محمود", phone: "01010000004", address: "شبرا", currentDebt: 80, creditLimit: 400 },
+  { name: "سارة أحمد", phone: "01010000005", address: "الزمالك", currentDebt: 0, creditLimit: 1200 },
+];
 
 async function upsertPermission(key: string) {
   return prisma.permission.upsert({
@@ -326,7 +350,7 @@ async function main() {
     password: "RaseedAdmin!2026",
   });
 
-  await findOrCreateUser({
+  const ownerUser = await findOrCreateUser({
     storeId: store.id,
     branchId: branch.id,
     roleId: roles.owner.id,
@@ -365,6 +389,53 @@ async function main() {
     phone: "01000000040",
     password: "RaseedInventory!2026",
   });
+
+  for (const customer of demoCustomers) {
+    const savedCustomer = await prisma.customer.upsert({
+      where: { storeId_phone: { storeId: store.id, phone: customer.phone } },
+      update: {
+        name: customer.name,
+        address: customer.address,
+        notes: customer.notes,
+        creditLimit: customer.creditLimit,
+        currentDebt: customer.currentDebt,
+        status: "ACTIVE",
+        deletedAt: null,
+      },
+      create: {
+        storeId: store.id,
+        name: customer.name,
+        phone: customer.phone,
+        address: customer.address,
+        notes: customer.notes,
+        creditLimit: customer.creditLimit,
+        currentDebt: customer.currentDebt,
+        status: "ACTIVE",
+      },
+    });
+
+    if (customer.currentDebt > 0) {
+      const existingSeedDebt = await prisma.customerDebtTransaction.findFirst({
+        where: { storeId: store.id, customerId: savedCustomer.id, reason: "Seeded opening customer debt" },
+      });
+      if (!existingSeedDebt) {
+        await prisma.customerDebtTransaction.create({
+          data: {
+            storeId: store.id,
+            branchId: branch.id,
+            customerId: savedCustomer.id,
+            userId: ownerUser.id,
+            type: "DEBT_ADDED",
+            amount: customer.currentDebt,
+            balanceBefore: 0,
+            balanceAfter: customer.currentDebt,
+            reason: "Seeded opening customer debt",
+            notes: "رصيد افتتاحي للعرض التجريبي",
+          },
+        });
+      }
+    }
+  }
 
   const openShift = await prisma.cashierShift.findFirst({
     where: { storeId: store.id, branchId: branch.id, cashierId: cashierUser.id, status: "OPEN" },

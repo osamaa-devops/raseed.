@@ -88,6 +88,18 @@ enum ExpenseCategory {
   OTHER
 }
 
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CustomerDebtTransactionType {
+  DEBT_ADDED
+  PAYMENT_RECEIVED
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+}
+
 model Store {
   id            String         @id @default(cuid())
   name          String
@@ -116,6 +128,8 @@ model Store {
   returnItems ReturnItem[]
   expenses Expense[]
   dailyClosings DailyClosing[]
+  customers Customer[]
+  customerDebtTransactions CustomerDebtTransaction[]
   subscriptions Subscription[]
   activityLogs  ActivityLog[]
 
@@ -148,6 +162,7 @@ model Branch {
   returnItems ReturnItem[]
   expenses Expense[]
   dailyClosings DailyClosing[]
+  customerDebtTransactions CustomerDebtTransaction[]
   activityLogs ActivityLog[]
 
   @@unique([storeId, name])
@@ -178,6 +193,7 @@ model User {
   returns Return[]
   expenses Expense[]
   dailyClosings DailyClosing[]
+  customerDebtTransactions CustomerDebtTransaction[]
   activityLogs    ActivityLog[]
 
   @@unique([storeId, email])
@@ -400,15 +416,18 @@ model Invoice {
   updatedAt     DateTime      @updatedAt
   store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   branch        Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   cashier       User          @relation(fields: [cashierId], references: [id], onDelete: Restrict)
   shift         CashierShift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   items         InvoiceItem[]
   payments      Payment[]
   returns       Return[]
+  customerDebtTransactions CustomerDebtTransaction[]
 
   @@unique([storeId, branchId, invoiceNumber])
   @@index([storeId, branchId])
   @@index([cashierId])
+  @@index([customerId])
   @@index([shiftId])
   @@index([createdAt])
 }
@@ -578,6 +597,58 @@ model DailyClosing {
   @@unique([storeId, branchId, date])
   @@index([storeId, branchId])
   @@index([date])
+}
+
+model Customer {
+  id               String                    @id @default(cuid())
+  storeId          String
+  name             String
+  phone            String
+  email            String?
+  address          String?
+  notes            String?
+  status           CustomerStatus            @default(ACTIVE)
+  creditLimit      Decimal?                  @db.Decimal(10, 2)
+  currentDebt      Decimal                   @default(0) @db.Decimal(10, 2)
+  loyaltyPoints    Int                       @default(0)
+  deletedAt        DateTime?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  store            Store                     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  invoices         Invoice[]
+  debtTransactions CustomerDebtTransaction[]
+
+  @@unique([storeId, phone])
+  @@index([storeId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model CustomerDebtTransaction {
+  id            String                      @id @default(cuid())
+  storeId       String
+  branchId      String?
+  customerId    String
+  invoiceId     String?
+  userId        String
+  type          CustomerDebtTransactionType
+  amount        Decimal                     @db.Decimal(10, 2)
+  balanceBefore Decimal                     @db.Decimal(10, 2)
+  balanceAfter  Decimal                     @db.Decimal(10, 2)
+  paymentMethod PaymentMethod?
+  reason        String?
+  notes         String?
+  createdAt     DateTime                    @default(now())
+  store         Store                       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch        Branch?                     @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  customer      Customer                    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoice       Invoice?                    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  user          User                        @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([storeId])
+  @@index([customerId])
+  @@index([branchId])
+  @@index([createdAt])
 }
 
 model SubscriptionPlan {

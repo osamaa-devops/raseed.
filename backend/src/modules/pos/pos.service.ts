@@ -9,6 +9,7 @@ import { CreateSaleDto } from "./dto/create-sale.dto";
 const invoiceInclude = {
   branch: true,
   cashier: { select: { id: true, name: true, email: true } },
+  customer: { select: { id: true, name: true, phone: true } },
   items: { include: { product: { include: { category: true } } } },
   payments: true,
 } as const;
@@ -23,6 +24,7 @@ export class PosService {
   async createSale(user: AuthenticatedUser, dto: CreateSaleDto) {
     const storeId = this.requireStore(user);
     await this.assertBranch(storeId, dto.branchId);
+    if (dto.customerId) await this.assertCustomer(storeId, dto.customerId);
     const shift = await this.validateShift(user, storeId, dto.branchId, dto.shiftId);
     const productIds = [...new Set(dto.items.map((item) => item.productId))];
     const products = await this.prisma.product.findMany({ where: { storeId, id: { in: productIds }, status: "ACTIVE" } });
@@ -74,6 +76,7 @@ export class PosService {
           branchId: dto.branchId,
           cashierId: user.id,
           shiftId: shift?.id,
+          customerId: dto.customerId,
           invoiceNumber,
           subtotal,
           discountTotal,
@@ -157,6 +160,19 @@ export class PosService {
           metadata: { invoiceNumber },
         },
       });
+      if (dto.customerId) {
+        await tx.activityLog.create({
+          data: {
+            storeId,
+            branchId: dto.branchId,
+            userId: user.id,
+            action: "invoice.linked_to_customer",
+            entityType: "Invoice",
+            entityId: createdInvoice.id,
+            metadata: { invoiceNumber, customerId: dto.customerId },
+          },
+        });
+      }
       return tx.invoice.findUniqueOrThrow({ where: { id: createdInvoice.id }, include: invoiceInclude });
     });
 
@@ -244,6 +260,11 @@ export class PosService {
   private async assertBranch(storeId: string, branchId: string) {
     const branch = await this.prisma.branch.findFirst({ where: { id: branchId, storeId, status: "ACTIVE" } });
     if (!branch) throw new BadRequestException("Branch does not belong to this store.");
+  }
+
+  private async assertCustomer(storeId: string, customerId: string) {
+    const customer = await this.prisma.customer.findFirst({ where: { id: customerId, storeId, status: "ACTIVE", deletedAt: null } });
+    if (!customer) throw new BadRequestException("Customer does not belong to this store.");
   }
 
   private serializeInvoice(invoice: Prisma.InvoiceGetPayload<{ include: typeof invoiceInclude }>) {

@@ -15,7 +15,7 @@
 - Add password reset and invitation flows.
 - Add more complete role/permission management endpoints.
 - Expand store/branch guards as business modules are added.
-- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, POS sale rollback behavior, return/refund rollback behavior, expenses, dashboard reports, and day closing.
+- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, POS sale rollback behavior, return/refund rollback behavior, expenses, dashboard reports, day closing, and customer debt balance transactions.
 
 ## Prisma And PostgreSQL
 
@@ -27,7 +27,9 @@
 - Returns and refunds now exist with optional restock and returned quantity tracking.
 - Expenses and daily closing snapshots now exist.
 - Dashboard and reports now read real operational data.
-- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, purchase orders, customer debts, advanced accounting, or PDF/Excel exports until their dedicated phases.
+- Customers and debt transactions now exist.
+- POS invoices can optionally link to a customer; credit sale is deferred.
+- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, purchase orders, suppliers, advanced accounting, or PDF/Excel exports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
 
 ## Frontend
@@ -43,7 +45,9 @@
 - POS, shifts, and sales/invoices pages now use real backend APIs.
 - Returns page now uses real backend return/refund APIs.
 - Expenses, dashboard, reports, and end-of-day closing pages now use real backend APIs.
-- Keep purchase orders, customer debts, loyalty, AI, and advanced billing services as placeholders until those backend modules exist.
+- Customers and debts page now uses real backend APIs.
+- POS supports optional customer selection for invoice linking.
+- Keep purchase orders, suppliers, loyalty, AI, and advanced billing services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
@@ -56,7 +60,8 @@
 - Offline POS queue
 - Return approvals and cancellation workflow
 - Expenses polish and attachments
-- Customers and debts
+- Customer invoice history UI
+- Credit sale and partially paid invoice workflow
 - Suppliers and purchase orders
 - Shift management polish
 - End-of-day closing reopen/approval policy

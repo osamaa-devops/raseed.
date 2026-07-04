@@ -7,6 +7,7 @@ import { GetInvoicesQueryDto } from "./dto/get-invoices-query.dto";
 const invoiceInclude = {
   branch: true,
   cashier: { select: { id: true, name: true, email: true } },
+  customer: { select: { id: true, name: true, phone: true } },
   items: { include: { product: { include: { category: true } } } },
   payments: true,
   returns: {
@@ -31,6 +32,7 @@ export class InvoicesService {
       branchId: query.branchId || undefined,
       cashierId: query.cashierId || undefined,
       shiftId: query.shiftId || undefined,
+      customerId: query.customerId || undefined,
       status: query.status,
       payments: query.paymentMethod ? { some: { method: query.paymentMethod } } : undefined,
       createdAt: {

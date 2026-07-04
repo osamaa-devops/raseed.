@@ -26,7 +26,7 @@ export class DashboardService {
     const returnWhere: Prisma.ReturnWhereInput = { storeId, ...branchWhere, status: "COMPLETED", createdAt: range };
     const expenseWhere: Prisma.ExpenseWhereInput = { storeId, ...branchWhere, deletedAt: null, expenseDate: range };
 
-    const [sales, previousSales, returns, expenses, invoicesCount, previousInvoicesCount, payments, topProducts, recentInvoices, cashierPerformance, lowStockCount, expiryAlertsCount] =
+    const [sales, previousSales, returns, expenses, invoicesCount, previousInvoicesCount, payments, topProducts, recentInvoices, cashierPerformance, lowStockCount, expiryAlertsCount, customerDebt] =
       await Promise.all([
         this.sumInvoices(invoiceWhere),
         this.sumInvoices(previousInvoiceWhere),
@@ -40,6 +40,7 @@ export class DashboardService {
         this.cashierPerformance(storeId, query.branchId, range),
         this.lowStockCount(storeId, query.branchId),
         this.expiryAlertsCount(storeId, query.branchId),
+        this.customerDebt(storeId),
       ]);
 
     const grossProfitEstimate = await this.grossProfit(storeId, query.branchId, range);
@@ -70,6 +71,7 @@ export class DashboardService {
       cashPayments: payments.CASH,
       cardPayments: payments.CARD,
       walletPayments: payments.WALLET,
+      totalCustomerDebt: customerDebt,
       topSellingProducts: topProducts,
       recentInvoices,
       cashierPerformance,
@@ -166,6 +168,11 @@ export class DashboardService {
     return this.prisma.inventoryBatch.count({
       where: { storeId, branchId: branchId || undefined, remainingQuantity: { gt: 0 }, expiryDate: { gte: new Date(), lte: to } },
     });
+  }
+
+  private async customerDebt(storeId: string) {
+    const result = await this.prisma.customer.aggregate({ where: { storeId, deletedAt: null }, _sum: { currentDebt: true } });
+    return Number(result._sum.currentDebt ?? 0);
   }
 
   private requireStore(user: AuthenticatedUser) {

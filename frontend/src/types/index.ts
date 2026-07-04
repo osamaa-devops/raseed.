@@ -143,6 +143,7 @@ export type Invoice = {
   shiftId?: Id | null;
   customerId?: Id | null;
   customerName?: string;
+  customer?: { id: Id; name: string; phone: string } | null;
   status: "PAID" | "VOID" | "REFUNDED" | "PARTIALLY_REFUNDED";
   subtotal: number;
   discountTotal: number;
@@ -221,6 +222,7 @@ export type HeldOrder = {
 export type CreateSaleRequest = {
   branchId: Id;
   shiftId?: Id;
+  customerId?: Id;
   items: Array<{ productId: Id; quantity: number; unitPrice?: number; discount?: number }>;
   payments: Array<{ method: Payment["method"]; amount: number }>;
   invoiceDiscount?: number;
@@ -337,6 +339,7 @@ export type DashboardOverview = {
   cashPayments: number;
   cardPayments: number;
   walletPayments: number;
+  totalCustomerDebt?: number;
   salesChangePercent: number;
   profitChangePercent: number;
   invoicesChangePercent: number;
@@ -380,14 +383,62 @@ export type Supplier = {
   balance: number;
 };
 
+export type CustomerStatus = "ACTIVE" | "INACTIVE";
+
 export type Customer = {
   id: Id;
   storeId: Id;
   name: string;
   phone: string;
-  debt: number;
-  points: number;
+  email?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  status: CustomerStatus;
+  creditLimit?: number | null;
+  currentDebt: number;
+  loyaltyPoints: number;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { invoices: number; debtTransactions: number };
 };
+
+export type CustomerDebtTransactionType = "DEBT_ADDED" | "PAYMENT_RECEIVED" | "ADJUSTMENT_IN" | "ADJUSTMENT_OUT";
+
+export type CustomerDebtTransaction = {
+  id: Id;
+  storeId: Id;
+  branchId?: Id | null;
+  customerId: Id;
+  invoiceId?: Id | null;
+  userId: Id;
+  type: CustomerDebtTransactionType;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  paymentMethod?: Payment["method"] | null;
+  reason?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  branch?: Branch | null;
+  user?: { id: Id; name: string; email?: string | null };
+  invoice?: Pick<Invoice, "id" | "invoiceNumber" | "total" | "status"> | null;
+};
+
+export type CreateCustomerRequest = {
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  creditLimit?: number;
+};
+
+export type UpdateCustomerRequest = Partial<CreateCustomerRequest>;
+
+export type AddDebtRequest = { branchId?: Id; amount: number; reason: string; notes?: string };
+export type PayDebtRequest = { branchId?: Id; amount: number; paymentMethod: Payment["method"]; notes?: string };
+export type AdjustDebtRequest = { branchId?: Id; amount: number; direction: "IN" | "OUT"; reason: string; notes?: string };
 
 export type Subscription = {
   id: Id;

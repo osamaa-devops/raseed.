@@ -16,6 +16,10 @@ export class GetInvoicesQueryDto {
   shiftId?: string;
 
   @IsOptional()
+  @IsString()
+  customerId?: string;
+
+  @IsOptional()
   @IsEnum(PaymentMethod)
   paymentMethod?: PaymentMethod;
 

@@ -8,9 +8,10 @@ import { ProductTile } from "../../components/pos/ProductTile";
 import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { posService } from "../../services/posService";
+import { customersService } from "../../services/customersService";
 import { productsService } from "../../services/productsService";
 import { shiftsService } from "../../services/shiftsService";
-import type { CashierShift, HeldOrder, Invoice, Payment, Product } from "../../types";
+import type { CashierShift, Customer, HeldOrder, Invoice, Payment, Product } from "../../types";
 
 type CartItem = { product: Product; quantity: number; discount: number };
 
@@ -20,7 +21,11 @@ export function PosPage() {
   const canSell = hasPermission("pos.sell");
   const canHold = hasPermission("pos.hold_order");
   const canReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
+  const canViewCustomers = hasPermission("customers.view");
   const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [query, setQuery] = useState("");
   const [shift, setShift] = useState<CashierShift | null>(null);
@@ -54,6 +59,10 @@ export function PosPage() {
       setShift(currentShift);
       setHeldOrders(held);
       setRecentInvoices(recent);
+      if (canViewCustomers) {
+        const customerResponse = await customersService.getCustomers({ search: customerQuery, status: "ACTIVE", limit: 8 });
+        setCustomers(customerResponse.items);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "تعذر تحميل بيانات الكاشير");
     }
@@ -83,6 +92,7 @@ export function PosPage() {
       const created = await posService.createSale({
         branchId,
         shiftId: shift.id,
+        customerId: selectedCustomer?.id,
         items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity, unitPrice: item.product.sellingPrice, discount: item.discount })),
         payments: [{ method: paymentMethod, amount: paid }],
         invoiceDiscount,
@@ -90,6 +100,7 @@ export function PosPage() {
       setInvoice(created);
       setCart([]);
       setInvoiceDiscount(0);
+      setSelectedCustomer(null);
       setAmountPaid("");
       setNotice("تم إتمام البيع وتحديث المخزون");
       await load();
@@ -158,6 +169,7 @@ export function PosPage() {
               <div key={recent.id} className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-muted p-2 text-sm">
                 <div className="grid">
                   <span>{recent.invoiceNumber}</span>
+                  {recent.customer && <span className="text-xs text-muted-foreground">{recent.customer.name}</span>}
                   <span>{formatMoney(recent.total)}</span>
                 </div>
                 {canReturn && recent.status !== "REFUNDED" && <AppButton variant="ghost" icon={RotateCcw} onClick={() => goToReturn(recent.invoiceNumber)}>مرتجع</AppButton>}
@@ -195,6 +207,26 @@ export function PosPage() {
             <option value="WALLET">محفظة</option>
           </SelectInput>
           <TextInput className="mt-3" label="المبلغ المدفوع" type="number" value={amountPaid} onChange={(event) => setAmountPaid(event.target.value)} />
+          {canViewCustomers && (
+            <div className="mt-3 rounded-lg border border-border p-3">
+              <TextInput label="عميل اختياري" placeholder="بحث بالاسم أو الهاتف" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} onBlur={load} />
+              {selectedCustomer ? (
+                <div className="mt-2 flex items-center justify-between rounded-lg bg-muted p-2 text-sm">
+                  <span>{selectedCustomer.name} - {selectedCustomer.phone}</span>
+                  <button className="font-semibold text-primary" onClick={() => setSelectedCustomer(null)}>إزالة</button>
+                </div>
+              ) : (
+                <div className="mt-2 grid gap-2">
+                  {customers.map((customer) => (
+                    <button key={customer.id} className="rounded-lg bg-muted p-2 text-right text-sm hover:bg-primary/10" onClick={() => setSelectedCustomer(customer)}>
+                      {customer.name} - {customer.phone}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">البيع الائتماني مؤجل؛ يجب تغطية إجمالي الفاتورة بالمدفوعات.</p>
+            </div>
+          )}
           <div className="my-4 space-y-2 text-lg font-bold">
             <div className="flex justify-between"><span>الإجمالي</span><span>{formatMoney(total)}</span></div>
             <div className="flex justify-between text-success"><span>الباقي</span><span>{formatMoney(change)}</span></div>
@@ -211,6 +243,7 @@ export function PosPage() {
         {invoice && (
           <div className="space-y-3 text-sm">
             <div className="rounded-lg bg-muted p-3"><b>{invoice.invoiceNumber}</b></div>
+            {invoice.customer && <div className="rounded-lg bg-muted p-3">العميل: {invoice.customer.name} - {invoice.customer.phone}</div>}
             {invoice.items?.map((item) => <div key={item.id} className="flex justify-between"><span>{item.productName} x{item.quantity}</span><span>{formatMoney(item.lineTotal)}</span></div>)}
             <div className="border-t border-border pt-3 text-lg font-bold">الإجمالي: {formatMoney(invoice.total)}</div>
             <AppButton icon={Printer} onClick={() => window.print()}>طباعة</AppButton>

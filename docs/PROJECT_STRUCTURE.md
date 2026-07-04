@@ -107,7 +107,8 @@ Current state:
 - `frontend/src/services/dashboardService.ts` integrates the owner dashboard overview.
 - `frontend/src/services/reportsService.ts` integrates JSON operational reports.
 - `frontend/src/services/closingService.ts` integrates end-of-day summary, close-day, and history.
-- Advanced admin business integrations such as purchase orders, debts, AI, and billing remain placeholders.
+- `frontend/src/services/customersService.ts` integrates customers and debt transactions.
+- Advanced admin business integrations such as purchase orders, suppliers, AI, and billing remain placeholders.
 
 ## Frontend Routes
 
@@ -285,6 +286,16 @@ Current backend implementation:
 - `GET /api/closing/summary`
 - `POST /api/closing/close-day`
 - `GET /api/closing/history`
+- `GET /api/customers`
+- `GET /api/customers/:id`
+- `POST /api/customers`
+- `PATCH /api/customers/:id`
+- `PATCH /api/customers/:id/status`
+- `DELETE /api/customers/:id`
+- `GET /api/customers/:id/debt-transactions`
+- `POST /api/customers/:id/debt/add`
+- `POST /api/customers/:id/debt/payment`
+- `POST /api/customers/:id/debt/adjust`
 - global `/api` prefix
 - CORS
 - validation pipe
@@ -325,6 +336,8 @@ Prisma foundational models:
 - `ReturnItem`
 - `Expense`
 - `DailyClosing`
+- `Customer`
+- `CustomerDebtTransaction`
 
 Auth-related seed data:
 
@@ -332,8 +345,8 @@ Auth-related seed data:
 - Demo store: `ماركت المدينة`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
-- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, invoice refunds, returns, expenses CRUD, reports/export, closing view/create, users, settings, activity logs, and platform admin access
+- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, invoice refunds, returns, expenses CRUD, reports/export, closing view/create, customers/debts, users, settings, activity logs, and platform admin access
 - Demo product categories and products for local frontend/API validation
 - Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
 
-Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally. Expenses are branch-scoped and soft-deleted. Dashboard and reports read operational data as JSON. End-of-day closing saves a `DailyClosing` snapshot and blocks closing while shifts are still open.
+Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. POS invoices can optionally link to a customer, while credit sales are deferred. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally. Expenses are branch-scoped and soft-deleted. Dashboard and reports read operational data as JSON. End-of-day closing saves a `DailyClosing` snapshot and blocks closing while shifts are still open. Customer debts are tracked through immutable `CustomerDebtTransaction` records that update `Customer.currentDebt` inside database transactions.

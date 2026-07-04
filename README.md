@@ -139,12 +139,15 @@ Implemented in this foundation step:
 - Dashboard overview with daily sales, returns, expenses, net sales, estimated profit, payments, low-stock counts, recent invoices, and cashier performance
 - JSON reports for sales, profit, payment methods, cashier performance, product sales, inventory value, and expenses
 - End-of-day closing summary and immutable daily closing snapshots
+- Real customers and customer debt transactions with partial payments and adjustments
+- Optional customer link on POS invoices
 
 Not implemented yet:
 
 - Advanced return approvals/cancellations
 - PDF/Excel export
 - Advanced accounting and tax redistribution
+- Credit sale / partially paid invoice workflow
 - Loyalty, coupons, offers, and purchase orders
 - Subscription billing
 
@@ -287,3 +290,35 @@ End-of-day closing endpoints:
 `DailyClosing` stores a snapshot at close time. V1 blocks closing while cashier shifts are still open and does not close shifts automatically.
 
 Financial permissions include `expenses.view`, `expenses.create`, `expenses.update`, `expenses.delete`, `dashboard.view`, `reports.view`, `reports.export`, `closing.view`, and `closing.create`.
+
+## Customers And Debts
+
+Customer data is store-scoped. Debt transactions may also include `branchId` when they happen at a branch. Customer balances are updated only through transaction-based debt operations.
+
+Customer endpoints:
+
+- `GET /api/customers`
+- `GET /api/customers/:id`
+- `POST /api/customers`
+- `PATCH /api/customers/:id`
+- `PATCH /api/customers/:id/status`
+- `DELETE /api/customers/:id`
+
+Debt endpoints:
+
+- `GET /api/customers/:id/debt-transactions`
+- `POST /api/customers/:id/debt/add`
+- `POST /api/customers/:id/debt/payment`
+- `POST /api/customers/:id/debt/adjust`
+
+Debt behavior:
+
+- `DEBT_ADDED` increases `currentDebt`.
+- `PAYMENT_RECEIVED` decreases `currentDebt`.
+- `ADJUSTMENT_IN` increases debt.
+- `ADJUSTMENT_OUT` decreases debt.
+- V1 rejects overpayment and any adjustment that would make debt negative.
+
+Customer/debt permissions include `customers.view`, `customers.create`, `customers.update`, `customers.delete`, `debts.view`, `debts.add`, `debts.pay`, and `debts.adjust`.
+
+POS V1 supports optional `customerId` on `POST /api/pos/sale`, so invoices can be linked to a customer. Credit sales are intentionally deferred; payments must still cover the invoice total.

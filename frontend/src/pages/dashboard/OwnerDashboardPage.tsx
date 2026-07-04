@@ -90,6 +90,7 @@ export function OwnerDashboardPage() {
             <StateItem icon={AlertTriangle} label="تنبيهات صلاحية" value={overview.expiryAlertsCount} />
             <StateItem icon={Receipt} label="مرتجعات" value={overview.returnsCount} />
             <StateItem icon={Wallet} label="إجمالي طرق الدفع" value={`${overview.cashPayments + overview.cardPayments + overview.walletPayments} ج`} />
+            <StateItem icon={Wallet} label="ديون العملاء" value={`${overview.totalCustomerDebt ?? 0} ج`} />
           </div>
         </AppCard>
       </div>

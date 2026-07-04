@@ -38,6 +38,10 @@ export class CreateSaleDto {
   @IsString()
   shiftId?: string;
 
+  @IsOptional()
+  @IsString()
+  customerId?: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })

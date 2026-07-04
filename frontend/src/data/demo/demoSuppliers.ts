@@ -6,6 +6,6 @@ export const demoSuppliers: Supplier[] = [
 ];
 
 export const demoCustomers: Customer[] = [
-  { id: "c1", storeId: "store_city_market", name: "محمد علي", phone: "01001111111", debt: 350, points: 120 },
-  { id: "c2", storeId: "store_city_market", name: "أحمد حسن", phone: "01002222222", debt: 0, points: 85 },
+  { id: "c1", storeId: "store_city_market", name: "محمد علي", phone: "01001111111", status: "ACTIVE", currentDebt: 350, loyaltyPoints: 120, createdAt: "2026-07-04", updatedAt: "2026-07-04" },
+  { id: "c2", storeId: "store_city_market", name: "أحمد حسن", phone: "01002222222", status: "ACTIVE", currentDebt: 0, loyaltyPoints: 85, createdAt: "2026-07-04", updatedAt: "2026-07-04" },
 ];

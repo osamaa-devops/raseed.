@@ -10,6 +10,7 @@ export type InvoiceListParams = {
   branchId?: string;
   cashierId?: string;
   shiftId?: string;
+  customerId?: string;
   paymentMethod?: Payment["method"] | "";
   status?: Invoice["status"] | "";
   dateFrom?: string;

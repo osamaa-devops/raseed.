@@ -58,12 +58,13 @@ export function SalesInvoicesPage() {
       </div>
       {invoices.length === 0 ? <EmptyState icon={Receipt} title="لا توجد فواتير" description="الفواتير ستظهر هنا بعد أول عملية بيع." /> : (
         <DataTable
-          columns={["رقم الفاتورة", "التاريخ", "الفرع", "الكاشير", "الإجمالي", "طريقة الدفع", "الحالة", "الإجراءات"]}
+          columns={["رقم الفاتورة", "التاريخ", "العميل", "الفرع", "الكاشير", "الإجمالي", "طريقة الدفع", "الحالة", "الإجراءات"]}
           rows={invoices}
           renderRow={(invoice) => (
             <tr key={invoice.id} className="border-t border-border hover:bg-table-row-hover">
               <td className="px-4 py-3 font-semibold">{invoice.invoiceNumber}</td>
               <td className="px-4 py-3">{formatDateTime(invoice.createdAt)}</td>
+              <td className="px-4 py-3">{invoice.customer ? `${invoice.customer.name} - ${invoice.customer.phone}` : "-"}</td>
               <td className="px-4 py-3">{invoice.branch?.name ?? "-"}</td>
               <td className="px-4 py-3">{invoice.cashier?.name ?? "-"}</td>
               <td className="px-4 py-3">{formatMoney(invoice.total)}</td>
@@ -84,6 +85,7 @@ export function SalesInvoicesPage() {
         {selected && (
           <div className="space-y-3 text-sm">
             <div className="rounded-lg bg-muted p-3 font-bold">{selected.invoiceNumber}</div>
+            {selected.customer && <div className="rounded-lg bg-muted p-3">العميل: {selected.customer.name} - {selected.customer.phone}</div>}
             {selected.items?.map((item) => (
               <div key={item.id} className="border-b border-border pb-2">
                 <div className="flex justify-between">
