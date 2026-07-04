@@ -16,6 +16,10 @@ const permissions = [
   "categories.delete",
   "inventory.view",
   "inventory.adjust",
+  "inventory.add_stock",
+  "inventory.remove_stock",
+  "inventory.view_movements",
+  "inventory.view_alerts",
   "sales.view",
   "invoices.view",
   "returns.create",
@@ -41,6 +45,10 @@ const rolePermissions: Record<string, string[]> = {
     "categories.update",
     "inventory.view",
     "inventory.adjust",
+    "inventory.add_stock",
+    "inventory.remove_stock",
+    "inventory.view_movements",
+    "inventory.view_alerts",
     "sales.view",
     "invoices.view",
     "returns.create",
@@ -50,7 +58,16 @@ const rolePermissions: Record<string, string[]> = {
     "activity_logs.view",
   ],
   cashier: ["pos.access", "sales.view", "invoices.view", "returns.create"],
-  inventory: ["products.view", "categories.view", "inventory.view", "inventory.adjust"],
+  inventory: [
+    "products.view",
+    "categories.view",
+    "inventory.view",
+    "inventory.adjust",
+    "inventory.add_stock",
+    "inventory.remove_stock",
+    "inventory.view_movements",
+    "inventory.view_alerts",
+  ],
 };
 
 const demoCategories = [
@@ -79,6 +96,24 @@ const demoProducts = [
   { name: "تونة", barcode: "6223001234580", category: "معلبات", purchasePrice: 14, sellingPrice: 20, minStock: 24, unitType: "علبة" },
   { name: "صابون", barcode: "6223001234581", category: "منظفات", purchasePrice: 9, sellingPrice: 14, minStock: 20, unitType: "قطعة" },
 ];
+
+const demoInventory: Record<string, { quantity: number; batchNumber?: string; expiryDays?: number; purchasePrice?: number }> = {
+  "لبن جهينة": { quantity: 12, batchNumber: "MILK-EXP-01", expiryDays: 9, purchasePrice: 13 },
+  "سكر أبيض": { quantity: 80 },
+  "أرز مصري": { quantity: 50 },
+  "زيت خليط": { quantity: 22 },
+  "شاي العروسة": { quantity: 18 },
+  "مياه معدنية": { quantity: 120 },
+  "جبنة بيضاء": { quantity: 14, batchNumber: "CHEESE-01", expiryDays: 18, purchasePrice: 50 },
+  "مكرونة": { quantity: 70 },
+  "بسكويت": { quantity: 26 },
+  "مسحوق غسيل": { quantity: 30 },
+  "عصير مانجو": { quantity: 16, batchNumber: "JUICE-01", expiryDays: 24, purchasePrice: 10 },
+  "بيبسي": { quantity: 64 },
+  "زبادي": { quantity: 8, batchNumber: "YOG-EXP-01", expiryDays: 5, purchasePrice: 4 },
+  "تونة": { quantity: 28 },
+  "صابون": { quantity: 9 },
+};
 
 async function upsertPermission(key: string) {
   return prisma.permission.upsert({
@@ -319,7 +354,7 @@ async function main() {
 
   for (const product of demoProducts) {
     const category = categoryByName.get(product.category);
-    await prisma.product.upsert({
+    const savedProduct = await prisma.product.upsert({
       where: { storeId_barcode: { storeId: store.id, barcode: product.barcode } },
       update: {
         categoryId: category?.id,
@@ -341,6 +376,69 @@ async function main() {
         status: "ACTIVE",
       },
     });
+
+    const inventory = demoInventory[product.name];
+    if (!inventory) continue;
+
+    const stock = await prisma.inventoryStock.upsert({
+      where: { storeId_branchId_productId: { storeId: store.id, branchId: branch.id, productId: savedProduct.id } },
+      update: { quantity: inventory.quantity },
+      create: {
+        storeId: store.id,
+        branchId: branch.id,
+        productId: savedProduct.id,
+        quantity: inventory.quantity,
+      },
+    });
+
+    const existingInitialMovement = await prisma.inventoryMovement.findFirst({
+      where: { storeId: store.id, branchId: branch.id, productId: savedProduct.id, type: "INITIAL" },
+    });
+    if (!existingInitialMovement) {
+      await prisma.inventoryMovement.create({
+        data: {
+          storeId: store.id,
+          branchId: branch.id,
+          productId: savedProduct.id,
+          type: "INITIAL",
+          quantity: inventory.quantity,
+          quantityBefore: 0,
+          quantityAfter: stock.quantity,
+          reason: "Seeded opening stock",
+        },
+      });
+    }
+
+    if (inventory.expiryDays || inventory.batchNumber || inventory.purchasePrice) {
+      const expiryDate = inventory.expiryDays ? new Date(Date.now() + inventory.expiryDays * 24 * 60 * 60 * 1000) : null;
+      const existingBatch = await prisma.inventoryBatch.findFirst({
+        where: { storeId: store.id, branchId: branch.id, productId: savedProduct.id, batchNumber: inventory.batchNumber },
+      });
+      if (existingBatch) {
+        await prisma.inventoryBatch.update({
+          where: { id: existingBatch.id },
+          data: {
+            quantity: inventory.quantity,
+            remainingQuantity: inventory.quantity,
+            purchasePrice: inventory.purchasePrice,
+            expiryDate,
+          },
+        });
+      } else {
+        await prisma.inventoryBatch.create({
+          data: {
+            storeId: store.id,
+            branchId: branch.id,
+            productId: savedProduct.id,
+            batchNumber: inventory.batchNumber,
+            quantity: inventory.quantity,
+            remainingQuantity: inventory.quantity,
+            purchasePrice: inventory.purchasePrice,
+            expiryDate,
+          },
+        });
+      }
+    }
   }
 }
 

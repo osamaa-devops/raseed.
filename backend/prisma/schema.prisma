@@ -40,6 +40,21 @@ enum CatalogStatus {
   INACTIVE
 }
 
+enum InventoryMovementType {
+  INITIAL
+  ADD_STOCK
+  REMOVE_STOCK
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  DAMAGE
+  EXPIRED
+  RETURN
+  SALE
+  PURCHASE
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
 model Store {
   id            String         @id @default(cuid())
   name          String
@@ -56,6 +71,9 @@ model Store {
   roles         Role[]
   categories    Category[]
   products      Product[]
+  inventoryStocks InventoryStock[]
+  inventoryMovements InventoryMovement[]
+  inventoryBatches InventoryBatch[]
   subscriptions Subscription[]
   activityLogs  ActivityLog[]
 
@@ -76,6 +94,9 @@ model Branch {
   updatedAt DateTime @updatedAt
   store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   users     User[]
+  inventoryStocks InventoryStock[]
+  inventoryMovements InventoryMovement[]
+  inventoryBatches InventoryBatch[]
   activityLogs ActivityLog[]
 
   @@unique([storeId, name])
@@ -99,6 +120,7 @@ model User {
   branch          Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
   role            Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
   permissions     UserPermission[]
+  inventoryMovements InventoryMovement[]
   activityLogs    ActivityLog[]
 
   @@unique([storeId, email])
@@ -195,12 +217,81 @@ model Product {
   updatedAt     DateTime      @updatedAt
   store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  inventoryStocks InventoryStock[]
+  inventoryMovements InventoryMovement[]
+  inventoryBatches InventoryBatch[]
 
   @@unique([storeId, barcode])
   @@unique([storeId, sku])
   @@index([storeId])
   @@index([storeId, categoryId])
   @@index([status])
+}
+
+model InventoryStock {
+  id               String   @id @default(cuid())
+  storeId          String
+  branchId         String
+  productId        String
+  quantity         Decimal  @default(0) @db.Decimal(14, 3)
+  minStockOverride Decimal? @db.Decimal(14, 3)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  store            Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch           Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, branchId, productId])
+  @@index([storeId])
+  @@index([storeId, branchId])
+  @@index([storeId, productId])
+}
+
+model InventoryMovement {
+  id             String                @id @default(cuid())
+  storeId        String
+  branchId       String
+  productId      String
+  userId         String?
+  type           InventoryMovementType
+  quantity       Decimal               @db.Decimal(14, 3)
+  quantityBefore Decimal               @db.Decimal(14, 3)
+  quantityAfter  Decimal               @db.Decimal(14, 3)
+  reason         String?
+  referenceType  String?
+  referenceId    String?
+  notes          String?
+  createdAt      DateTime              @default(now())
+  store          Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch         Branch                @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product        Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, branchId])
+  @@index([storeId, productId])
+  @@index([createdAt])
+}
+
+model InventoryBatch {
+  id                String   @id @default(cuid())
+  storeId           String
+  branchId          String
+  productId         String
+  batchNumber       String?
+  quantity          Decimal  @db.Decimal(14, 3)
+  remainingQuantity Decimal  @db.Decimal(14, 3)
+  purchasePrice     Decimal? @db.Decimal(10, 2)
+  expiryDate        DateTime?
+  receivedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch            Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([storeId, branchId])
+  @@index([storeId, productId])
+  @@index([expiryDate])
 }
 
 model SubscriptionPlan {

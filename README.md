@@ -126,12 +126,15 @@ Implemented in this foundation step:
 - Store-scoped Products and Categories CRUD
 - Seeded demo categories and products for the demo store
 - Frontend Products and Categories pages integrated with the API
+- Branch-scoped inventory stock balances and movement history
+- Inventory add/remove/adjust flows with transactional stock updates
+- Low-stock and expiry alert endpoints
+- Frontend Inventory page integrated with the API
 
 Not implemented yet:
 
 - POS logic
 - Sales and invoices
-- Inventory movements
 - Reports
 - Subscription billing
 
@@ -154,3 +157,27 @@ Products and categories are the first real store-owned business modules. Every r
 
 Category permissions use `categories.view`, `categories.create`, `categories.update`, and `categories.delete`.
 Product permissions use `products.view`, `products.create`, `products.update`, and `products.delete`.
+
+## Inventory Endpoints
+
+Product catalog data is store-level, but stock quantity is branch-level. Every stock change must create an `InventoryMovement`; stock should never be updated silently.
+
+- `GET /api/inventory/stocks`
+- `GET /api/inventory/stocks/:productId`
+- `GET /api/inventory/movements`
+- `POST /api/inventory/add-stock`
+- `POST /api/inventory/remove-stock`
+- `POST /api/inventory/adjust`
+- `GET /api/inventory/low-stock`
+- `GET /api/inventory/expiry-alerts`
+
+Inventory permissions:
+
+- `inventory.view`
+- `inventory.adjust`
+- `inventory.add_stock`
+- `inventory.remove_stock`
+- `inventory.view_movements`
+- `inventory.view_alerts`
+
+Seeded inventory examples include low-stock products such as `لبن جهينة`, `زبادي`, and `صابون`, plus near-expiry batches for expiry alert testing.

@@ -65,9 +65,61 @@ export type InventoryMovement = {
   storeId: Id;
   branchId: Id;
   productId: Id;
-  type: "in" | "out" | "adjustment" | "damage";
+  product?: Product;
+  branch?: Branch;
+  user?: { id: Id; name: string; email?: string | null } | null;
+  type:
+    | "INITIAL"
+    | "ADD_STOCK"
+    | "REMOVE_STOCK"
+    | "ADJUSTMENT_IN"
+    | "ADJUSTMENT_OUT"
+    | "DAMAGE"
+    | "EXPIRED"
+    | "RETURN"
+    | "SALE"
+    | "PURCHASE"
+    | "TRANSFER_IN"
+    | "TRANSFER_OUT";
   quantity: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  reason?: string | null;
+  notes?: string | null;
   createdAt: string;
+};
+
+export type InventoryStock = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  productId: Id;
+  product: Product;
+  category?: Category | null;
+  branch: Branch;
+  quantity: number;
+  minStock: number;
+  minStockOverride?: number | null;
+  stockStatus: "low_stock" | "in_stock" | "out_of_stock";
+  lastMovementAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InventoryBatch = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  productId: Id;
+  product: Product;
+  branch: Branch;
+  batchNumber?: string | null;
+  quantity: number;
+  remainingQuantity: number;
+  purchasePrice?: number | null;
+  expiryDate?: string | null;
+  receivedAt: string;
+  daysRemaining?: number | null;
 };
 
 export type Sale = {

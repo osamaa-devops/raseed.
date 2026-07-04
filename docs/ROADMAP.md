@@ -29,9 +29,10 @@
 
 - Products and categories master data. Completed: first store-scoped CRUD foundation.
 - Product/category polish: import/export, barcode validation helpers, richer units, and catalog test coverage.
+- Inventory stock balances and stock movements. Completed: branch-level balances, add/remove/adjust flows, low-stock alerts, expiry alerts, and movement history.
+- Inventory polish: automated tests, stock transfer workflow, purchase receiving workflow, and later POS-safe stock consumption.
 - Suppliers and purchase orders.
 - Customers and debts.
-- Inventory movements.
 - POS sessions and shifts.
 - Sales, invoices, payments, returns, expenses, and end-of-day closing.
 

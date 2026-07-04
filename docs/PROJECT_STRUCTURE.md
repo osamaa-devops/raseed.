@@ -98,7 +98,8 @@ Current state:
 - `frontend/src/services/authService.ts` integrates login and `/auth/me`.
 - `frontend/src/services/productsService.ts` integrates store-scoped product CRUD.
 - `frontend/src/services/categoriesService.ts` integrates store-scoped category CRUD.
-- Inventory, sales, reports, and advanced admin business integrations remain placeholders.
+- `frontend/src/services/inventoryService.ts` integrates branch-scoped inventory stock, movements, and alerts.
+- Sales, reports, and advanced admin business integrations remain placeholders.
 
 ## Frontend Routes
 
@@ -232,6 +233,14 @@ Current backend implementation:
 - `PATCH /api/products/:id`
 - `PATCH /api/products/:id/status`
 - `DELETE /api/products/:id`
+- `GET /api/inventory/stocks`
+- `GET /api/inventory/stocks/:productId`
+- `GET /api/inventory/movements`
+- `POST /api/inventory/add-stock`
+- `POST /api/inventory/remove-stock`
+- `POST /api/inventory/adjust`
+- `GET /api/inventory/low-stock`
+- `GET /api/inventory/expiry-alerts`
 - global `/api` prefix
 - CORS
 - validation pipe
@@ -260,6 +269,9 @@ Prisma foundational models:
 - `ActivityLog`
 - `Category`
 - `Product`
+- `InventoryStock`
+- `InventoryMovement`
+- `InventoryBatch`
 
 Auth-related seed data:
 
@@ -267,7 +279,8 @@ Auth-related seed data:
 - Demo store: `ماركت المدينة`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
-- Permission keys for dashboard, POS, categories, products, inventory, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
+- Permission keys for dashboard, POS, categories, products, inventory, inventory stock actions, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
 - Demo product categories and products for local frontend/API validation
+- Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
 
-Business entities such as invoices, sales, inventory movements, returns, expenses, and reports are intentionally not modeled yet. Products and categories are modeled only as catalog master data; they do not perform stock movements or POS checkout logic yet.
+Business entities such as invoices, sales, returns, expenses, and reports are intentionally not modeled yet. Products and categories are catalog master data. Inventory now owns branch-level stock balances and movement history, but it does not implement POS checkout or invoice stock consumption yet.
