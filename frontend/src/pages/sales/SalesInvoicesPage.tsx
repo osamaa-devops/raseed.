@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Eye, Printer, Receipt } from "lucide-react";
+import { Eye, Printer, Receipt, RotateCcw } from "lucide-react";
+import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Modal } from "../../components/feedback/Modal";
 import { SelectInput, TextInput } from "../../components/forms/FormControls";
@@ -17,6 +18,8 @@ const paymentLabels: Record<Payment["method"], string> = {
 };
 
 export function SalesInvoicesPage() {
+  const { hasPermission } = useAuth();
+  const canCreateReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<Payment["method"] | "">("");
@@ -69,6 +72,7 @@ export function SalesInvoicesPage() {
               <td className="px-4 py-3">
                 <div className="flex gap-2">
                   <AppButton variant="outline" icon={Eye} onClick={() => setSelected(invoice)}>عرض</AppButton>
+                  {canCreateReturn && invoice.status !== "REFUNDED" && <AppButton variant="ghost" icon={RotateCcw} onClick={() => goToReturn(invoice.invoiceNumber)}>مرتجع</AppButton>}
                   <AppButton variant="ghost" icon={Printer} onClick={() => window.print()}>طباعة</AppButton>
                 </div>
               </td>
@@ -81,14 +85,18 @@ export function SalesInvoicesPage() {
           <div className="space-y-3 text-sm">
             <div className="rounded-lg bg-muted p-3 font-bold">{selected.invoiceNumber}</div>
             {selected.items?.map((item) => (
-              <div key={item.id} className="flex justify-between border-b border-border pb-2">
-                <span>{item.productName} x{item.quantity}</span>
-                <span>{formatMoney(item.lineTotal)}</span>
+              <div key={item.id} className="border-b border-border pb-2">
+                <div className="flex justify-between">
+                  <span>{item.productName} x{item.quantity}</span>
+                  <span>{formatMoney(item.lineTotal)}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">مرتجع: {item.returnedQuantity ?? 0} - متاح للإرجاع: {item.returnableQuantity ?? item.quantity}</p>
               </div>
             ))}
             <div className="flex justify-between"><span>الخصم</span><span>{formatMoney(selected.discountTotal)}</span></div>
             <div className="flex justify-between"><span>المدفوع</span><span>{formatMoney(selected.paidAmount)}</span></div>
             <div className="text-lg font-bold">الإجمالي: {formatMoney(selected.total)}</div>
+            {canCreateReturn && selected.status !== "REFUNDED" && <AppButton icon={RotateCcw} onClick={() => goToReturn(selected.invoiceNumber)}>إنشاء مرتجع</AppButton>}
             <AppButton icon={Printer} onClick={() => window.print()}>طباعة</AppButton>
           </div>
         )}
@@ -103,4 +111,8 @@ function formatMoney(value: number) {
 
 function formatDateTime(value?: string | null) {
   return value ? new Intl.DateTimeFormat("ar-EG", { dateStyle: "short", timeStyle: "short" }).format(new Date(value)) : "-";
+}
+
+function goToReturn(invoiceNumber: string) {
+  window.location.href = `/returns?invoice=${encodeURIComponent(invoiceNumber)}`;
 }

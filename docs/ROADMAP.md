@@ -33,9 +33,11 @@
 - Inventory polish: automated tests, stock transfer workflow, purchase receiving workflow, and later POS-safe stock consumption.
 - POS sessions, cashier shifts, paid invoices, payments, held orders, and stock decrement on sale. Completed: first real end-to-end POS sale flow.
 - POS polish: receipt layout, barcode focus flow, mixed-payment UX, offline queue, and automated sale rollback tests.
+- Returns and refunds. Completed: partial/full returns, returned quantities, refund payment records, optional restock, and `RETURN` inventory movements.
+- Returns polish: approval workflow, cancellation rules, receipt layout, and accounting-grade tax/discount redistribution.
 - Suppliers and purchase orders.
 - Customers and debts.
-- Returns, expenses, and end-of-day closing.
+- Expenses and end-of-day closing.
 
 ## Phase 5: Reporting And Operations
 

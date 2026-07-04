@@ -9,6 +9,13 @@ const invoiceInclude = {
   cashier: { select: { id: true, name: true, email: true } },
   items: { include: { product: { include: { category: true } } } },
   payments: true,
+  returns: {
+    include: {
+      items: true,
+      cashier: { select: { id: true, name: true, email: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  },
 } as const;
 
 @Injectable()
@@ -80,8 +87,20 @@ export class InvoicesService {
         unitPrice: Number(item.unitPrice),
         discount: Number(item.discount),
         lineTotal: Number(item.lineTotal),
+        returnedQuantity: Number(item.returnedQuantity),
+        returnableQuantity: Number(item.quantity.minus(item.returnedQuantity)),
       })),
       payments: invoice.payments.map((payment) => ({ ...payment, amount: Number(payment.amount) })),
+      returns: invoice.returns.map((returnRecord) => ({
+        ...returnRecord,
+        refundTotal: Number(returnRecord.refundTotal),
+        items: returnRecord.items.map((item) => ({
+          ...item,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          refundAmount: Number(item.refundAmount),
+        })),
+      })),
     };
   }
 }

@@ -15,7 +15,7 @@
 - Add password reset and invitation flows.
 - Add more complete role/permission management endpoints.
 - Expand store/branch guards as business modules are added.
-- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, and POS sale rollback behavior.
+- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, POS sale rollback behavior, and return/refund rollback behavior.
 
 ## Prisma And PostgreSQL
 
@@ -24,7 +24,8 @@
 - Products and categories now exist as catalog master data.
 - Inventory stock, batches, and movements now exist for branch-level stock control.
 - POS sales, invoices, payments, held orders, and cashier shifts now exist.
-- Do not add advanced returns/refunds, loyalty, coupons, offers, purchase orders, or reports until their dedicated phases.
+- Returns and refunds now exist with optional restock and returned quantity tracking.
+- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, purchase orders, or reports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
 
 ## Frontend
@@ -38,7 +39,8 @@
 - Products and categories pages now use the backend API.
 - Inventory page now uses real backend stock, movement, and alert APIs.
 - POS, shifts, and sales/invoices pages now use real backend APIs.
-- Keep reports, returns, purchase orders, loyalty, and AI services as placeholders until those backend modules exist.
+- Returns page now uses real backend return/refund APIs.
+- Keep reports, purchase orders, loyalty, and AI services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
@@ -49,7 +51,7 @@
 - Receipt printing polish
 - Mixed-payment UX polish
 - Offline POS queue
-- Returns
+- Return approvals and cancellation workflow
 - Expenses
 - Customers and debts
 - Suppliers and purchase orders

@@ -133,10 +133,12 @@ Implemented in this foundation step:
 - Real POS sale flow with transactional invoices, payments, stock decrement, and `SALE` inventory movements
 - Basic cashier shifts and held orders
 - Frontend POS, Shifts, and Sales & Invoices pages integrated with the API
+- Real returns/refunds V1 with partial/full returns, refund payment records, optional restock, and `RETURN` inventory movements
+- Frontend Returns page integrated with invoices and returns history
 
 Not implemented yet:
 
-- Advanced returns/refunds
+- Advanced return approvals/cancellations
 - Reports
 - Loyalty, coupons, offers, and purchase orders
 - Subscription billing
@@ -214,3 +216,29 @@ POS and invoice endpoints:
 - `GET /api/shifts`
 
 POS permissions include `pos.access`, `pos.sell`, `pos.hold_order`, `pos.view_recent_invoices`, `shifts.open`, `shifts.close`, `shifts.view`, `invoices.view`, and `invoices.print`.
+
+## Returns And Refunds
+
+Returns are store and branch scoped. A return references an existing invoice and can return one or more invoice items partially or fully. Returned quantity cannot exceed the sold quantity minus previous returns.
+
+`POST /api/returns` runs in one transaction:
+
+1. Creates a return header.
+2. Creates return items.
+3. Updates `InvoiceItem.returnedQuantity`.
+4. Updates invoice status to `PARTIALLY_REFUNDED` or `REFUNDED`.
+5. Records a negative refund payment against the invoice.
+6. Optionally increases branch inventory stock.
+7. Creates `InventoryMovement` rows of type `RETURN` for restocked products.
+8. Writes activity logs.
+
+Return endpoints:
+
+- `GET /api/returns`
+- `GET /api/returns/:id`
+- `GET /api/returns/by-number/:returnNumber`
+- `POST /api/returns`
+
+Return permissions include `returns.view`, `returns.create`, `returns.cancel`, `returns.approve`, and `invoices.refund`.
+
+Refund calculation V1 uses the invoice item net line amount proportionally: `refund = returnedQuantity / soldQuantity * item.lineTotal`. Invoice-level discount and tax redistribution are intentionally left for a later accounting pass.

@@ -102,6 +102,7 @@ Current state:
 - `frontend/src/services/posService.ts` integrates sale creation, recent invoices, and held orders.
 - `frontend/src/services/shiftsService.ts` integrates cashier shift open/close/history.
 - `frontend/src/services/invoicesService.ts` integrates invoice listing and details.
+- `frontend/src/services/returnsService.ts` integrates returns and refunds.
 - Reports and advanced admin business integrations remain placeholders.
 
 ## Frontend Routes
@@ -256,6 +257,10 @@ Current backend implementation:
 - `GET /api/invoices`
 - `GET /api/invoices/:id`
 - `GET /api/invoices/by-number/:invoiceNumber`
+- `GET /api/returns`
+- `GET /api/returns/:id`
+- `GET /api/returns/by-number/:returnNumber`
+- `POST /api/returns`
 - global `/api` prefix
 - CORS
 - validation pipe
@@ -292,6 +297,8 @@ Prisma foundational models:
 - `InvoiceItem`
 - `Payment`
 - `HeldOrder`
+- `Return`
+- `ReturnItem`
 
 Auth-related seed data:
 
@@ -299,8 +306,8 @@ Auth-related seed data:
 - Demo store: `ماركت المدينة`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
-- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, returns, expenses, reports, users, settings, activity logs, and platform admin access
+- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, invoice refunds, returns, expenses, reports, users, settings, activity logs, and platform admin access
 - Demo product categories and products for local frontend/API validation
 - Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
 
-Business entities such as returns, expenses, and reports are intentionally not modeled yet. Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS now creates paid invoices, payment rows, and `SALE` inventory movements transactionally.
+Business entities such as expenses and reports are intentionally not modeled yet. Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Minus, Pause, Plus, Printer, Search, Trash2, Wallet } from "lucide-react";
+import { CreditCard, Minus, Pause, Plus, Printer, RotateCcw, Search, Trash2, Wallet } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Modal } from "../../components/feedback/Modal";
@@ -19,6 +19,7 @@ export function PosPage() {
   const branchId = auth?.branch?.id ?? auth?.user.branchId ?? "";
   const canSell = hasPermission("pos.sell");
   const canHold = hasPermission("pos.hold_order");
+  const canReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [query, setQuery] = useState("");
@@ -154,9 +155,12 @@ export function PosPage() {
           <AppCard>
             <h2 className="mb-3 font-bold">آخر الفواتير</h2>
             {recentInvoices.slice(0, 4).map((recent) => (
-              <div key={recent.id} className="mb-2 flex justify-between rounded-lg bg-muted p-2 text-sm">
-                <span>{recent.invoiceNumber}</span>
-                <span>{formatMoney(recent.total)}</span>
+              <div key={recent.id} className="mb-2 flex items-center justify-between gap-2 rounded-lg bg-muted p-2 text-sm">
+                <div className="grid">
+                  <span>{recent.invoiceNumber}</span>
+                  <span>{formatMoney(recent.total)}</span>
+                </div>
+                {canReturn && recent.status !== "REFUNDED" && <AppButton variant="ghost" icon={RotateCcw} onClick={() => goToReturn(recent.invoiceNumber)}>مرتجع</AppButton>}
               </div>
             ))}
           </AppCard>
@@ -219,4 +223,8 @@ export function PosPage() {
 
 function formatMoney(value: number) {
   return `${value.toLocaleString("ar-EG")} ج`;
+}
+
+function goToReturn(invoiceNumber: string) {
+  window.location.href = `/returns?invoice=${encodeURIComponent(invoiceNumber)}`;
 }

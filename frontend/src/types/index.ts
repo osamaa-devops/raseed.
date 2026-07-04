@@ -154,6 +154,7 @@ export type Invoice = {
   cashier?: { id: Id; name: string; email?: string | null };
   items?: InvoiceItem[];
   payments?: Payment[];
+  returns?: Return[];
   updatedAt?: string;
 };
 
@@ -171,6 +172,8 @@ export type InvoiceItem = {
   unitPrice: number;
   discount: number;
   lineTotal: number;
+  returnedQuantity: number;
+  returnableQuantity: number;
   createdAt: string;
 };
 
@@ -223,6 +226,55 @@ export type CreateSaleRequest = {
   invoiceDiscount?: number;
   taxAmount?: number;
   notes?: string;
+};
+
+export type ReturnStatus = "COMPLETED" | "CANCELLED";
+
+export type Return = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  invoiceId: Id;
+  cashierId: Id;
+  shiftId?: Id | null;
+  returnNumber: string;
+  reason: string;
+  status: ReturnStatus;
+  refundTotal: number;
+  refundMethod: Payment["method"];
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  branch?: Branch;
+  cashier?: { id: Id; name: string; email?: string | null };
+  invoice?: Pick<Invoice, "id" | "invoiceNumber" | "status" | "total">;
+  items: ReturnItem[];
+};
+
+export type ReturnItem = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  returnId: Id;
+  invoiceItemId: Id;
+  productId: Id;
+  productName: string;
+  productBarcode?: string | null;
+  quantity: number;
+  unitPrice: number;
+  refundAmount: number;
+  restocked: boolean;
+  createdAt: string;
+};
+
+export type CreateReturnRequest = {
+  branchId: Id;
+  invoiceId: Id;
+  shiftId?: Id;
+  reason: string;
+  refundMethod: Payment["method"];
+  notes?: string;
+  items: Array<{ invoiceItemId: Id; quantity: number; restocked?: boolean }>;
 };
 
 export type Expense = {
