@@ -15,6 +15,10 @@ import { ShiftsModule } from "./modules/shifts/shifts.module";
 import { PosModule } from "./modules/pos/pos.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
 import { ReturnsModule } from "./modules/returns/returns.module";
+import { ExpensesModule } from "./modules/expenses/expenses.module";
+import { DashboardModule } from "./modules/dashboard/dashboard.module";
+import { ReportsModule } from "./modules/reports/reports.module";
+import { ClosingModule } from "./modules/closing/closing.module";
 
 @Module({
   imports: [
@@ -37,6 +41,10 @@ import { ReturnsModule } from "./modules/returns/returns.module";
     PosModule,
     InvoicesModule,
     ReturnsModule,
+    ExpensesModule,
+    DashboardModule,
+    ReportsModule,
+    ClosingModule,
   ],
 })
 export class AppModule {}

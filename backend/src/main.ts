@@ -7,11 +7,18 @@ import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
-  const frontendOrigin = config.get<string>("FRONTEND_URL", config.get<string>("FRONTEND_ORIGIN", "http://localhost:5173"));
+  const configuredOrigins = config.get<string>("FRONTEND_URL", config.get<string>("FRONTEND_ORIGIN", "http://localhost:5173"));
+  const allowedOrigins = Array.from(
+    new Set([
+      ...configuredOrigins.split(",").map((origin) => origin.trim()).filter(Boolean),
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+    ]),
+  );
 
   app.setGlobalPrefix("api");
   app.enableCors({
-    origin: frontendOrigin,
+    origin: allowedOrigins,
     credentials: true,
   });
   app.useGlobalPipes(

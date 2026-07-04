@@ -78,6 +78,16 @@ enum ReturnStatus {
   CANCELLED
 }
 
+enum ExpenseCategory {
+  RENT
+  SALARIES
+  ELECTRICITY
+  MAINTENANCE
+  DELIVERY
+  SUPPLIES
+  OTHER
+}
+
 model Store {
   id            String         @id @default(cuid())
   name          String
@@ -104,6 +114,8 @@ model Store {
   heldOrders HeldOrder[]
   returns Return[]
   returnItems ReturnItem[]
+  expenses Expense[]
+  dailyClosings DailyClosing[]
   subscriptions Subscription[]
   activityLogs  ActivityLog[]
 
@@ -134,6 +146,8 @@ model Branch {
   heldOrders HeldOrder[]
   returns Return[]
   returnItems ReturnItem[]
+  expenses Expense[]
+  dailyClosings DailyClosing[]
   activityLogs ActivityLog[]
 
   @@unique([storeId, name])
@@ -162,6 +176,8 @@ model User {
   invoices Invoice[]
   heldOrders HeldOrder[]
   returns Return[]
+  expenses Expense[]
+  dailyClosings DailyClosing[]
   activityLogs    ActivityLog[]
 
   @@unique([storeId, email])
@@ -509,6 +525,59 @@ model ReturnItem {
   @@index([returnId])
   @@index([invoiceItemId])
   @@index([productId])
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  storeId       String
+  branchId      String
+  userId        String
+  title         String
+  category      ExpenseCategory
+  amount        Decimal         @db.Decimal(10, 2)
+  expenseDate   DateTime
+  notes         String?
+  attachmentUrl String?
+  deletedAt     DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  store         Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch        Branch          @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([storeId, branchId])
+  @@index([expenseDate])
+  @@index([category])
+  @@index([deletedAt])
+}
+
+model DailyClosing {
+  id             String   @id @default(cuid())
+  storeId        String
+  branchId       String
+  closedById     String
+  date           DateTime
+  totalSales     Decimal  @db.Decimal(10, 2)
+  totalReturns   Decimal  @db.Decimal(10, 2)
+  totalExpenses  Decimal  @db.Decimal(10, 2)
+  cashPayments   Decimal  @db.Decimal(10, 2)
+  cardPayments   Decimal  @db.Decimal(10, 2)
+  walletPayments Decimal  @db.Decimal(10, 2)
+  openingCash    Decimal  @db.Decimal(10, 2)
+  expectedCash   Decimal  @db.Decimal(10, 2)
+  actualCash     Decimal  @db.Decimal(10, 2)
+  difference     Decimal  @db.Decimal(10, 2)
+  netTotal       Decimal  @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  store          Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  closedBy       User     @relation(fields: [closedById], references: [id], onDelete: Restrict)
+
+  @@unique([storeId, branchId, date])
+  @@index([storeId, branchId])
+  @@index([date])
 }
 
 model SubscriptionPlan {

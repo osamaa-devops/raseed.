@@ -15,7 +15,7 @@
 - Add password reset and invitation flows.
 - Add more complete role/permission management endpoints.
 - Expand store/branch guards as business modules are added.
-- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, POS sale rollback behavior, and return/refund rollback behavior.
+- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, POS sale rollback behavior, return/refund rollback behavior, expenses, dashboard reports, and day closing.
 
 ## Prisma And PostgreSQL
 
@@ -25,7 +25,9 @@
 - Inventory stock, batches, and movements now exist for branch-level stock control.
 - POS sales, invoices, payments, held orders, and cashier shifts now exist.
 - Returns and refunds now exist with optional restock and returned quantity tracking.
-- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, purchase orders, or reports until their dedicated phases.
+- Expenses and daily closing snapshots now exist.
+- Dashboard and reports now read real operational data.
+- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, purchase orders, customer debts, advanced accounting, or PDF/Excel exports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
 
 ## Frontend
@@ -40,7 +42,8 @@
 - Inventory page now uses real backend stock, movement, and alert APIs.
 - POS, shifts, and sales/invoices pages now use real backend APIs.
 - Returns page now uses real backend return/refund APIs.
-- Keep reports, purchase orders, loyalty, and AI services as placeholders until those backend modules exist.
+- Expenses, dashboard, reports, and end-of-day closing pages now use real backend APIs.
+- Keep purchase orders, customer debts, loyalty, AI, and advanced billing services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
@@ -52,12 +55,12 @@
 - Mixed-payment UX polish
 - Offline POS queue
 - Return approvals and cancellation workflow
-- Expenses
+- Expenses polish and attachments
 - Customers and debts
 - Suppliers and purchase orders
-- Shift management
-- End-of-day closing
-- Reports
+- Shift management polish
+- End-of-day closing reopen/approval policy
+- Report export generation
 - Notifications
 - AI insights
 - Users and permissions

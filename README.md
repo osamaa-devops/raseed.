@@ -57,7 +57,7 @@ Health check:
 curl http://localhost:4000/api/health
 ```
 
-If you use the default example env, the API runs on `http://localhost:3000/api`. The current local development `.env` may use another port.
+If you use the default example env, the API runs on `http://localhost:4000/api`.
 
 ## Demo Credentials
 
@@ -135,11 +135,16 @@ Implemented in this foundation step:
 - Frontend POS, Shifts, and Sales & Invoices pages integrated with the API
 - Real returns/refunds V1 with partial/full returns, refund payment records, optional restock, and `RETURN` inventory movements
 - Frontend Returns page integrated with invoices and returns history
+- Real expenses CRUD with soft delete and activity logs
+- Dashboard overview with daily sales, returns, expenses, net sales, estimated profit, payments, low-stock counts, recent invoices, and cashier performance
+- JSON reports for sales, profit, payment methods, cashier performance, product sales, inventory value, and expenses
+- End-of-day closing summary and immutable daily closing snapshots
 
 Not implemented yet:
 
 - Advanced return approvals/cancellations
-- Reports
+- PDF/Excel export
+- Advanced accounting and tax redistribution
 - Loyalty, coupons, offers, and purchase orders
 - Subscription billing
 
@@ -242,3 +247,43 @@ Return endpoints:
 Return permissions include `returns.view`, `returns.create`, `returns.cancel`, `returns.approve`, and `invoices.refund`.
 
 Refund calculation V1 uses the invoice item net line amount proportionally: `refund = returnedQuantity / soldQuantity * item.lineTotal`. Invoice-level discount and tax redistribution are intentionally left for a later accounting pass.
+
+## Expenses, Dashboard, Reports, And Closing
+
+Financial visibility is now backed by PostgreSQL data, still without advanced accounting.
+
+Expense endpoints:
+
+- `GET /api/expenses`
+- `GET /api/expenses/:id`
+- `POST /api/expenses`
+- `PATCH /api/expenses/:id`
+- `DELETE /api/expenses/:id`
+
+Expenses are scoped by `storeId` and `branchId`. Delete is a soft delete through `deletedAt`.
+
+Dashboard endpoint:
+
+- `GET /api/dashboard/overview`
+
+Reports endpoints:
+
+- `GET /api/reports/daily-sales`
+- `GET /api/reports/monthly-sales`
+- `GET /api/reports/profit`
+- `GET /api/reports/payment-methods`
+- `GET /api/reports/cashier-performance`
+- `GET /api/reports/best-selling-products`
+- `GET /api/reports/worst-selling-products`
+- `GET /api/reports/inventory-value`
+- `GET /api/reports/expenses`
+
+End-of-day closing endpoints:
+
+- `GET /api/closing/summary`
+- `POST /api/closing/close-day`
+- `GET /api/closing/history`
+
+`DailyClosing` stores a snapshot at close time. V1 blocks closing while cashier shifts are still open and does not close shifts automatically.
+
+Financial permissions include `expenses.view`, `expenses.create`, `expenses.update`, `expenses.delete`, `dashboard.view`, `reports.view`, `reports.export`, `closing.view`, and `closing.create`.

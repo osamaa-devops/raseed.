@@ -37,14 +37,16 @@
 - Returns polish: approval workflow, cancellation rules, receipt layout, and accounting-grade tax/discount redistribution.
 - Suppliers and purchase orders.
 - Customers and debts.
-- Expenses and end-of-day closing.
+- Expenses, dashboard summaries, reports, and end-of-day closing. Completed: expenses CRUD, dashboard overview, JSON reports, and daily closing snapshots.
+- Financial polish: automated tests, closing reopen/approval policy, richer report filters, and export generation later.
 
 ## Phase 5: Reporting And Operations
 
-- Sales reports.
-- Profit reports.
-- Inventory reports.
-- Cashier and shift reports.
+- Sales reports. Completed: JSON daily/monthly sales.
+- Profit reports. Completed: simple gross profit estimate from invoice item snapshots.
+- Inventory reports. Completed: current inventory value.
+- Cashier and shift reports. Completed: cashier performance and closing summaries.
+- Expense reports. Completed: expenses grouped by category.
 - Activity logs.
 - Notifications.
 - AI insights after reliable operational data exists.

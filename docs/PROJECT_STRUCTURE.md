@@ -103,7 +103,11 @@ Current state:
 - `frontend/src/services/shiftsService.ts` integrates cashier shift open/close/history.
 - `frontend/src/services/invoicesService.ts` integrates invoice listing and details.
 - `frontend/src/services/returnsService.ts` integrates returns and refunds.
-- Reports and advanced admin business integrations remain placeholders.
+- `frontend/src/services/expensesService.ts` integrates expenses CRUD.
+- `frontend/src/services/dashboardService.ts` integrates the owner dashboard overview.
+- `frontend/src/services/reportsService.ts` integrates JSON operational reports.
+- `frontend/src/services/closingService.ts` integrates end-of-day summary, close-day, and history.
+- Advanced admin business integrations such as purchase orders, debts, AI, and billing remain placeholders.
 
 ## Frontend Routes
 
@@ -170,6 +174,7 @@ backend
 │   │   ├── users
 │   │   ├── stores
 │   │   ├── branches
+│   │   ├── dashboard
 │   │   ├── products
 │   │   ├── categories
 │   │   ├── inventory
@@ -178,6 +183,7 @@ backend
 │   │   ├── returns
 │   │   ├── expenses
 │   │   ├── reports
+│   │   ├── closing
 │   │   ├── suppliers
 │   │   ├── customers
 │   │   ├── subscriptions
@@ -261,6 +267,24 @@ Current backend implementation:
 - `GET /api/returns/:id`
 - `GET /api/returns/by-number/:returnNumber`
 - `POST /api/returns`
+- `GET /api/expenses`
+- `GET /api/expenses/:id`
+- `POST /api/expenses`
+- `PATCH /api/expenses/:id`
+- `DELETE /api/expenses/:id`
+- `GET /api/dashboard/overview`
+- `GET /api/reports/daily-sales`
+- `GET /api/reports/monthly-sales`
+- `GET /api/reports/profit`
+- `GET /api/reports/payment-methods`
+- `GET /api/reports/cashier-performance`
+- `GET /api/reports/best-selling-products`
+- `GET /api/reports/worst-selling-products`
+- `GET /api/reports/inventory-value`
+- `GET /api/reports/expenses`
+- `GET /api/closing/summary`
+- `POST /api/closing/close-day`
+- `GET /api/closing/history`
 - global `/api` prefix
 - CORS
 - validation pipe
@@ -299,6 +323,8 @@ Prisma foundational models:
 - `HeldOrder`
 - `Return`
 - `ReturnItem`
+- `Expense`
+- `DailyClosing`
 
 Auth-related seed data:
 
@@ -306,8 +332,8 @@ Auth-related seed data:
 - Demo store: `ماركت المدينة`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
-- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, invoice refunds, returns, expenses, reports, users, settings, activity logs, and platform admin access
+- Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, invoice refunds, returns, expenses CRUD, reports/export, closing view/create, users, settings, activity logs, and platform admin access
 - Demo product categories and products for local frontend/API validation
 - Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
 
-Business entities such as expenses and reports are intentionally not modeled yet. Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally.
+Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally. Expenses are branch-scoped and soft-deleted. Dashboard and reports read operational data as JSON. End-of-day closing saves a `DailyClosing` snapshot and blocks closing while shifts are still open.

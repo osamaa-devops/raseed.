@@ -23,6 +23,6 @@ export const demoSales: Sale[] = [
 ];
 
 export const demoExpenses: Expense[] = [
-  { id: "e1", storeId: "store_city_market", branchId: "branch_main", title: "كهرباء الشهر", category: "كهرباء", amount: 650, date: "2026-07-01" },
-  { id: "e2", storeId: "store_city_market", branchId: "branch_main", title: "صيانة ثلاجة", category: "صيانة", amount: 300, date: "2026-07-02" },
+  { id: "e1", storeId: "store_city_market", branchId: "branch_main", userId: "u1", title: "كهرباء الشهر", category: "ELECTRICITY", amount: 650, expenseDate: "2026-07-01", createdAt: "2026-07-01", updatedAt: "2026-07-01" },
+  { id: "e2", storeId: "store_city_market", branchId: "branch_main", userId: "u1", title: "صيانة ثلاجة", category: "MAINTENANCE", amount: 300, expenseDate: "2026-07-02", createdAt: "2026-07-02", updatedAt: "2026-07-02" },
 ];

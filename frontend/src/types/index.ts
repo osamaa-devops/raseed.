@@ -277,14 +277,99 @@ export type CreateReturnRequest = {
   items: Array<{ invoiceItemId: Id; quantity: number; restocked?: boolean }>;
 };
 
+export type ExpenseCategory = "RENT" | "SALARIES" | "ELECTRICITY" | "MAINTENANCE" | "DELIVERY" | "SUPPLIES" | "OTHER";
+
 export type Expense = {
   id: Id;
   storeId: Id;
-  branchId?: Id;
+  branchId: Id;
+  userId: Id;
   title: string;
+  category: ExpenseCategory;
   amount: number;
-  category: string;
+  expenseDate: string;
+  notes?: string | null;
+  attachmentUrl?: string | null;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  branch?: Branch;
+  user?: { id: Id; name: string; email?: string | null };
+};
+
+export type DailyClosing = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  closedById: Id;
   date: string;
+  totalSales: number;
+  totalReturns: number;
+  totalExpenses: number;
+  cashPayments: number;
+  cardPayments: number;
+  walletPayments: number;
+  openingCash: number;
+  expectedCash: number;
+  actualCash: number;
+  difference: number;
+  netTotal: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  branch?: Branch;
+  closedBy?: { id: Id; name: string; email?: string | null };
+};
+
+export type DashboardOverview = {
+  date: string;
+  todaySales: number;
+  todayReturns: number;
+  todayExpenses: number;
+  netSales: number;
+  grossProfitEstimate: number;
+  netProfitEstimate: number;
+  invoicesCount: number;
+  returnsCount: number;
+  averageInvoiceValue: number;
+  lowStockCount: number;
+  expiryAlertsCount: number;
+  cashPayments: number;
+  cardPayments: number;
+  walletPayments: number;
+  salesChangePercent: number;
+  profitChangePercent: number;
+  invoicesChangePercent: number;
+  topSellingProducts: Array<{ productId: Id; productName: string; quantity: number; sales: number }>;
+  recentInvoices: Array<{ id: Id; invoiceNumber: string; total: number; status: Invoice["status"]; cashier?: { id: Id; name: string }; createdAt: string }>;
+  cashierPerformance: Array<{ cashierId: Id; cashierName: string; invoicesCount: number; totalSales: number }>;
+};
+
+export type ClosingSummary = {
+  date: string;
+  branchId: Id;
+  totalSales: number;
+  totalReturns: number;
+  totalExpenses: number;
+  cashPayments: number;
+  cardPayments: number;
+  walletPayments: number;
+  openingCash: number;
+  expectedCash: number;
+  invoicesCount: number;
+  returnsCount: number;
+  netTotal: number;
+  shifts: Array<Pick<CashierShift, "id" | "openingCash" | "expectedCash" | "actualCash" | "difference" | "status" | "openedAt" | "closedAt"> & { cashier?: { id: Id; name: string } }>;
+  cashierSummaries: Array<{ cashierId: Id; cashierName: string; invoicesCount: number; totalSales: number }>;
+  bestSellingProducts: Array<{ productId: Id; productName: string; quantity: number; sales: number }>;
+  lowStockProducts: Array<{ productId: Id; productName: string; quantity: number; minStock: number }>;
+};
+
+export type ReportRange = { dateFrom: string; dateTo: string };
+
+export type ReportResponse<T> = {
+  range: ReportRange;
+  rows: T[];
 };
 
 export type Supplier = {
