@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StoreStatus {
+  ACTIVE
+  TRIAL
+  SUSPENDED
+  EXPIRED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
+  DISABLED
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Store {
+  id            String         @id @default(cuid())
+  name          String
+  ownerName     String?
+  legalName     String?
+  taxNumber     String?
+  phone         String?
+  email         String?
+  status        StoreStatus    @default(TRIAL)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  branches      Branch[]
+  users         User[]
+  roles         Role[]
+  subscriptions Subscription[]
+  activityLogs  ActivityLog[]
+
+  @@index([status])
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  code      String?
+  address   String?
+  phone     String?
+  status    BranchStatus @default(ACTIVE)
+  isMain    Boolean  @default(false)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  users     User[]
+  activityLogs ActivityLog[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+}
+
+model User {
+  id              String           @id @default(cuid())
+  storeId         String?
+  branchId        String?
+  roleId          String?
+  name            String
+  email           String?
+  phone           String?
+  passwordHash    String?
+  status          UserStatus       @default(INVITED)
+  lastLoginAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  store           Store?           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch          Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  role            Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  permissions     UserPermission[]
+  activityLogs    ActivityLog[]
+
+  @@unique([storeId, email])
+  @@unique([storeId, phone])
+  @@index([storeId])
+  @@index([branchId])
+  @@index([roleId])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  storeId     String?
+  name        String
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  store       Store?           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  users       User[]
+  permissions RolePermission[]
+
+  @@unique([storeId, name])
+  @@index([storeId])
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  label       String
+  description String?
+  createdAt   DateTime         @default(now())
+  roleLinks   RolePermission[]
+  userLinks   UserPermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model UserPermission {
+  id           String     @id @default(cuid())
+  userId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([permissionId])
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  name          String
+  monthlyPrice  Decimal        @db.Decimal(10, 2)
+  maxBranches   Int?
+  maxUsers      Int?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  storeId   String
+  planId    String
+  status    SubscriptionStatus @default(TRIAL)
+  startsAt  DateTime           @default(now())
+  endsAt    DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  store     Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  plan      SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([storeId])
+  @@index([planId])
+  @@index([status])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  storeId   String?
+  branchId  String?
+  userId    String?
+  action    String
+  entityType String?
+  entity    String?
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  store     Store?   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch    Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([branchId])
+  @@index([userId])
+}
