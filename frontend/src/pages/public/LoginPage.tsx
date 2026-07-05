@@ -4,13 +4,15 @@ import { useAuth } from "../../app/providers/AuthProvider";
 import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { TextInput } from "../../components/forms/FormControls";
+import { isDevOrDemoEnvironment } from "../../utils/demo";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
-  const [identity, setIdentity] = useState("owner@raseed.local");
-  const [password, setPassword] = useState("RaseedOwner!2026");
+  const { login, isLoading, auth } = useAuth();
+  const [identity, setIdentity] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const showDevCredentials = isDevOrDemoEnvironment(auth?.store);
 
   const submit = async () => {
     setError(null);
@@ -35,11 +37,18 @@ export function LoginPage() {
           <TextInput label="كلمة المرور" type="password" placeholder="********" value={password} onChange={(event) => setPassword(event.target.value)} />
           {error && <p className="rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
           <AppButton className="w-full" onClick={submit} disabled={isLoading}>{isLoading ? "جار تسجيل الدخول..." : "تسجيل الدخول"}</AppButton>
-          <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-            <p className="font-semibold text-foreground">بيانات تجريبية:</p>
-            <p>owner@raseed.local / RaseedOwner!2026</p>
-            <p>admin@raseed.local / RaseedAdmin!2026</p>
-          </div>
+          {showDevCredentials && (
+            <div className="rounded-xl bg-muted p-3 text-xs text-muted-foreground">
+              <p className="font-semibold text-foreground">وضع التطوير فقط</p>
+              <p className="mt-1">بيانات الدخول التجريبية موجودة في README ويمكن تعبئتها يدويًا أثناء التطوير المحلي.</p>
+              <AppButton className="mt-3 w-full" variant="outline" onClick={() => {
+                setIdentity("owner@raseed.local");
+                setPassword("RaseedOwner!2026");
+              }}>
+                تعبئة حساب المالك التجريبي
+              </AppButton>
+            </div>
+          )}
           <Link to="/request-demo" className="block text-center text-sm font-semibold text-primary">طلب تجربة جديدة</Link>
         </AppCard>
       </div>

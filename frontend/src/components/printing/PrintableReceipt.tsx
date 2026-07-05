@@ -68,11 +68,13 @@ export function PrintableReceipt({ payload }: PrintableReceiptProps) {
       </section>
 
       <section className="receipt-payments">
+        <p className="receipt-section-title">تفاصيل الدفع</p>
         {payload.payments.map((payment) => (
           <Row key={payment.id} label={paymentLabels[payment.method]} value={formatMoney(payment.amount)} />
         ))}
       </section>
 
+      {payload.invoice.notes && <p className="receipt-status">ملاحظات: {payload.invoice.notes}</p>}
       {payload.returnStatus && <p className="receipt-status">حالة المرتجع: {payload.returnStatus}</p>}
       {settings.receiptFooter && <footer className="receipt-footer">{settings.receiptFooter}</footer>}
     </article>

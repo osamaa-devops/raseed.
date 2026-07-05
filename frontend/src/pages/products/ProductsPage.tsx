@@ -7,6 +7,7 @@ import { Modal } from "../../components/feedback/Modal";
 import { SelectInput, TextInput } from "../../components/forms/FormControls";
 import { DataTable } from "../../components/tables/DataTable";
 import { AppButton } from "../../components/ui/AppButton";
+import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { BarcodeLabelsSheet } from "../../components/printing/BarcodeLabelsSheet";
@@ -202,6 +203,10 @@ export function ProductsPage() {
           </div>
         }
       />
+      <AppCard className="mb-4 bg-muted/35">
+        <p className="text-sm font-semibold text-foreground">بداية سريعة</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">يمكنك استيراد الأصناف من Excel لبدء التشغيل بسرعة، أو إضافة المنتجات يدويًا مع توليد باركود وملصقات للطباعة.</p>
+      </AppCard>
       <div className="mb-4 grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_220px_180px_auto]">
         <TextInput placeholder="بحث بالاسم أو الباركود أو SKU" value={search} onChange={(event) => setSearch(event.target.value)} />
         <SelectInput value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>

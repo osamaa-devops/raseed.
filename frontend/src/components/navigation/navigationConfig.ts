@@ -72,7 +72,10 @@ export const dashboardNavGroups = [
   },
   {
     label: "الدعم",
-    items: [{ label: "المساعدة والدعم", path: "/help", icon: HelpCircle }],
+    items: [
+      { label: "المساعدة والدعم", path: "/help", icon: HelpCircle },
+      { label: "سيناريو العرض", path: "/demo-script", icon: LifeBuoy },
+    ],
   },
 ];
 

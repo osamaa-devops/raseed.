@@ -73,6 +73,8 @@ Seeded development users:
 
 These are local development credentials only.
 
+The app no longer exposes these credentials to normal users inside the login screen. In development mode, the login page can show a local helper button, but the canonical source of demo credentials remains this README.
+
 ## Auth Flow
 
 - `POST /api/auth/login` accepts `identity` and `password`.
@@ -151,6 +153,8 @@ Implemented in this foundation step:
 - Product barcode generation and browser-printable barcode label sheets
 - Excel/CSV import and export for products, initial inventory stock, operational lists, and key reports
 - Settings page sections for receipts, barcode labels, and future hardware setup
+- Demo-ready dashboard and POS polish with visible demo-mode badges for the seeded store
+- Internal demo walkthrough page at `/demo-script`
 
 Not implemented yet:
 
@@ -161,6 +165,23 @@ Not implemented yet:
 - Credit sale / partially paid invoice workflow
 - Loyalty, coupons, and offers
 - Online billing provider integration and automated invoicing
+
+## Demo Script
+
+For live walkthroughs inside the app, open `/demo-script` after logging in.
+
+Suggested order:
+
+1. Login as the demo owner for `ماركت المدينة`
+2. Open POS and scan or search a product
+3. Complete a sale and preview/print the receipt
+4. Open Inventory and show the stock decrease with `SALE` movement
+5. Create a return and show the quantity increase
+6. Open Dashboard and explain sales, profit, invoices, and top products
+7. Open Reports and change the date range
+8. Open Import/Export and show Excel import readiness
+9. Open Products and preview barcode label printing
+10. Login as super admin and show the SaaS control panel
 
 ## Subscription Endpoints
 

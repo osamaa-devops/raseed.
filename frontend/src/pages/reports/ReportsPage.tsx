@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
+import { TextInput } from "../../components/forms/FormControls";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { reportsService } from "../../services/reportsService";
 import { importExportService } from "../../services/importExportService";
@@ -62,10 +63,14 @@ export function ReportsPage() {
   return (
     <div>
       <PageHeader title="التقارير" description="تقارير تشغيل حقيقية من الفواتير، المدفوعات، المخزون، والمصروفات." />
+      <AppCard className="mb-4 bg-muted/35">
+        <p className="text-sm font-semibold text-foreground">أفضل استخدام</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">ابدأ دائمًا بتحديد الفترة الزمنية أولاً، ثم راجع المبيعات والربح وطرق الدفع قبل التصدير أو مشاركة الأرقام مع صاحب المتجر.</p>
+      </AppCard>
       <AppCard>
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-          <label className="block"><span className="mb-1.5 block text-sm font-semibold">من</span><input className="w-full rounded-lg border border-border bg-input-background px-3 py-2 text-sm" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} /></label>
-          <label className="block"><span className="mb-1.5 block text-sm font-semibold">إلى</span><input className="w-full rounded-lg border border-border bg-input-background px-3 py-2 text-sm" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} /></label>
+          <TextInput label="من" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />
+          <TextInput label="إلى" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
           <AppButton className="self-end" variant="outline" icon={Download} disabled={!hasPermission("reports.export")} onClick={() => void importExportService.exportDailySalesReport("xlsx", { branchId, dateFrom, dateTo })}>تصدير المبيعات</AppButton>
         </div>
       </AppCard>

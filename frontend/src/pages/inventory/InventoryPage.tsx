@@ -167,6 +167,10 @@ export function InventoryPage() {
   return (
     <div>
       <PageHeader title="المخزون" description={`أرصدة وحركات مخزون ${branchName}`} actions={canExport ? <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportInventory("xlsx", { branchId, status })}>تصدير</AppButton> : null} />
+      <AppCard className="mb-4 bg-muted/35">
+        <p className="text-sm font-semibold text-foreground">معلومة مهمة</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">كل عملية بيع أو مرتجع أو إضافة أو تسوية يتم تسجيلها تلقائيًا في سجل الحركات، لذلك مراجعة المخزون هنا تكفي لمعرفة ما حدث فعليًا داخل الفرع.</p>
+      </AppCard>
       {notice && <p className="mb-4 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">{notice}</p>}
       {error && <p className="mb-4 rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
 

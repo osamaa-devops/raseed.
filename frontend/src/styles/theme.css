@@ -2,7 +2,7 @@
 
 :root {
   --font-size: 15px;
-  --background: #f4f5f7;
+  --background: #f3f5f7;
   --foreground: #111827;
   --text-primary: #111827;
   --text-secondary: #4b5563;
@@ -28,7 +28,7 @@
   --border: #e5e7eb;
   --input: transparent;
   --input-background: #f9fafb;
-  --topbar: #ffffff;
+  --topbar: rgba(255, 255, 255, 0.92);
   --modal: #ffffff;
   --table-row-hover: #f9fafb;
   --switch-background: #d1d5db;
@@ -40,7 +40,7 @@
   --chart-3: #2563eb;
   --chart-4: #7c3aed;
   --chart-5: #dc2626;
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: #1a2332;
   --sidebar-foreground: #cbd5e1;
   --sidebar-primary: #0f766e;
@@ -78,7 +78,7 @@
   --border: #2a2d3e;
   --input: transparent;
   --input-background: #232636;
-  --topbar: #1a1d27;
+  --topbar: rgba(26, 29, 39, 0.92);
   --modal: #1a1d27;
   --table-row-hover: #232636;
   --switch-background: #3a3d52;
@@ -156,6 +156,9 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at top right, rgba(15, 118, 110, 0.06), transparent 24%),
+      radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.05), transparent 22%);
   }
 
   /**

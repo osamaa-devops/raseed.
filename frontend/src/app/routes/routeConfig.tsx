@@ -5,6 +5,7 @@ import { PosLayout } from "../../layouts/PosLayout";
 import { PublicLayout } from "../../layouts/PublicLayout";
 import { SuperAdminLayout } from "../../layouts/SuperAdminLayout";
 import { ActivityLogsPage } from "../../pages/admin/ActivityLogsPage";
+import { DemoScriptPage } from "../../pages/admin/DemoScriptPage";
 import { HelpSupportPage } from "../../pages/admin/HelpSupportPage";
 import { SettingsPage } from "../../pages/admin/SettingsPage";
 import { SubscriptionBlockedPage } from "../../pages/admin/SubscriptionBlockedPage";
@@ -75,6 +76,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/subscription-billing", element: <SubscriptionBillingPage /> },
           { path: "/subscription-blocked", element: <SubscriptionBlockedPage /> },
           { path: "/help", element: <HelpSupportPage /> },
+          { path: "/demo-script", element: <DemoScriptPage /> },
           { path: "/settings", element: <SettingsPage /> },
         ],
       },

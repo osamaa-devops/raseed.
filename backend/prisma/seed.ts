@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -250,6 +250,63 @@ const demoSuppliers = [
   { name: "شركة المشروبات الحديثة", phone: "01020000005", contactPerson: "أ. مينا", address: "الإسكندرية", currentBalance: 0 },
 ];
 
+const demoInvoicesSeed = [
+  {
+    invoiceNumber: "INV-DEMO-1001",
+    createdAt: minutesAgo(3),
+    customerPhone: "01010000001",
+    paymentMethod: "CASH" as const,
+    items: [
+      { barcode: "6223001234567", quantity: 2, discount: 0 },
+      { barcode: "6223001234578", quantity: 6, discount: 0 },
+      { barcode: "6223001234571", quantity: 1, discount: 2 },
+    ],
+    notes: "فاتورة عرض سريعة للعميل الدائم",
+  },
+  {
+    invoiceNumber: "INV-DEMO-1002",
+    createdAt: minutesAgo(6),
+    customerPhone: null,
+    paymentMethod: "CARD" as const,
+    items: [
+      { barcode: "6223001234568", quantity: 3, discount: 0 },
+      { barcode: "6223001234574", quantity: 4, discount: 0 },
+      { barcode: "6223001234580", quantity: 2, discount: 0 },
+    ],
+    notes: "فاتورة تجريبية لعميل بيع مباشر",
+  },
+  {
+    invoiceNumber: "INV-DEMO-0999",
+    createdAt: hoursAgo(28),
+    customerPhone: "01010000002",
+    paymentMethod: "WALLET" as const,
+    items: [
+      { barcode: "6223001234577", quantity: 5, discount: 0 },
+      { barcode: "6223001234572", quantity: 12, discount: 0 },
+      { barcode: "6223001234581", quantity: 2, discount: 0 },
+    ],
+    notes: "فاتورة يوم أمس للمقارنة في الداشبورد",
+  },
+];
+
+const demoReturnSeed = {
+  invoiceNumber: "INV-DEMO-1001",
+  returnNumber: "RT-DEMO-0001",
+  createdAt: minutesAgo(1),
+  reason: "العميل أعاد منتجًا زائدًا بعد المراجعة",
+  refundMethod: "CASH" as const,
+  itemBarcode: "6223001234578",
+  quantity: 1,
+  restocked: true,
+  notes: "مرتجع تجريبي يعيد الكمية إلى المخزون",
+};
+
+const demoExpensesSeed = [
+  { title: "مصاريف توصيل طلبيات", category: "DELIVERY" as const, amount: 95, expenseDate: minutesAgo(2), notes: "تحميل وتنزيل وشحن داخلي" },
+  { title: "مستلزمات نظافة للفرع", category: "SUPPLIES" as const, amount: 140, expenseDate: minutesAgo(5), notes: "أكياس قمامة ومناديل ومنظفات" },
+  { title: "وجبات فريق العمل", category: "OTHER" as const, amount: 75, expenseDate: hoursAgo(26), notes: "مصروف يوم سابق للمقارنة" },
+];
+
 async function upsertPermission(key: string) {
   return prisma.permission.upsert({
     where: { key },
@@ -260,6 +317,14 @@ async function upsertPermission(key: string) {
       description: `Permission: ${key}`,
     },
   });
+}
+
+function hoursAgo(hours: number) {
+  return new Date(Date.now() - hours * 60 * 60 * 1000);
+}
+
+function minutesAgo(minutes: number) {
+  return new Date(Date.now() - minutes * 60 * 1000);
 }
 
 async function findOrCreateRole(name: string, storeId: string | null) {
@@ -339,6 +404,239 @@ async function findOrCreateUser(data: {
       status: "ACTIVE",
     },
   });
+}
+
+async function resetDemoOperationalData(storeId: string, branchId: string) {
+  const demoInvoiceNumbers = demoInvoicesSeed.map((invoice) => invoice.invoiceNumber);
+  const invoiceIds = (
+    await prisma.invoice.findMany({
+      where: { storeId, branchId, invoiceNumber: { in: demoInvoiceNumbers } },
+      select: { id: true },
+    })
+  ).map((invoice) => invoice.id);
+
+  if (invoiceIds.length > 0) {
+    await prisma.returnItem.deleteMany({ where: { storeId, branchId, return: { invoiceId: { in: invoiceIds } } } });
+    await prisma.return.deleteMany({ where: { storeId, branchId, invoiceId: { in: invoiceIds } } });
+    await prisma.payment.deleteMany({ where: { storeId, branchId, invoiceId: { in: invoiceIds } } });
+    await prisma.invoiceItem.deleteMany({ where: { storeId, branchId, invoiceId: { in: invoiceIds } } });
+    await prisma.invoice.deleteMany({ where: { id: { in: invoiceIds } } });
+  }
+
+  await prisma.return.deleteMany({ where: { storeId, branchId, returnNumber: demoReturnSeed.returnNumber } });
+  await prisma.expense.deleteMany({ where: { storeId, branchId, notes: { startsWith: "[DEMO]" } } });
+  await prisma.inventoryMovement.deleteMany({
+    where: {
+      storeId,
+      branchId,
+      OR: [{ reason: "Seeded demo sale" }, { reason: "Seeded demo return restock" }],
+    },
+  });
+}
+
+async function seedDemoOperationalData({
+  storeId,
+  branchId,
+  ownerUserId,
+  cashierUserId,
+  shiftId,
+  productByBarcode,
+  customerByPhone,
+}: {
+  storeId: string;
+  branchId: string;
+  ownerUserId: string;
+  cashierUserId: string;
+  shiftId: string | null;
+  productByBarcode: Map<string, { id: string; name: string; barcode: string | null; purchasePrice: Prisma.Decimal; sellingPrice: Prisma.Decimal }>;
+  customerByPhone: Map<string, { id: string }>;
+}) {
+  for (const invoiceSeed of demoInvoicesSeed) {
+    const lines = invoiceSeed.items.map((item) => {
+      const product = productByBarcode.get(item.barcode);
+      if (!product) throw new Error(`Missing seeded product ${item.barcode}`);
+      const unitPrice = Number(product.sellingPrice);
+      const purchasePrice = Number(product.purchasePrice);
+      const lineTotal = unitPrice * item.quantity - item.discount;
+      return { ...item, product, unitPrice, purchasePrice, lineTotal };
+    });
+
+    const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+    const discountTotal = lines.reduce((sum, line) => sum + line.discount, 0);
+    const total = subtotal - discountTotal;
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        storeId,
+        branchId,
+        cashierId: cashierUserId,
+        shiftId,
+        customerId: invoiceSeed.customerPhone ? customerByPhone.get(invoiceSeed.customerPhone)?.id ?? null : null,
+        invoiceNumber: invoiceSeed.invoiceNumber,
+        status: "PAID",
+        subtotal,
+        discountTotal,
+        taxTotal: 0,
+        total,
+        paidAmount: total,
+        changeAmount: 0,
+        notes: invoiceSeed.notes,
+        createdAt: invoiceSeed.createdAt,
+        updatedAt: invoiceSeed.createdAt,
+        items: {
+          create: lines.map((line) => ({
+            storeId,
+            branchId,
+            productId: line.product.id,
+            productName: line.product.name,
+            productBarcode: line.product.barcode,
+            quantity: line.quantity,
+            purchasePriceSnapshot: line.purchasePrice,
+            unitPrice: line.unitPrice,
+            discount: line.discount,
+            lineTotal: line.lineTotal,
+            createdAt: invoiceSeed.createdAt,
+          })),
+        },
+        payments: {
+          create: {
+            storeId,
+            branchId,
+            method: invoiceSeed.paymentMethod,
+            amount: total,
+            createdAt: invoiceSeed.createdAt,
+          },
+        },
+      },
+      include: { items: true },
+    });
+
+    for (const item of invoice.items) {
+      const stock = await prisma.inventoryStock.findUniqueOrThrow({
+        where: { storeId_branchId_productId: { storeId, branchId, productId: item.productId } },
+      });
+      const quantityAfter = Number(stock.quantity) - Number(item.quantity);
+
+      await prisma.inventoryStock.update({
+        where: { id: stock.id },
+        data: { quantity: quantityAfter },
+      });
+
+      await prisma.inventoryMovement.create({
+        data: {
+          storeId,
+          branchId,
+          productId: item.productId,
+          userId: cashierUserId,
+          type: "SALE",
+          quantity: item.quantity,
+          quantityBefore: stock.quantity,
+          quantityAfter,
+          reason: "Seeded demo sale",
+          notes: invoiceSeed.invoiceNumber,
+          referenceId: invoice.id,
+          createdAt: invoiceSeed.createdAt,
+        },
+      });
+    }
+  }
+
+  const returnInvoice = await prisma.invoice.findUniqueOrThrow({
+    where: { storeId_branchId_invoiceNumber: { storeId, branchId, invoiceNumber: demoReturnSeed.invoiceNumber } },
+    include: { items: true },
+  });
+  const returnItem = returnInvoice.items.find((item) => item.productBarcode === demoReturnSeed.itemBarcode);
+  if (!returnItem) throw new Error("Missing seeded return invoice item.");
+
+  const refundAmount = Number(returnItem.unitPrice) * demoReturnSeed.quantity;
+  const createdReturn = await prisma.return.create({
+    data: {
+      storeId,
+      branchId,
+      invoiceId: returnInvoice.id,
+      cashierId: cashierUserId,
+      shiftId,
+      returnNumber: demoReturnSeed.returnNumber,
+      reason: demoReturnSeed.reason,
+      status: "COMPLETED",
+      refundTotal: refundAmount,
+      refundMethod: demoReturnSeed.refundMethod,
+      notes: demoReturnSeed.notes,
+      createdAt: demoReturnSeed.createdAt,
+      updatedAt: demoReturnSeed.createdAt,
+      items: {
+        create: {
+          storeId,
+          branchId,
+          invoiceItemId: returnItem.id,
+          productId: returnItem.productId,
+          productName: returnItem.productName,
+          productBarcode: returnItem.productBarcode,
+          quantity: demoReturnSeed.quantity,
+          unitPrice: returnItem.unitPrice,
+          refundAmount,
+          restocked: demoReturnSeed.restocked,
+          createdAt: demoReturnSeed.createdAt,
+        },
+      },
+    },
+  });
+
+  await prisma.invoice.update({
+    where: { id: returnInvoice.id },
+    data: { status: "PARTIALLY_REFUNDED", updatedAt: demoReturnSeed.createdAt },
+  });
+
+  await prisma.invoiceItem.update({
+    where: { id: returnItem.id },
+    data: { returnedQuantity: demoReturnSeed.quantity },
+  });
+
+  if (demoReturnSeed.restocked) {
+    const stock = await prisma.inventoryStock.findUniqueOrThrow({
+      where: { storeId_branchId_productId: { storeId, branchId, productId: returnItem.productId } },
+    });
+    const quantityAfter = Number(stock.quantity) + demoReturnSeed.quantity;
+
+    await prisma.inventoryStock.update({
+      where: { id: stock.id },
+      data: { quantity: quantityAfter },
+    });
+
+    await prisma.inventoryMovement.create({
+      data: {
+        storeId,
+        branchId,
+        productId: returnItem.productId,
+        userId: cashierUserId,
+        type: "RETURN",
+        quantity: demoReturnSeed.quantity,
+        quantityBefore: stock.quantity,
+        quantityAfter,
+        reason: "Seeded demo return restock",
+        notes: demoReturnSeed.returnNumber,
+        referenceId: createdReturn.id,
+        createdAt: demoReturnSeed.createdAt,
+      },
+    });
+  }
+
+  for (const expenseSeed of demoExpensesSeed) {
+    await prisma.expense.create({
+      data: {
+        storeId,
+        branchId,
+        userId: ownerUserId,
+        title: expenseSeed.title,
+        category: expenseSeed.category,
+        amount: expenseSeed.amount,
+        expenseDate: expenseSeed.expenseDate,
+        notes: `[DEMO] ${expenseSeed.notes}`,
+        createdAt: expenseSeed.expenseDate,
+        updatedAt: expenseSeed.expenseDate,
+      },
+    });
+  }
 }
 
 async function main() {
@@ -663,6 +961,7 @@ async function main() {
     password: "RaseedInventory!2026",
   });
 
+  const customerByPhone = new Map<string, { id: string }>();
   for (const customer of demoCustomers) {
     const savedCustomer = await prisma.customer.upsert({
       where: { storeId_phone: { storeId: store.id, phone: customer.phone } },
@@ -708,6 +1007,8 @@ async function main() {
         });
       }
     }
+
+    customerByPhone.set(customer.phone, savedCustomer);
   }
 
   const supplierByName = new Map<string, { id: string; currentBalance: unknown }>();
@@ -756,11 +1057,11 @@ async function main() {
     }
   }
 
-  const openShift = await prisma.cashierShift.findFirst({
+  let openShift = await prisma.cashierShift.findFirst({
     where: { storeId: store.id, branchId: branch.id, cashierId: cashierUser.id, status: "OPEN" },
   });
   if (!openShift) {
-    await prisma.cashierShift.create({
+    openShift = await prisma.cashierShift.create({
       data: {
         storeId: store.id,
         branchId: branch.id,
@@ -772,6 +1073,7 @@ async function main() {
   }
 
   const categoryByName = new Map<string, { id: string }>();
+  const productByBarcode = new Map<string, { id: string; name: string; barcode: string | null; purchasePrice: Prisma.Decimal; sellingPrice: Prisma.Decimal }>();
   for (const category of demoCategories) {
     const savedCategory = await prisma.category.upsert({
       where: { storeId_name: { storeId: store.id, name: category.name } },
@@ -814,6 +1116,13 @@ async function main() {
         unitType: product.unitType,
         status: "ACTIVE",
       },
+    });
+    productByBarcode.set(product.barcode, {
+      id: savedProduct.id,
+      name: savedProduct.name,
+      barcode: savedProduct.barcode,
+      purchasePrice: savedProduct.purchasePrice,
+      sellingPrice: savedProduct.sellingPrice,
     });
 
     const inventory = demoInventory[product.name];
@@ -879,6 +1188,17 @@ async function main() {
       }
     }
   }
+
+  await resetDemoOperationalData(store.id, branch.id);
+  await seedDemoOperationalData({
+    storeId: store.id,
+    branchId: branch.id,
+    ownerUserId: ownerUser.id,
+    cashierUserId: cashierUser.id,
+    shiftId: openShift?.id ?? null,
+    productByBarcode,
+    customerByPhone,
+  });
 
   const draftSupplier = supplierByName.get("شركة الأمل للمواد الغذائية");
   const draftProducts = await prisma.product.findMany({
