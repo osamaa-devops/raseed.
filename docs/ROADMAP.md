@@ -30,12 +30,12 @@
 - Products and categories master data. Completed: first store-scoped CRUD foundation.
 - Product/category polish: import/export, barcode validation helpers, richer units, and catalog test coverage.
 - Inventory stock balances and stock movements. Completed: branch-level balances, add/remove/adjust flows, low-stock alerts, expiry alerts, and movement history.
-- Inventory polish: automated tests, stock transfer workflow, purchase receiving workflow, and later POS-safe stock consumption.
+- Inventory polish: automated tests, stock transfer workflow, and later POS-safe stock consumption. Completed: purchase receiving increases stock through `PURCHASE` movements.
 - POS sessions, cashier shifts, paid invoices, payments, held orders, and stock decrement on sale. Completed: first real end-to-end POS sale flow.
 - POS polish: receipt layout, barcode focus flow, mixed-payment UX, offline queue, and automated sale rollback tests.
 - Returns and refunds. Completed: partial/full returns, returned quantities, refund payment records, optional restock, and `RETURN` inventory movements.
 - Returns polish: approval workflow, cancellation rules, receipt layout, and accounting-grade tax/discount redistribution.
-- Suppliers and purchase orders.
+- Suppliers and purchase orders. Completed: supplier profiles, balances, payments, adjustments, purchase-order draft/send/cancel, partial/full receiving, and inventory integration.
 - Customers and debts. Completed: customer profiles, debt balances, debt transactions, partial payments, adjustments, and optional invoice customer link.
 - Customer polish: customer invoice history UI, credit sale workflow, debt aging, statements, and loyalty points later.
 - Expenses, dashboard summaries, reports, and end-of-day closing. Completed: expenses CRUD, dashboard overview, JSON reports, and daily closing snapshots.

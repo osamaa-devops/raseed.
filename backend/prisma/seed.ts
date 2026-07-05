@@ -50,6 +50,17 @@ const permissions = [
   "debts.add",
   "debts.pay",
   "debts.adjust",
+  "suppliers.view",
+  "suppliers.create",
+  "suppliers.update",
+  "suppliers.delete",
+  "suppliers.pay",
+  "suppliers.adjust",
+  "purchase_orders.view",
+  "purchase_orders.create",
+  "purchase_orders.update",
+  "purchase_orders.cancel",
+  "purchase_orders.receive",
   "users.manage",
   "settings.manage",
   "activity_logs.view",
@@ -104,13 +115,27 @@ const rolePermissions: Record<string, string[]> = {
     "debts.add",
     "debts.pay",
     "debts.adjust",
+    "suppliers.view",
+    "suppliers.create",
+    "suppliers.update",
+    "suppliers.delete",
+    "suppliers.pay",
+    "suppliers.adjust",
+    "purchase_orders.view",
+    "purchase_orders.create",
+    "purchase_orders.update",
+    "purchase_orders.cancel",
+    "purchase_orders.receive",
     "users.manage",
     "activity_logs.view",
   ],
-  cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay"],
+  cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay", "suppliers.view"],
   inventory: [
     "products.view",
     "categories.view",
+    "suppliers.view",
+    "purchase_orders.view",
+    "purchase_orders.receive",
     "inventory.view",
     "inventory.adjust",
     "inventory.add_stock",
@@ -171,6 +196,14 @@ const demoCustomers = [
   { name: "مصطفى السيد", phone: "01010000003", address: "المعادي", currentDebt: 0, creditLimit: 500 },
   { name: "كريم محمود", phone: "01010000004", address: "شبرا", currentDebt: 80, creditLimit: 400 },
   { name: "سارة أحمد", phone: "01010000005", address: "الزمالك", currentDebt: 0, creditLimit: 1200 },
+];
+
+const demoSuppliers = [
+  { name: "شركة النور للتوريدات", phone: "01020000001", contactPerson: "أ. وليد", address: "القاهرة", currentBalance: 0 },
+  { name: "مورد المدينة", phone: "01020000002", contactPerson: "أ. سامي", address: "الجيزة", currentBalance: 250 },
+  { name: "شركة الأمل للمواد الغذائية", phone: "01020000003", contactPerson: "أ. عمرو", address: "القليوبية", currentBalance: 0 },
+  { name: "المتحدة للمنظفات", phone: "01020000004", contactPerson: "أ. حسن", address: "القاهرة", currentBalance: 120 },
+  { name: "شركة المشروبات الحديثة", phone: "01020000005", contactPerson: "أ. مينا", address: "الإسكندرية", currentBalance: 0 },
 ];
 
 async function upsertPermission(key: string) {
@@ -437,6 +470,52 @@ async function main() {
     }
   }
 
+  const supplierByName = new Map<string, { id: string; currentBalance: unknown }>();
+  for (const supplier of demoSuppliers) {
+    const savedSupplier = await prisma.supplier.upsert({
+      where: { storeId_phone: { storeId: store.id, phone: supplier.phone } },
+      update: {
+        name: supplier.name,
+        contactPerson: supplier.contactPerson,
+        address: supplier.address,
+        currentBalance: supplier.currentBalance,
+        status: "ACTIVE",
+        deletedAt: null,
+      },
+      create: {
+        storeId: store.id,
+        name: supplier.name,
+        phone: supplier.phone,
+        contactPerson: supplier.contactPerson,
+        address: supplier.address,
+        currentBalance: supplier.currentBalance,
+        status: "ACTIVE",
+      },
+    });
+    supplierByName.set(supplier.name, savedSupplier);
+    if (supplier.currentBalance > 0) {
+      const existingSeedBalance = await prisma.supplierTransaction.findFirst({
+        where: { storeId: store.id, supplierId: savedSupplier.id, reason: "Seeded opening supplier balance" },
+      });
+      if (!existingSeedBalance) {
+        await prisma.supplierTransaction.create({
+          data: {
+            storeId: store.id,
+            branchId: branch.id,
+            supplierId: savedSupplier.id,
+            userId: ownerUser.id,
+            type: "BALANCE_ADDED",
+            amount: supplier.currentBalance,
+            balanceBefore: 0,
+            balanceAfter: supplier.currentBalance,
+            reason: "Seeded opening supplier balance",
+            notes: "رصيد افتتاحي للعرض التجريبي",
+          },
+        });
+      }
+    }
+  }
+
   const openShift = await prisma.cashierShift.findFirst({
     where: { storeId: store.id, branchId: branch.id, cashierId: cashierUser.id, status: "OPEN" },
   });
@@ -558,6 +637,54 @@ async function main() {
           },
         });
       }
+    }
+  }
+
+  const draftSupplier = supplierByName.get("شركة الأمل للمواد الغذائية");
+  const draftProducts = await prisma.product.findMany({
+    where: { storeId: store.id, barcode: { in: ["6223001234568", "6223001234578"] } },
+    orderBy: { name: "asc" },
+    take: 2,
+  });
+  if (draftSupplier && draftProducts.length > 0) {
+    const existingDraftOrder = await prisma.purchaseOrder.findFirst({
+      where: { storeId: store.id, branchId: branch.id, orderNumber: "PO-SEED-0001" },
+    });
+    if (!existingDraftOrder) {
+      const items = draftProducts.map((product) => {
+        const quantity = product.barcode === "6223001234568" ? 20 : 24;
+        const purchasePrice = Number(product.purchasePrice);
+        return { product, quantity, purchasePrice, lineTotal: quantity * purchasePrice };
+      });
+      const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+      await prisma.purchaseOrder.create({
+        data: {
+          storeId: store.id,
+          branchId: branch.id,
+          supplierId: draftSupplier.id,
+          createdById: ownerUser.id,
+          orderNumber: "PO-SEED-0001",
+          status: "DRAFT",
+          subtotal,
+          discountTotal: 0,
+          taxTotal: 0,
+          total: subtotal,
+          remainingAmount: subtotal,
+          notes: "أمر شراء تجريبي غير مستلم",
+          items: {
+            create: items.map((item) => ({
+              storeId: store.id,
+              branchId: branch.id,
+              productId: item.product.id,
+              productName: item.product.name,
+              productBarcode: item.product.barcode,
+              quantity: item.quantity,
+              purchasePrice: item.purchasePrice,
+              lineTotal: item.lineTotal,
+            })),
+          },
+        },
+      });
     }
   }
 }

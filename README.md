@@ -141,6 +141,9 @@ Implemented in this foundation step:
 - End-of-day closing summary and immutable daily closing snapshots
 - Real customers and customer debt transactions with partial payments and adjustments
 - Optional customer link on POS invoices
+- Real suppliers with balances, payments, adjustments, and transaction history
+- Purchase orders with draft/send/cancel flows and transactional receiving into inventory
+- Frontend Suppliers and Purchase Orders pages integrated with the backend API
 
 Not implemented yet:
 
@@ -148,7 +151,7 @@ Not implemented yet:
 - PDF/Excel export
 - Advanced accounting and tax redistribution
 - Credit sale / partially paid invoice workflow
-- Loyalty, coupons, offers, and purchase orders
+- Loyalty, coupons, and offers
 - Subscription billing
 
 ## Catalog Endpoints
@@ -194,6 +197,41 @@ Inventory permissions:
 - `inventory.view_alerts`
 
 Seeded inventory examples include low-stock products such as `لبن جهينة`, `زبادي`, and `صابون`, plus near-expiry batches for expiry alert testing.
+
+## Suppliers And Purchase Orders
+
+Suppliers are scoped by `storeId`; purchase orders and received stock are scoped by both `storeId` and `branchId`.
+
+Supplier endpoints:
+
+- `GET /api/suppliers`
+- `GET /api/suppliers/:id`
+- `POST /api/suppliers`
+- `PATCH /api/suppliers/:id`
+- `PATCH /api/suppliers/:id/status`
+- `DELETE /api/suppliers/:id`
+- `GET /api/suppliers/:id/transactions`
+- `POST /api/suppliers/:id/payment`
+- `POST /api/suppliers/:id/adjust`
+
+Purchase order endpoints:
+
+- `GET /api/purchase-orders`
+- `GET /api/purchase-orders/:id`
+- `POST /api/purchase-orders`
+- `PATCH /api/purchase-orders/:id`
+- `PATCH /api/purchase-orders/:id/status`
+- `POST /api/purchase-orders/:id/receive`
+- `DELETE /api/purchase-orders/:id`
+
+Receiving a purchase order runs in one database transaction. It updates received quantities, increases `InventoryStock`, creates `InventoryMovement` rows of type `PURCHASE`, creates inventory batches when expiry/batch data is supplied, updates purchase-order status, and increases supplier balance only by the unpaid value received in that receive call.
+
+Supplier and purchase-order permissions:
+
+- `suppliers.view`, `suppliers.create`, `suppliers.update`, `suppliers.delete`, `suppliers.pay`, `suppliers.adjust`
+- `purchase_orders.view`, `purchase_orders.create`, `purchase_orders.update`, `purchase_orders.cancel`, `purchase_orders.receive`
+
+Manual test path: login as `owner@raseed.local`, open Suppliers, create or adjust a supplier, open Purchase Orders, create a draft order, send it, receive part of it, and confirm Inventory movements show `PURCHASE` and the supplier balance increases for unpaid received stock.
 
 ## POS And Invoices
 

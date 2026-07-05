@@ -100,6 +100,34 @@ enum CustomerDebtTransactionType {
   ADJUSTMENT_OUT
 }
 
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SupplierTransactionType {
+  BALANCE_ADDED
+  PAYMENT_MADE
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  PURCHASE_ORDER_RECEIVED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum SupplierPaymentMethod {
+  CASH
+  CARD
+  WALLET
+  BANK_TRANSFER
+}
+
 model Store {
   id            String         @id @default(cuid())
   name          String
@@ -130,6 +158,10 @@ model Store {
   dailyClosings DailyClosing[]
   customers Customer[]
   customerDebtTransactions CustomerDebtTransaction[]
+  suppliers Supplier[]
+  supplierTransactions SupplierTransaction[]
+  purchaseOrders PurchaseOrder[]
+  purchaseOrderItems PurchaseOrderItem[]
   subscriptions Subscription[]
   activityLogs  ActivityLog[]
 
@@ -163,6 +195,9 @@ model Branch {
   expenses Expense[]
   dailyClosings DailyClosing[]
   customerDebtTransactions CustomerDebtTransaction[]
+  supplierTransactions SupplierTransaction[]
+  purchaseOrders PurchaseOrder[]
+  purchaseOrderItems PurchaseOrderItem[]
   activityLogs ActivityLog[]
 
   @@unique([storeId, name])
@@ -194,6 +229,8 @@ model User {
   expenses Expense[]
   dailyClosings DailyClosing[]
   customerDebtTransactions CustomerDebtTransaction[]
+  supplierTransactions SupplierTransaction[]
+  purchaseOrders PurchaseOrder[]
   activityLogs    ActivityLog[]
 
   @@unique([storeId, email])
@@ -295,6 +332,7 @@ model Product {
   inventoryBatches InventoryBatch[]
   invoiceItems InvoiceItem[]
   returnItems ReturnItem[]
+  purchaseOrderItems PurchaseOrderItem[]
 
   @@unique([storeId, barcode])
   @@unique([storeId, sku])
@@ -649,6 +687,116 @@ model CustomerDebtTransaction {
   @@index([customerId])
   @@index([branchId])
   @@index([createdAt])
+}
+
+model Supplier {
+  id                   String                @id @default(cuid())
+  storeId              String
+  name                 String
+  phone                String?
+  email                String?
+  address              String?
+  contactPerson        String?
+  notes                String?
+  status               SupplierStatus        @default(ACTIVE)
+  currentBalance       Decimal               @default(0) @db.Decimal(10, 2)
+  deletedAt            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  transactions         SupplierTransaction[]
+  purchaseOrders       PurchaseOrder[]
+
+  @@unique([storeId, phone])
+  @@index([storeId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model SupplierTransaction {
+  id              String                  @id @default(cuid())
+  storeId         String
+  branchId        String?
+  supplierId      String
+  purchaseOrderId String?
+  userId          String
+  type            SupplierTransactionType
+  amount          Decimal                 @db.Decimal(10, 2)
+  balanceBefore   Decimal                 @db.Decimal(10, 2)
+  balanceAfter    Decimal                 @db.Decimal(10, 2)
+  paymentMethod   SupplierPaymentMethod?
+  reason          String?
+  notes           String?
+  createdAt       DateTime                @default(now())
+  store           Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch          Branch?                 @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  supplier        Supplier                @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder?          @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([storeId])
+  @@index([supplierId])
+  @@index([branchId])
+  @@index([createdAt])
+}
+
+model PurchaseOrder {
+  id                   String                @id @default(cuid())
+  storeId              String
+  branchId             String
+  supplierId           String
+  createdById          String
+  orderNumber          String
+  status               PurchaseOrderStatus   @default(DRAFT)
+  subtotal             Decimal               @db.Decimal(10, 2)
+  discountTotal        Decimal               @default(0) @db.Decimal(10, 2)
+  taxTotal             Decimal               @default(0) @db.Decimal(10, 2)
+  total                Decimal               @db.Decimal(10, 2)
+  paidAmount           Decimal               @default(0) @db.Decimal(10, 2)
+  remainingAmount      Decimal               @default(0) @db.Decimal(10, 2)
+  expectedDeliveryDate DateTime?
+  receivedAt           DateTime?
+  notes                String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch               Branch                @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  supplier             Supplier              @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdBy            User                  @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  items                PurchaseOrderItem[]
+  supplierTransactions SupplierTransaction[]
+
+  @@unique([storeId, branchId, orderNumber])
+  @@index([storeId, branchId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PurchaseOrderItem {
+  id                String        @id @default(cuid())
+  storeId           String
+  branchId          String
+  purchaseOrderId   String
+  productId         String
+  productName       String
+  productBarcode    String?
+  quantity          Decimal       @db.Decimal(14, 3)
+  receivedQuantity  Decimal       @default(0) @db.Decimal(14, 3)
+  purchasePrice     Decimal       @db.Decimal(10, 2)
+  lineTotal         Decimal       @db.Decimal(10, 2)
+  expiryDate        DateTime?
+  batchNumber       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  store             Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  branch            Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  purchaseOrder     PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product           Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([storeId, branchId])
+  @@index([purchaseOrderId])
+  @@index([productId])
 }
 
 model SubscriptionPlan {

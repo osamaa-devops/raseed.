@@ -28,8 +28,10 @@
 - Expenses and daily closing snapshots now exist.
 - Dashboard and reports now read real operational data.
 - Customers and debt transactions now exist.
+- Suppliers, supplier transactions, purchase orders, and purchase order items now exist.
+- Purchase-order receiving now increases inventory stock and supplier balance in one transaction.
 - POS invoices can optionally link to a customer; credit sale is deferred.
-- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, purchase orders, suppliers, advanced accounting, or PDF/Excel exports until their dedicated phases.
+- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, advanced accounting, or PDF/Excel exports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
 
 ## Frontend
@@ -46,15 +48,17 @@
 - Returns page now uses real backend return/refund APIs.
 - Expenses, dashboard, reports, and end-of-day closing pages now use real backend APIs.
 - Customers and debts page now uses real backend APIs.
+- Suppliers page now uses real backend APIs.
+- Purchase Orders page now uses real backend APIs for creating, sending, cancelling, and receiving purchase orders.
 - POS supports optional customer selection for invoice linking.
-- Keep purchase orders, suppliers, loyalty, AI, and advanced billing services as placeholders until those backend modules exist.
+- Keep loyalty, AI, and advanced billing services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
 
 - Authentication
 - Product/category import and bulk editing
-- Inventory transfer and purchase receiving workflows
+- Inventory transfer workflow
 - Receipt printing polish
 - Mixed-payment UX polish
 - Offline POS queue
@@ -62,7 +66,6 @@
 - Expenses polish and attachments
 - Customer invoice history UI
 - Credit sale and partially paid invoice workflow
-- Suppliers and purchase orders
 - Shift management polish
 - End-of-day closing reopen/approval policy
 - Report export generation

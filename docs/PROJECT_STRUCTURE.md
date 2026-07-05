@@ -108,7 +108,9 @@ Current state:
 - `frontend/src/services/reportsService.ts` integrates JSON operational reports.
 - `frontend/src/services/closingService.ts` integrates end-of-day summary, close-day, and history.
 - `frontend/src/services/customersService.ts` integrates customers and debt transactions.
-- Advanced admin business integrations such as purchase orders, suppliers, AI, and billing remain placeholders.
+- `frontend/src/services/suppliersService.ts` integrates suppliers, supplier payments, adjustments, and transaction history.
+- `frontend/src/services/purchaseOrdersService.ts` integrates purchase-order CRUD, send/cancel, and receiving.
+- Advanced admin business integrations such as AI and billing remain placeholders.
 
 ## Frontend Routes
 
@@ -186,6 +188,7 @@ backend
 │   │   ├── reports
 │   │   ├── closing
 │   │   ├── suppliers
+│   │   ├── purchase-orders
 │   │   ├── customers
 │   │   ├── subscriptions
 │   │   ├── admin
@@ -218,6 +221,9 @@ Current backend implementation:
 - `GET /api/users/:id`
 - `POST /api/users`
 - `PATCH /api/users/:id`
+- Supplier models: `Supplier` and `SupplierTransaction`
+- Purchase models: `PurchaseOrder` and `PurchaseOrderItem`
+- Receiving flow: purchase-order receive updates inventory stock, purchase movements, optional batches, purchase-order status, and supplier balance transactionally.
 - `PATCH /api/users/:id/status`
 - `GET /api/users/:id/permissions`
 - `GET /api/stores/me`

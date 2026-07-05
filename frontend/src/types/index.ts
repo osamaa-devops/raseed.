@@ -375,12 +375,111 @@ export type ReportResponse<T> = {
   rows: T[];
 };
 
+export type SupplierStatus = "ACTIVE" | "INACTIVE";
+export type SupplierPaymentMethod = "CASH" | "CARD" | "WALLET" | "BANK_TRANSFER";
+export type SupplierTransactionType = "BALANCE_ADDED" | "PAYMENT_MADE" | "ADJUSTMENT_IN" | "ADJUSTMENT_OUT" | "PURCHASE_ORDER_RECEIVED";
+
 export type Supplier = {
   id: Id;
   storeId: Id;
   name: string;
-  phone: string;
-  balance: number;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  contactPerson?: string | null;
+  notes?: string | null;
+  status: SupplierStatus;
+  currentBalance: number;
+  deletedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { transactions: number; purchaseOrders: number };
+};
+
+export type SupplierTransaction = {
+  id: Id;
+  storeId: Id;
+  branchId?: Id | null;
+  supplierId: Id;
+  purchaseOrderId?: Id | null;
+  userId: Id;
+  type: SupplierTransactionType;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  paymentMethod?: SupplierPaymentMethod | null;
+  reason?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  branch?: Branch | null;
+  user?: { id: Id; name: string; email?: string | null };
+  purchaseOrder?: Pick<PurchaseOrder, "id" | "orderNumber" | "status" | "total"> | null;
+};
+
+export type PurchaseOrderStatus = "DRAFT" | "SENT" | "PARTIALLY_RECEIVED" | "RECEIVED" | "CANCELLED";
+
+export type PurchaseOrderItem = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  purchaseOrderId: Id;
+  productId: Id;
+  productName: string;
+  productBarcode?: string | null;
+  quantity: number;
+  receivedQuantity: number;
+  purchasePrice: number;
+  lineTotal: number;
+  expiryDate?: string | null;
+  batchNumber?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PurchaseOrder = {
+  id: Id;
+  storeId: Id;
+  branchId: Id;
+  supplierId: Id;
+  createdById: Id;
+  orderNumber: string;
+  status: PurchaseOrderStatus;
+  subtotal: number;
+  discountTotal: number;
+  taxTotal: number;
+  total: number;
+  paidAmount: number;
+  remainingAmount: number;
+  expectedDeliveryDate?: string | null;
+  receivedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  branch?: Branch;
+  supplier?: Supplier;
+  createdBy?: { id: Id; name: string; email?: string | null };
+  items: PurchaseOrderItem[];
+};
+
+export type CreateSupplierRequest = Pick<Supplier, "name"> & Partial<Pick<Supplier, "phone" | "email" | "address" | "contactPerson" | "notes">>;
+export type UpdateSupplierRequest = Partial<CreateSupplierRequest>;
+export type SupplierPaymentRequest = { branchId?: Id; amount: number; paymentMethod: SupplierPaymentMethod; notes?: string };
+export type SupplierAdjustRequest = { branchId?: Id; amount: number; direction: "IN" | "OUT"; reason: string; notes?: string };
+export type CreatePurchaseOrderRequest = {
+  branchId: Id;
+  supplierId: Id;
+  expectedDeliveryDate?: string;
+  discountTotal?: number;
+  taxTotal?: number;
+  notes?: string;
+  items: Array<{ productId: Id; quantity: number; purchasePrice: number; expiryDate?: string; batchNumber?: string }>;
+};
+export type UpdatePurchaseOrderRequest = Partial<CreatePurchaseOrderRequest>;
+export type ReceivePurchaseOrderRequest = {
+  paidAmount?: number;
+  paymentMethod?: SupplierPaymentMethod;
+  notes?: string;
+  items: Array<{ purchaseOrderItemId: Id; receivedQuantity: number; expiryDate?: string; batchNumber?: string }>;
 };
 
 export type CustomerStatus = "ACTIVE" | "INACTIVE";

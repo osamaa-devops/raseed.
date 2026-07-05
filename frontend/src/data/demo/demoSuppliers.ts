@@ -1,8 +1,8 @@
 import type { Customer, Supplier } from "../../types";
 
 export const demoSuppliers: Supplier[] = [
-  { id: "sup1", storeId: "store_city_market", name: "شركة النور للتوريدات", phone: "01001234567", balance: -1200 },
-  { id: "sup2", storeId: "store_city_market", name: "مورد المدينة", phone: "01112345678", balance: 0 },
+  { id: "sup1", storeId: "store_city_market", name: "شركة النور للتوريدات", phone: "01001234567", status: "ACTIVE", currentBalance: 1200, createdAt: "2026-07-04", updatedAt: "2026-07-04" },
+  { id: "sup2", storeId: "store_city_market", name: "مورد المدينة", phone: "01112345678", status: "ACTIVE", currentBalance: 0, createdAt: "2026-07-04", updatedAt: "2026-07-04" },
 ];
 
 export const demoCustomers: Customer[] = [
