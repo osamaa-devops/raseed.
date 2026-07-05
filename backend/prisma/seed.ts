@@ -422,6 +422,20 @@ async function main() {
     },
   });
 
+  const legacyStarterPlan = await prisma.subscriptionPlan.findUnique({
+    where: { code: "starter" },
+    include: { _count: { select: { subscriptions: true } } },
+  });
+  if (legacyStarterPlan && legacyStarterPlan._count.subscriptions === 0 && legacyStarterPlan.status !== "INACTIVE") {
+    await prisma.subscriptionPlan.update({
+      where: { id: legacyStarterPlan.id },
+      data: {
+        status: "INACTIVE",
+        description: legacyStarterPlan.description ?? "خطة قديمة تم إيقافها من الباقات القياسية الحالية.",
+      },
+    });
+  }
+
   const store = await prisma.store.upsert({
     where: { id: "demo-store-city-market" },
     update: {

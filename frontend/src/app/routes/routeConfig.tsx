@@ -7,6 +7,7 @@ import { SuperAdminLayout } from "../../layouts/SuperAdminLayout";
 import { ActivityLogsPage } from "../../pages/admin/ActivityLogsPage";
 import { HelpSupportPage } from "../../pages/admin/HelpSupportPage";
 import { SettingsPage } from "../../pages/admin/SettingsPage";
+import { SubscriptionBlockedPage } from "../../pages/admin/SubscriptionBlockedPage";
 import { SubscriptionBillingPage } from "../../pages/admin/SubscriptionBillingPage";
 import { UsersPermissionsPage } from "../../pages/admin/UsersPermissionsPage";
 import { OwnerDashboardPage } from "../../pages/dashboard/OwnerDashboardPage";
@@ -70,6 +71,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/users-permissions", element: <UsersPermissionsPage /> },
           { path: "/activity-logs", element: <ActivityLogsPage /> },
           { path: "/subscription-billing", element: <SubscriptionBillingPage /> },
+          { path: "/subscription-blocked", element: <SubscriptionBlockedPage /> },
           { path: "/help", element: <HelpSupportPage /> },
           { path: "/settings", element: <SettingsPage /> },
         ],

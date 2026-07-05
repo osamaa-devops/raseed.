@@ -1,5 +1,7 @@
 import { AlertTriangle, CreditCard } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
@@ -40,6 +42,11 @@ export function SubscriptionBillingPage() {
                 <div>
                   <h3 className="font-bold text-danger">الاشتراك متوقف</h3>
                   <p className="mt-1 text-sm text-muted-foreground">انتهى اشتراك المتجر أو تم إيقافه. برجاء التواصل مع الدعم لاستعادة الوصول الكامل.</p>
+                  <div className="mt-3">
+                    <Link to="/help">
+                      <AppButton variant="outline">التواصل مع الدعم</AppButton>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </AppCard>
