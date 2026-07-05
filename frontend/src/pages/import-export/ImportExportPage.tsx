@@ -162,7 +162,7 @@ function FileInput({ label, onChange }: { label: string; onChange: (file: File |
   );
 }
 
-function PreviewBlock({ preview }: { preview: ImportPreviewResult | null }) {
+export function PreviewBlock({ preview }: { preview: ImportPreviewResult | null }) {
   if (!preview) return null;
   return (
     <div className="grid gap-3">

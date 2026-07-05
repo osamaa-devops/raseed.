@@ -31,7 +31,7 @@ import { ImportExportModule } from "./modules/import-export/import-export.module
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [".env", ".env.local"],
+      envFilePath: [`.env.${process.env.NODE_ENV ?? "development"}`, ".env", ".env.local"],
     }),
     PrismaModule,
     HealthModule,
