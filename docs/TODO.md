@@ -15,7 +15,7 @@
 - Add password reset and invitation flows.
 - Add more complete role/permission management endpoints.
 - Expand store/branch guards as business modules are added.
-- Add automated tests for auth, permissions, tenant isolation, products, categories, inventory transactions, POS sale rollback behavior, return/refund rollback behavior, expenses, dashboard reports, day closing, and customer debt balance transactions.
+- Add automated tests for auth, permissions, tenant isolation, products, categories, import/export validation, inventory transactions, POS sale rollback behavior, return/refund rollback behavior, expenses, dashboard reports, day closing, and customer debt balance transactions.
 
 ## Prisma And PostgreSQL
 
@@ -35,7 +35,8 @@
 - Receipt settings and barcode label settings now exist.
 - Product barcode generation and barcode label payloads now exist.
 - Invoice receipt payloads now exist for browser-based printing.
-- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, advanced accounting, or PDF/Excel exports until their dedicated phases.
+- XLSX/CSV import/export now exists for product templates, initial-stock templates, product imports, stock imports, operational exports, and selected report exports.
+- Do not add advanced return approvals/cancellations, loyalty, coupons, offers, advanced accounting, or PDF exports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
 - Prisma migration history is currently healthy through `20260705120000_receipts_barcodes`; run Prisma migrate commands with local PostgreSQL access when working inside a restricted sandbox.
 
@@ -59,13 +60,14 @@
 - POS supports optional customer selection for invoice linking.
 - Products page now supports barcode generation, product selection, barcode label preview, and browser printing.
 - Settings page now includes receipt settings, barcode label settings, and a hardware placeholder for future desktop device control.
+- Import/export page now supports templates, preview-before-write imports, and XLSX/CSV exports.
 - Keep loyalty, AI, and external billing-provider services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
 
 - Authentication
-- Product/category import and bulk editing
+- Product/category bulk editing
 - Inventory transfer workflow
 - Receipt printing polish beyond current browser print support
 - Electron silent printing and advanced hardware settings
@@ -77,7 +79,7 @@
 - Credit sale and partially paid invoice workflow
 - Shift management polish
 - End-of-day closing reopen/approval policy
-- Report export generation
+- PDF report export generation
 - Notifications
 - AI insights
 - Users and permissions

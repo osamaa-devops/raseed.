@@ -16,6 +16,7 @@ import { ExpensesPage } from "../../pages/finance/ExpensesPage";
 import { AiInsightsPage } from "../../pages/insights/AiInsightsPage";
 import { NotificationsPage } from "../../pages/insights/NotificationsPage";
 import { InventoryPage } from "../../pages/inventory/InventoryPage";
+import { ImportExportPage } from "../../pages/import-export/ImportExportPage";
 import { OnboardingWizardPage } from "../../pages/onboarding/OnboardingWizardPage";
 import { CategoriesPage } from "../../pages/products/CategoriesPage";
 import { ProductsPage } from "../../pages/products/ProductsPage";
@@ -59,6 +60,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/products", element: <ProductsPage /> },
           { path: "/categories", element: <CategoriesPage /> },
           { path: "/inventory", element: <InventoryPage /> },
+          { path: "/import-export", element: <ImportExportPage /> },
           { path: "/sales", element: <SalesInvoicesPage /> },
           { path: "/returns", element: <ReturnsRefundsPage /> },
           { path: "/expenses", element: <ExpensesPage /> },

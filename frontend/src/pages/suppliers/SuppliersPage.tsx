@@ -1,4 +1,4 @@
-import { CreditCard, Edit2, Eye, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Download, Edit2, Eye, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { Modal } from "../../components/feedback/Modal";
@@ -8,6 +8,7 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { importExportService } from "../../services/importExportService";
 import { suppliersService } from "../../services/suppliersService";
 import type { Supplier, SupplierPaymentMethod, SupplierStatus, SupplierTransaction } from "../../types";
 
@@ -35,6 +36,7 @@ export function SuppliersPage() {
   const canDelete = hasPermission("suppliers.delete");
   const canPay = hasPermission("suppliers.pay");
   const canAdjust = hasPermission("suppliers.adjust");
+  const canExport = hasPermission("data.export");
 
   const load = async () => {
     if (!canView) return;
@@ -123,7 +125,7 @@ export function SuppliersPage() {
 
   return (
     <div>
-      <PageHeader title="الموردين" description="إدارة ملفات الموردين والأرصدة والمدفوعات." />
+      <PageHeader title="الموردين" description="إدارة ملفات الموردين والأرصدة والمدفوعات." actions={canExport ? <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportSuppliers("xlsx", { status: filters.status })}>تصدير</AppButton> : null} />
       <div className="grid gap-4 md:grid-cols-3">
         <AppCard><p className="text-sm text-muted-foreground">إجمالي الموردين</p><h3 className="mt-2 text-2xl font-bold">{summary.suppliersCount}</h3></AppCard>
         <AppCard><p className="text-sm text-muted-foreground">إجمالي الرصيد المستحق</p><h3 className="mt-2 text-2xl font-bold">{formatMoney(summary.totalBalance)}</h3></AppCard>

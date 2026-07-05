@@ -40,6 +40,12 @@ const permissions = [
   "expenses.delete",
   "reports.view",
   "reports.export",
+  "data.import",
+  "data.export",
+  "products.import",
+  "products.export",
+  "inventory.import",
+  "inventory.export",
   "closing.view",
   "closing.create",
   "customers.view",
@@ -88,7 +94,7 @@ const permissions = [
 ];
 
 const rolePermissions: Record<string, string[]> = {
-  super_admin: permissions,
+  super_admin: permissions.filter((permission) => permission.startsWith("admin.")),
   owner: permissions.filter((permission) => !permission.startsWith("admin.")).concat(["subscription.view", "subscription.request_upgrade"]),
   manager: [
     "dashboard.view",
@@ -125,6 +131,12 @@ const rolePermissions: Record<string, string[]> = {
     "expenses.delete",
     "reports.view",
     "reports.export",
+    "data.import",
+    "data.export",
+    "products.import",
+    "products.export",
+    "inventory.import",
+    "inventory.export",
     "closing.view",
     "closing.create",
     "customers.view",
@@ -158,12 +170,16 @@ const rolePermissions: Record<string, string[]> = {
   cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "printing.receipts", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay", "suppliers.view"],
   inventory: [
     "products.view",
+    "products.import",
+    "products.export",
     "products.generate_barcode",
     "categories.view",
     "suppliers.view",
     "purchase_orders.view",
     "purchase_orders.receive",
     "inventory.view",
+    "inventory.import",
+    "inventory.export",
     "inventory.adjust",
     "inventory.add_stock",
     "inventory.remove_stock",
@@ -261,8 +277,20 @@ async function findOrCreateRole(name: string, storeId: string | null) {
 }
 
 async function syncRolePermissions(roleId: string, keys: string[]) {
-  for (const key of keys) {
-    const permission = await prisma.permission.findUniqueOrThrow({ where: { key } });
+  const rolePermissionRows = await prisma.permission.findMany({ where: { key: { in: keys } } });
+  const permissionIds = rolePermissionRows.map((permission) => permission.id);
+  const foundKeys = new Set(rolePermissionRows.map((permission) => permission.key));
+  const missingKeys = keys.filter((key) => !foundKeys.has(key));
+  if (missingKeys.length) throw new Error(`Missing permissions: ${missingKeys.join(", ")}`);
+
+  await prisma.rolePermission.deleteMany({
+    where: {
+      roleId,
+      permissionId: { notIn: permissionIds },
+    },
+  });
+
+  for (const permission of rolePermissionRows) {
     await prisma.rolePermission.upsert({
       where: { roleId_permissionId: { roleId, permissionId: permission.id } },
       update: {},

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Archive, Eye, History, Layers, MinusCircle, Plus, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, Archive, Download, Eye, History, Layers, MinusCircle, Plus, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingSkeleton } from "../../components/feedback/LoadingSkeleton";
@@ -11,6 +11,7 @@ import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { inventoryService, type AddStockPayload, type AdjustStockPayload, type RemoveStockPayload } from "../../services/inventoryService";
+import { importExportService } from "../../services/importExportService";
 import type { InventoryBatch, InventoryMovement, InventoryStock } from "../../types";
 
 type Tab = "stocks" | "low" | "expiry" | "movements";
@@ -47,6 +48,7 @@ export function InventoryPage() {
   const canAdjust = hasPermission("inventory.adjust");
   const canViewMovements = hasPermission("inventory.view_movements");
   const canViewAlerts = hasPermission("inventory.view_alerts");
+  const canExport = hasPermission("inventory.export");
 
   const [tab, setTab] = useState<Tab>("stocks");
   const [stocks, setStocks] = useState<InventoryStock[]>([]);
@@ -164,7 +166,7 @@ export function InventoryPage() {
 
   return (
     <div>
-      <PageHeader title="المخزون" description={`أرصدة وحركات مخزون ${branchName}`} />
+      <PageHeader title="المخزون" description={`أرصدة وحركات مخزون ${branchName}`} actions={canExport ? <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportInventory("xlsx", { branchId, status })}>تصدير</AppButton> : null} />
       {notice && <p className="mb-4 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">{notice}</p>}
       {error && <p className="mb-4 rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
 

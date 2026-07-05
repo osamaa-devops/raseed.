@@ -149,12 +149,13 @@ Implemented in this foundation step:
 - Frontend super admin dashboard, stores, plans, payments, and owner subscription billing pages integrated with the backend API
 - Browser-based receipt printing with per-store/branch receipt settings
 - Product barcode generation and browser-printable barcode label sheets
+- Excel/CSV import and export for products, initial inventory stock, operational lists, and key reports
 - Settings page sections for receipts, barcode labels, and future hardware setup
 
 Not implemented yet:
 
 - Advanced return approvals/cancellations
-- PDF/Excel export
+- PDF export
 - Electron desktop, silent printing, and advanced hardware control
 - Advanced accounting and tax redistribution
 - Credit sale / partially paid invoice workflow
@@ -221,6 +222,38 @@ Additional printing/catalog endpoints:
 Receipt and label printing use normal browser print preview and print CSS. Silent printing, cash drawer integration, barcode printer drivers, scales, and other direct hardware controls are reserved for the future Electron desktop app.
 
 Migration note: if Prisma reports a blank `Schema engine error` while PostgreSQL is healthy, confirm whether the command is running inside a restricted sandbox that cannot connect to `127.0.0.1:5432`. The receipt/barcode migration was applied normally with Prisma once local database access was allowed; no manual SQL or database reset was used.
+
+## Import And Export
+
+Import/export endpoints live under `/api/import-export` and are scoped to the authenticated user's store. Uploads accept `.xlsx` and `.csv`, are limited to 10 MB and 5,000 rows, validate the full file before writing, and sanitize exported spreadsheet cells that could be interpreted as formulas.
+
+Template endpoints:
+
+- `GET /api/import-export/templates/products.:format`
+- `GET /api/import-export/templates/initial-stock.:format`
+
+Import endpoints:
+
+- `POST /api/import-export/products/preview`
+- `POST /api/import-export/products/import`
+- `POST /api/import-export/initial-stock/preview`
+- `POST /api/import-export/initial-stock/import`
+
+Product import supports `CREATE_ONLY` and `UPSERT`, matches existing products by barcode or SKU, and auto-creates missing categories. Initial stock import supports `ADD_TO_EXISTING` and `SET_INITIAL_QUANTITY`, writes stock movements, and creates inventory batches when batch, expiry, or purchase-price data is supplied.
+
+Export endpoints:
+
+- `GET /api/import-export/products`
+- `GET /api/import-export/inventory`
+- `GET /api/import-export/invoices`
+- `GET /api/import-export/expenses`
+- `GET /api/import-export/customers`
+- `GET /api/import-export/suppliers`
+- `GET /api/import-export/reports/daily-sales`
+- `GET /api/import-export/reports/profit`
+- `GET /api/import-export/reports/inventory-value`
+
+Formats are selected with `format=xlsx` or `format=csv`. Permissions include `data.import`, `data.export`, `products.import`, `products.export`, `inventory.import`, `inventory.export`, and `reports.export`.
 
 ## Inventory Endpoints
 

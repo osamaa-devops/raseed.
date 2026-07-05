@@ -1,4 +1,4 @@
-import { CreditCard, Edit2, Eye, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Download, Edit2, Eye, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { Modal } from "../../components/feedback/Modal";
@@ -9,6 +9,7 @@ import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { customersService } from "../../services/customersService";
+import { importExportService } from "../../services/importExportService";
 import type { Customer, CustomerDebtTransaction, CustomerStatus, Payment } from "../../types";
 
 const emptyForm = { name: "", phone: "", email: "", address: "", notes: "", creditLimit: 0 };
@@ -37,6 +38,7 @@ export function CustomersDebtsPage() {
   const canAddDebt = hasPermission("debts.add");
   const canPayDebt = hasPermission("debts.pay");
   const canAdjustDebt = hasPermission("debts.adjust");
+  const canExport = hasPermission("data.export");
 
   const load = async () => {
     if (!canView) return;
@@ -120,7 +122,7 @@ export function CustomersDebtsPage() {
 
   return (
     <div>
-      <PageHeader title="العملاء والديون" description="إدارة ملفات العملاء وأرصدة الديون والمدفوعات الجزئية." />
+      <PageHeader title="العملاء والديون" description="إدارة ملفات العملاء وأرصدة الديون والمدفوعات الجزئية." actions={canExport ? <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportCustomers("xlsx", { status: filters.status })}>تصدير</AppButton> : null} />
       <div className="grid gap-4 md:grid-cols-3">
         <AppCard><p className="text-sm text-muted-foreground">إجمالي العملاء</p><h3 className="mt-2 text-2xl font-bold">{summary.customersCount}</h3></AppCard>
         <AppCard><p className="text-sm text-muted-foreground">إجمالي الديون</p><h3 className="mt-2 text-2xl font-bold">{formatMoney(summary.totalDebt)}</h3></AppCard>

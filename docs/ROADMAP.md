@@ -28,9 +28,9 @@
 ## Phase 4: Retail Core Data Model
 
 - Products and categories master data. Completed: first store-scoped CRUD foundation.
-- Product/category polish: barcode generation and label printing completed for browser demo. Remaining: import/export, barcode validation helpers, richer units, and catalog test coverage.
+- Product/category polish: barcode generation, label printing, and XLSX/CSV import/export completed for browser demo. Remaining: barcode validation helpers, richer units, and catalog test coverage.
 - Inventory stock balances and stock movements. Completed: branch-level balances, add/remove/adjust flows, low-stock alerts, expiry alerts, and movement history.
-- Inventory polish: automated tests, stock transfer workflow, and later POS-safe stock consumption. Completed: purchase receiving increases stock through `PURCHASE` movements.
+- Inventory polish: automated tests, stock transfer workflow, and later POS-safe stock consumption. Completed: initial-stock import and purchase receiving increases stock through inventory movements.
 - POS sessions, cashier shifts, paid invoices, payments, held orders, and stock decrement on sale. Completed: first real end-to-end POS sale flow.
 - POS polish: receipt layout completed for browser print. Remaining: barcode focus flow, mixed-payment UX, offline queue, and automated sale rollback tests.
 - Returns and refunds. Completed: partial/full returns, returned quantities, refund payment records, optional restock, and `RETURN` inventory movements.
@@ -38,7 +38,7 @@
 - Suppliers and purchase orders. Completed: supplier profiles, balances, payments, adjustments, purchase-order draft/send/cancel, partial/full receiving, and inventory integration.
 - Customers and debts. Completed: customer profiles, debt balances, debt transactions, partial payments, adjustments, and optional invoice customer link.
 - Customer polish: customer invoice history UI, credit sale workflow, debt aging, statements, and loyalty points later.
-- Expenses, dashboard summaries, reports, and end-of-day closing. Completed: expenses CRUD, dashboard overview, JSON reports, and daily closing snapshots.
+- Expenses, dashboard summaries, reports, and end-of-day closing. Completed: expenses CRUD, dashboard overview, JSON reports, XLSX/CSV exports, and daily closing snapshots.
 - Financial polish: automated tests, closing reopen/approval policy, richer report filters, and export generation later.
 
 ## Phase 5: Reporting And Operations
@@ -48,6 +48,7 @@
 - Inventory reports. Completed: current inventory value.
 - Cashier and shift reports. Completed: cashier performance and closing summaries.
 - Expense reports. Completed: expenses grouped by category.
+- Import/export. Completed: XLSX/CSV templates, product import, initial-stock import, product/inventory/list exports, and daily sales/profit/inventory value report exports.
 - Activity logs.
 - Notifications.
 - AI insights after reliable operational data exists.

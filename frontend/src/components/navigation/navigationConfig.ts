@@ -21,6 +21,7 @@ import {
   Clock,
   Store,
   LifeBuoy,
+  Upload,
 } from "lucide-react";
 
 export const dashboardNavGroups = [
@@ -38,6 +39,7 @@ export const dashboardNavGroups = [
       { label: "المنتجات", path: "/products", icon: Package },
       { label: "التصنيفات", path: "/categories", icon: Tag },
       { label: "المخزون", path: "/inventory", icon: Layers },
+      { label: "الاستيراد والتصدير", path: "/import-export", icon: Upload },
       { label: "الموردين", path: "/suppliers", icon: Truck },
       { label: "أوامر الشراء", path: "/purchase-orders", icon: ClipboardList },
     ],

@@ -1,4 +1,4 @@
-import { Edit2, Plus, Trash2 } from "lucide-react";
+import { Download, Edit2, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { TextInput, SelectInput } from "../../components/forms/FormControls";
@@ -7,6 +7,7 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { expensesService, type ExpensePayload } from "../../services/expensesService";
+import { importExportService } from "../../services/importExportService";
 import type { Expense, ExpenseCategory } from "../../types";
 
 const categories: Array<{ value: ExpenseCategory; label: string }> = [
@@ -37,6 +38,7 @@ export function ExpensesPage() {
   const canCreate = hasPermission("expenses.create");
   const canUpdate = hasPermission("expenses.update");
   const canDelete = hasPermission("expenses.delete");
+  const canExport = hasPermission("data.export");
 
   const topLabel = useMemo(() => (summary?.topCategory ? categoryLabel(summary.topCategory.category) : "لا يوجد"), [summary]);
 
@@ -108,7 +110,7 @@ export function ExpensesPage() {
 
   return (
     <div>
-      <PageHeader title="المصاريف" description="تسجيل ومراجعة مصروفات الفرع اليومية والشهرية." />
+      <PageHeader title="المصاريف" description="تسجيل ومراجعة مصروفات الفرع اليومية والشهرية." actions={canExport ? <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportExpenses("xlsx", { branchId, dateFrom: filters.dateFrom, dateTo: filters.dateTo, category: filters.category })}>تصدير</AppButton> : null} />
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard title="مصاريف اليوم" value={summary?.today ?? 0} />
         <SummaryCard title="مصاريف الشهر" value={summary?.month ?? 0} />

@@ -5,6 +5,7 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { reportsService } from "../../services/reportsService";
+import { importExportService } from "../../services/importExportService";
 
 type ReportState = {
   daily: Array<{ date?: string; totalSales: number; invoicesCount: number }>;
@@ -65,7 +66,7 @@ export function ReportsPage() {
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
           <label className="block"><span className="mb-1.5 block text-sm font-semibold">من</span><input className="w-full rounded-lg border border-border bg-input-background px-3 py-2 text-sm" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} /></label>
           <label className="block"><span className="mb-1.5 block text-sm font-semibold">إلى</span><input className="w-full rounded-lg border border-border bg-input-background px-3 py-2 text-sm" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} /></label>
-          <AppButton className="self-end" variant="outline" icon={Download} disabled={!hasPermission("reports.export")}>تصدير لاحقًا</AppButton>
+          <AppButton className="self-end" variant="outline" icon={Download} disabled={!hasPermission("reports.export")} onClick={() => void importExportService.exportDailySalesReport("xlsx", { branchId, dateFrom, dateTo })}>تصدير المبيعات</AppButton>
         </div>
       </AppCard>
       {loading && <AppCard className="mt-6">جار تحميل التقارير...</AppCard>}

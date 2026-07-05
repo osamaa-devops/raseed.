@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, Printer, Receipt, RotateCcw } from "lucide-react";
+import { Download, Eye, Printer, Receipt, RotateCcw } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Modal } from "../../components/feedback/Modal";
@@ -11,6 +11,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { PrintButton } from "../../components/printing/PrintButton";
 import { ReceiptPreview } from "../../components/printing/ReceiptPreview";
 import { invoicesService } from "../../services/invoicesService";
+import { importExportService } from "../../services/importExportService";
 import type { Invoice, Payment, ReceiptPayload } from "../../types";
 
 const paymentLabels: Record<Payment["method"], string> = {
@@ -23,6 +24,7 @@ export function SalesInvoicesPage() {
   const { hasPermission } = useAuth();
   const canCreateReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
   const canPrintReceipts = hasPermission("printing.receipts") || hasPermission("invoices.print");
+  const canExport = hasPermission("data.export");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<Payment["method"] | "">("");
@@ -58,7 +60,7 @@ export function SalesInvoicesPage() {
 
   return (
     <div>
-      <PageHeader title="المبيعات والفواتير" description="فواتير حقيقية ناتجة من شاشة الكاشير." />
+      <PageHeader title="المبيعات والفواتير" description="فواتير حقيقية ناتجة من شاشة الكاشير." actions={canExport ? <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportInvoices("xlsx", { paymentMethod, dateFrom, dateTo })}>تصدير</AppButton> : null} />
       {error && <p className="mb-4 rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
       <div className="mb-4 grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-[180px_180px_180px_auto]">
         <TextInput label="من تاريخ" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Barcode, Edit2, Package, Plus, Printer, Search, Tags, Trash2 } from "lucide-react";
+import { Barcode, Download, Edit2, Package, Plus, Printer, Search, Tags, Trash2 } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingSkeleton } from "../../components/feedback/LoadingSkeleton";
@@ -13,6 +13,7 @@ import { BarcodeLabelsSheet } from "../../components/printing/BarcodeLabelsSheet
 import { PrintButton } from "../../components/printing/PrintButton";
 import { barcodeService } from "../../services/barcodeService";
 import { categoriesService } from "../../services/categoriesService";
+import { importExportService } from "../../services/importExportService";
 import { productsService, type ProductPayload } from "../../services/productsService";
 import type { BarcodeLabelPayload, BarcodeLabelSize, Category, Product } from "../../types";
 
@@ -37,6 +38,7 @@ export function ProductsPage() {
   const canDelete = hasPermission("products.delete");
   const canGenerateBarcode = hasPermission("products.generate_barcode");
   const canPrintBarcodes = hasPermission("printing.barcodes");
+  const canExport = hasPermission("products.export");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState("");
@@ -195,6 +197,7 @@ export function ProductsPage() {
         actions={
           <div className="flex flex-wrap gap-2">
             {canPrintBarcodes && <AppButton variant="outline" icon={Tags} disabled={selectedIds.length === 0} onClick={() => void openLabels(selectedIds)}>طباعة المحدد</AppButton>}
+            {canExport && <AppButton variant="outline" icon={Download} onClick={() => void importExportService.exportProducts("xlsx", { search, categoryId, status })}>تصدير</AppButton>}
             {canCreate && <AppButton icon={Plus} onClick={openCreate}>إضافة منتج</AppButton>}
           </div>
         }

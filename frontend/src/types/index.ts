@@ -269,6 +269,34 @@ export type BarcodeLabelPayload = {
   products: BarcodeLabelProduct[];
 };
 
+export type ExportFormat = "xlsx" | "csv";
+export type ProductImportMode = "CREATE_ONLY" | "UPSERT";
+export type StockImportMode = "ADD_TO_EXISTING" | "SET_INITIAL_QUANTITY";
+
+export type ImportIssue = {
+  row: number;
+  field: string;
+  message: string;
+};
+
+export type ImportPreviewResult = {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  createCount: number;
+  updateCount: number;
+  warnings: ImportIssue[];
+  errors: ImportIssue[];
+  sampleRows: unknown[];
+};
+
+export type ImportSummary = {
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: ImportIssue[];
+};
+
 export type CashierShift = {
   id: Id;
   storeId: Id;

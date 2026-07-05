@@ -63,6 +63,7 @@ frontend/src
 │   ├── admin
 │   ├── dashboard
 │   ├── finance
+│   ├── import-export
 │   ├── insights
 │   ├── inventory
 │   ├── onboarding
@@ -119,6 +120,7 @@ Current state:
 - `frontend/src/services/superAdminService.ts` integrates SaaS overview, store management, and subscriptions.
 - `frontend/src/services/plansService.ts` integrates super-admin plan management.
 - `frontend/src/services/subscriptionPaymentsService.ts` integrates super-admin subscription payment management.
+- `frontend/src/services/importExportService.ts` integrates Excel/CSV templates, preview/import, and file download exports.
 - AI and external billing-provider integrations remain placeholders.
 
 ## Frontend Routes
@@ -143,6 +145,7 @@ Store routes:
 - `/returns`
 - `/expenses`
 - `/reports`
+- `/import-export`
 - `/suppliers`
 - `/purchase-orders`
 - `/customers-debts`
@@ -195,6 +198,7 @@ backend
 │   │   ├── returns
 │   │   ├── expenses
 │   │   ├── reports
+│   │   ├── import-export
 │   │   ├── closing
 │   │   ├── suppliers
 │   │   ├── purchase-orders
@@ -234,6 +238,7 @@ Current backend implementation:
 - Purchase models: `PurchaseOrder` and `PurchaseOrderItem`
 - Receiving flow: purchase-order receive updates inventory stock, purchase movements, optional batches, purchase-order status, and supplier balance transactionally.
 - Receipt settings, barcode label settings, invoice receipt payloads, product barcode generation, and barcode label payload APIs support browser print workflows.
+- Import/export APIs support XLSX/CSV product templates, initial-stock templates, preview-before-write imports, product and inventory exports, operational list exports, and report exports.
 - Receipt/barcode migration verification requires Prisma CLI access to the local PostgreSQL port; a restricted sandbox can surface this as a blank schema-engine error even when the database and migration files are healthy.
 - `PATCH /api/users/:id/status`
 - `GET /api/users/:id/permissions`
@@ -381,4 +386,4 @@ Auth-related seed data:
 - Demo product categories and products for local frontend/API validation
 - Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
 
-Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. POS invoices can optionally link to a customer, while credit sales are deferred. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally. Expenses are branch-scoped and soft-deleted. Dashboard and reports read operational data as JSON. End-of-day closing saves a `DailyClosing` snapshot and blocks closing while shifts are still open. Customer debts are tracked through immutable `CustomerDebtTransaction` records that update `Customer.currentDebt` inside database transactions.
+Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. POS invoices can optionally link to a customer, while credit sales are deferred. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally. Expenses are branch-scoped and soft-deleted. Dashboard and reports read operational data as JSON and can be exported as XLSX/CSV. End-of-day closing saves a `DailyClosing` snapshot and blocks closing while shifts are still open. Customer debts are tracked through immutable `CustomerDebtTransaction` records that update `Customer.currentDebt` inside database transactions.
