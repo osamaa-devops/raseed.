@@ -5,6 +5,7 @@ import { UpdateCatalogStatusDto } from "../../common/dto/update-catalog-status.d
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { assertStoreAccess } from "../../common/utils/tenant-context";
 import { ActivityLogsService } from "../activity-logs/activity-logs.service";
+import { BarcodeLabelsDto } from "./dto/barcode-labels.dto";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { ListProductsDto } from "./dto/list-products.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
@@ -115,6 +116,63 @@ export class ProductsService {
     return { success: true };
   }
 
+  async generateBarcode(user: AuthenticatedUser, id: string, force = false) {
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("Product not found.");
+    assertStoreAccess(user, existing.storeId);
+    if (existing.barcode && !force) {
+      return { productId: existing.id, barcode: existing.barcode };
+    }
+
+    const barcode = await this.generateUniqueBarcode(existing.storeId);
+    const product = await this.prisma.product.update({ where: { id }, data: { barcode } });
+    await this.log(user, "product.barcode_generated", product.id, { barcode, force });
+    return { productId: product.id, barcode: product.barcode };
+  }
+
+  async getBarcodeLabels(user: AuthenticatedUser, dto: BarcodeLabelsDto) {
+    const storeId = this.requireStore(user);
+    const productIds = Array.from(new Set(dto.productIds));
+    const products = await this.prisma.product.findMany({
+      where: { storeId, id: { in: productIds } },
+      orderBy: { name: "asc" },
+    });
+    if (products.length !== productIds.length) throw new BadRequestException("Some products do not belong to this store.");
+
+    const prepared = [];
+    for (const product of products) {
+      let barcode = product.barcode;
+      if (!barcode && dto.autoGenerate) {
+        barcode = await this.generateUniqueBarcode(storeId);
+        await this.prisma.product.update({ where: { id: product.id }, data: { barcode } });
+        await this.log(user, "product.barcode_generated", product.id, { barcode, autoGenerate: true });
+      }
+      if (!barcode) throw new BadRequestException(`Product "${product.name}" has no barcode.`);
+      prepared.push({
+        id: product.id,
+        name: product.name,
+        barcode,
+        sellingPrice: Number(product.sellingPrice),
+        copies: dto.copies ?? 1,
+      });
+    }
+
+    const settings =
+      (await this.prisma.barcodeLabelSettings.findUnique({ where: { storeId } })) ??
+      (await this.prisma.barcodeLabelSettings.create({ data: { storeId } }));
+
+    return {
+      settings: {
+        ...settings,
+        marginTop: settings.marginTop === null ? null : Number(settings.marginTop),
+        marginRight: settings.marginRight === null ? null : Number(settings.marginRight),
+        marginBottom: settings.marginBottom === null ? null : Number(settings.marginBottom),
+        marginLeft: settings.marginLeft === null ? null : Number(settings.marginLeft),
+      },
+      products: prepared,
+    };
+  }
+
   private requireStore(user: AuthenticatedUser) {
     if (user.isSuperAdmin || !user.storeId) {
       throw new ForbiddenException("Store product CRUD requires a store user context.");
@@ -160,6 +218,25 @@ export class ProductsService {
       const existing = await this.prisma.product.findFirst({ where: { storeId, sku, id: excludeId ? { not: excludeId } : undefined } });
       if (existing) throw new ConflictException("SKU already exists in this store.");
     }
+  }
+
+  private async generateUniqueBarcode(storeId: string) {
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const body = `${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, "0")}`.slice(-12);
+      const checkDigit = this.ean13CheckDigit(body);
+      const barcode = `${body}${checkDigit}`;
+      const existing = await this.prisma.product.findFirst({ where: { storeId, barcode } });
+      if (!existing) return barcode;
+    }
+    throw new ConflictException("Could not generate a unique barcode. Please try again.");
+  }
+
+  private ean13CheckDigit(body: string) {
+    const sum = body.split("").reduce((total, char, index) => {
+      const digit = Number(char);
+      return total + digit * (index % 2 === 0 ? 1 : 3);
+    }, 0);
+    return (10 - (sum % 10)) % 10;
   }
 
   private serialize(product: Product & { category?: Category | null }) {

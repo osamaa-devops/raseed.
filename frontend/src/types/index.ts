@@ -200,6 +200,75 @@ export type Payment = {
   createdAt: string;
 };
 
+export type ReceiptPaperSize = "MM_58" | "MM_80" | "A4";
+export type BarcodeLabelSize = "SMALL" | "MEDIUM" | "LARGE" | "CUSTOM";
+
+export type ReceiptSettings = {
+  id: Id;
+  storeId: Id;
+  branchId?: Id | null;
+  storeName?: string | null;
+  storePhone?: string | null;
+  storeAddress?: string | null;
+  logoUrl?: string | null;
+  receiptHeader?: string | null;
+  receiptFooter?: string | null;
+  showLogo: boolean;
+  showTaxNumber: boolean;
+  taxNumber?: string | null;
+  showCashierName: boolean;
+  showBranchName: boolean;
+  showCustomerInfo: boolean;
+  paperSize: ReceiptPaperSize;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BarcodeLabelSettings = {
+  id: Id;
+  storeId: Id;
+  labelSize: BarcodeLabelSize;
+  showProductName: boolean;
+  showPrice: boolean;
+  showBarcodeText: boolean;
+  columns: number;
+  rows?: number | null;
+  marginTop?: number | null;
+  marginRight?: number | null;
+  marginBottom?: number | null;
+  marginLeft?: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReceiptPayload = {
+  store: Pick<Store, "id" | "name" | "phone"> & { address?: string | null; taxNumber?: string | null };
+  branch: Branch & { phone?: string | null; address?: string | null };
+  receiptSettings: ReceiptSettings;
+  invoice: Pick<Invoice, "id" | "invoiceNumber" | "status" | "createdAt" | "subtotal" | "discountTotal" | "taxTotal" | "total" | "paidAmount" | "changeAmount" | "notes">;
+  items: InvoiceItem[];
+  payments: Payment[];
+  customer?: Invoice["customer"];
+  cashier?: Invoice["cashier"];
+  totals: Pick<Invoice, "subtotal" | "discountTotal" | "taxTotal" | "total" | "paidAmount" | "changeAmount">;
+  returnStatus?: Invoice["status"] | null;
+  returns?: Return[];
+  generatedAt: string;
+};
+
+export type BarcodeLabelProduct = {
+  id: Id;
+  name: string;
+  barcode: string;
+  sellingPrice: number;
+  copies: number;
+};
+
+export type BarcodeLabelPayload = {
+  settings: BarcodeLabelSettings;
+  products: BarcodeLabelProduct[];
+};
+
 export type CashierShift = {
   id: Id;
   storeId: Id;

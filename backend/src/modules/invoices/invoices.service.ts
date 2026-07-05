@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
+import { SettingsService } from "../settings/settings.service";
 import { GetInvoicesQueryDto } from "./dto/get-invoices-query.dto";
 
 const invoiceInclude = {
@@ -21,7 +22,10 @@ const invoiceInclude = {
 
 @Injectable()
 export class InvoicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {}
 
   async list(user: AuthenticatedUser, query: GetInvoicesQueryDto) {
     const storeId = this.requireStore(user);
@@ -62,6 +66,70 @@ export class InvoicesService {
     if (!invoice) throw new NotFoundException("Invoice not found.");
     if (!this.canViewAll(user) && invoice.cashierId !== user.id) throw new ForbiddenException("Cannot view this invoice.");
     return this.serialize(invoice);
+  }
+
+  async getReceipt(user: AuthenticatedUser, id: string) {
+    if (!user.permissions.includes("invoices.view") && !user.permissions.includes("printing.receipts") && !user.isSuperAdmin) {
+      throw new ForbiddenException("Insufficient permissions.");
+    }
+    const storeId = this.requireStore(user);
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+      include: {
+        ...invoiceInclude,
+        store: true,
+      },
+    });
+    if (!invoice || invoice.storeId !== storeId) throw new NotFoundException("Invoice not found.");
+    if (!this.canViewAll(user) && invoice.cashierId !== user.id) throw new ForbiddenException("Cannot view this invoice.");
+
+    const receiptSettings = await this.settingsService.getReceiptSettings(user, invoice.branchId);
+    const serialized = this.serialize(invoice);
+
+    return {
+      store: {
+        id: invoice.store.id,
+        name: invoice.store.name,
+        phone: invoice.store.phone,
+        address: invoice.store.legalName,
+        taxNumber: invoice.store.taxNumber,
+      },
+      branch: {
+        id: invoice.branch.id,
+        name: invoice.branch.name,
+        phone: invoice.branch.phone,
+        address: invoice.branch.address,
+      },
+      receiptSettings,
+      invoice: {
+        id: serialized.id,
+        invoiceNumber: serialized.invoiceNumber,
+        status: serialized.status,
+        createdAt: serialized.createdAt,
+        subtotal: serialized.subtotal,
+        discountTotal: serialized.discountTotal,
+        taxTotal: serialized.taxTotal,
+        total: serialized.total,
+        paidAmount: serialized.paidAmount,
+        changeAmount: serialized.changeAmount,
+        notes: serialized.notes,
+      },
+      items: serialized.items,
+      payments: serialized.payments,
+      customer: serialized.customer,
+      cashier: serialized.cashier,
+      totals: {
+        subtotal: serialized.subtotal,
+        discountTotal: serialized.discountTotal,
+        taxTotal: serialized.taxTotal,
+        total: serialized.total,
+        paidAmount: serialized.paidAmount,
+        changeAmount: serialized.changeAmount,
+      },
+      returnStatus: serialized.status === "REFUNDED" || serialized.status === "PARTIALLY_REFUNDED" ? serialized.status : null,
+      returns: serialized.returns,
+      generatedAt: new Date().toISOString(),
+    };
   }
 
   private requireStore(user: AuthenticatedUser) {

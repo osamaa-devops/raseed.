@@ -63,6 +63,11 @@ const permissions = [
   "purchase_orders.receive",
   "subscription.view",
   "subscription.request_upgrade",
+  "settings.receipt.view",
+  "settings.receipt.update",
+  "printing.receipts",
+  "printing.barcodes",
+  "products.generate_barcode",
   "users.manage",
   "settings.manage",
   "activity_logs.view",
@@ -141,13 +146,19 @@ const rolePermissions: Record<string, string[]> = {
     "purchase_orders.update",
     "purchase_orders.cancel",
     "purchase_orders.receive",
+    "settings.receipt.view",
+    "settings.receipt.update",
+    "printing.receipts",
+    "printing.barcodes",
+    "products.generate_barcode",
     "users.manage",
     "activity_logs.view",
     "subscription.view",
   ],
-  cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay", "suppliers.view"],
+  cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "printing.receipts", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay", "suppliers.view"],
   inventory: [
     "products.view",
+    "products.generate_barcode",
     "categories.view",
     "suppliers.view",
     "purchase_orders.view",
@@ -158,6 +169,7 @@ const rolePermissions: Record<string, string[]> = {
     "inventory.remove_stock",
     "inventory.view_movements",
     "inventory.view_alerts",
+    "printing.barcodes",
   ],
 };
 
@@ -472,6 +484,50 @@ async function main() {
       isMain: true,
       isDefault: true,
       status: "ACTIVE",
+    },
+  });
+
+  const existingReceiptSettings = await prisma.receiptSettings.findFirst({ where: { storeId: store.id, branchId: null } });
+  if (existingReceiptSettings) {
+    await prisma.receiptSettings.update({
+      where: { id: existingReceiptSettings.id },
+      data: {
+        storeName: "ماركت المدينة",
+        storePhone: store.phone,
+        storeAddress: "القاهرة",
+        receiptFooter: "شكراً لتعاملكم معنا",
+        paperSize: "MM_80",
+      },
+    });
+  } else {
+    await prisma.receiptSettings.create({
+      data: {
+        storeId: store.id,
+        storeName: "ماركت المدينة",
+        storePhone: store.phone,
+        storeAddress: "القاهرة",
+        receiptFooter: "شكراً لتعاملكم معنا",
+        paperSize: "MM_80",
+      },
+    });
+  }
+
+  await prisma.barcodeLabelSettings.upsert({
+    where: { storeId: store.id },
+    update: {
+      labelSize: "MEDIUM",
+      showProductName: true,
+      showPrice: true,
+      showBarcodeText: true,
+      columns: 3,
+    },
+    create: {
+      storeId: store.id,
+      labelSize: "MEDIUM",
+      showProductName: true,
+      showPrice: true,
+      showBarcodeText: true,
+      columns: 3,
     },
   });
 

@@ -32,9 +32,12 @@
 - Purchase-order receiving now increases inventory stock and supplier balance in one transaction.
 - POS invoices can optionally link to a customer; credit sale is deferred.
 - Subscription plans, subscription payments, and super-admin CRUD now exist.
+- Receipt settings and barcode label settings now exist.
+- Product barcode generation and barcode label payloads now exist.
+- Invoice receipt payloads now exist for browser-based printing.
 - Do not add advanced return approvals/cancellations, loyalty, coupons, offers, advanced accounting, or PDF/Excel exports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
-- Resolve Prisma migration history for `20260705093000_subscriptions_saas_admin` with explicit approval if this local database will continue using Prisma migrate tracking.
+- Prisma migration history is currently healthy through `20260705120000_receipts_barcodes`; run Prisma migrate commands with local PostgreSQL access when working inside a restricted sandbox.
 
 ## Frontend
 
@@ -47,12 +50,15 @@
 - Products and categories pages now use the backend API.
 - Inventory page now uses real backend stock, movement, and alert APIs.
 - POS, shifts, and sales/invoices pages now use real backend APIs.
+- POS and sales/invoices pages now show receipt previews and browser print buttons.
 - Returns page now uses real backend return/refund APIs.
 - Expenses, dashboard, reports, and end-of-day closing pages now use real backend APIs.
 - Customers and debts page now uses real backend APIs.
 - Suppliers page now uses real backend APIs.
 - Purchase Orders page now uses real backend APIs for creating, sending, cancelling, and receiving purchase orders.
 - POS supports optional customer selection for invoice linking.
+- Products page now supports barcode generation, product selection, barcode label preview, and browser printing.
+- Settings page now includes receipt settings, barcode label settings, and a hardware placeholder for future desktop device control.
 - Keep loyalty, AI, and external billing-provider services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
@@ -61,7 +67,8 @@
 - Authentication
 - Product/category import and bulk editing
 - Inventory transfer workflow
-- Receipt printing polish
+- Receipt printing polish beyond current browser print support
+- Electron silent printing and advanced hardware settings
 - Mixed-payment UX polish
 - Offline POS queue
 - Return approvals and cancellation workflow

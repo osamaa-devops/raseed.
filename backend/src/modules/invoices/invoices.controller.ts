@@ -24,6 +24,11 @@ export class InvoicesController {
     return this.invoicesService.getByNumber(user, invoiceNumber);
   }
 
+  @Get(":id/receipt")
+  getReceipt(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {
+    return this.invoicesService.getReceipt(user, id);
+  }
+
   @RequirePermissions("invoices.view")
   @Get(":id")
   get(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {

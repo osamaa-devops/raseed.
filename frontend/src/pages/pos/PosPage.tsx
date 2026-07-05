@@ -5,13 +5,16 @@ import { EmptyState } from "../../components/feedback/EmptyState";
 import { Modal } from "../../components/feedback/Modal";
 import { SelectInput, TextInput } from "../../components/forms/FormControls";
 import { ProductTile } from "../../components/pos/ProductTile";
+import { PrintButton } from "../../components/printing/PrintButton";
+import { ReceiptPreview } from "../../components/printing/ReceiptPreview";
 import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { posService } from "../../services/posService";
 import { customersService } from "../../services/customersService";
 import { productsService } from "../../services/productsService";
 import { shiftsService } from "../../services/shiftsService";
-import type { CashierShift, Customer, HeldOrder, Invoice, Payment, Product } from "../../types";
+import { receiptService } from "../../services/receiptService";
+import type { CashierShift, Customer, HeldOrder, Invoice, Payment, Product, ReceiptPayload } from "../../types";
 
 type CartItem = { product: Product; quantity: number; discount: number };
 
@@ -21,6 +24,7 @@ export function PosPage() {
   const canSell = hasPermission("pos.sell");
   const canHold = hasPermission("pos.hold_order");
   const canReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
+  const canPrintReceipts = hasPermission("printing.receipts") || hasPermission("invoices.print");
   const canViewCustomers = hasPermission("customers.view");
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -38,6 +42,7 @@ export function PosPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [receiptPayload, setReceiptPayload] = useState<ReceiptPayload | null>(null);
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.product.sellingPrice * item.quantity, 0), [cart]);
   const itemDiscount = useMemo(() => cart.reduce((sum, item) => sum + item.discount, 0), [cart]);
@@ -98,6 +103,7 @@ export function PosPage() {
         invoiceDiscount,
       });
       setInvoice(created);
+      setReceiptPayload(await receiptService.getInvoiceReceipt(created.id));
       setCart([]);
       setInvoiceDiscount(0);
       setSelectedCustomer(null);
@@ -130,6 +136,21 @@ export function PosPage() {
       return product ? { product, quantity: item.quantity, discount: item.discount ?? 0 } : null;
     }).filter(Boolean) as CartItem[];
     setCart(next);
+  };
+
+  const openReceipt = async (targetInvoice: Invoice) => {
+    setError(null);
+    try {
+      setInvoice(targetInvoice);
+      setReceiptPayload(await receiptService.getInvoiceReceipt(targetInvoice.id));
+    } catch (receiptError) {
+      setError(receiptError instanceof Error ? receiptError.message : "تعذر تحميل إيصال الفاتورة");
+    }
+  };
+
+  const closeReceipt = () => {
+    setInvoice(null);
+    setReceiptPayload(null);
   };
 
   if (!hasPermission("pos.access")) {
@@ -173,6 +194,7 @@ export function PosPage() {
                   <span>{formatMoney(recent.total)}</span>
                 </div>
                 {canReturn && recent.status !== "REFUNDED" && <AppButton variant="ghost" icon={RotateCcw} onClick={() => goToReturn(recent.invoiceNumber)}>مرتجع</AppButton>}
+                {canPrintReceipts && <AppButton variant="ghost" icon={Printer} onClick={() => void openReceipt(recent)}>طباعة</AppButton>}
               </div>
             ))}
           </AppCard>
@@ -239,14 +261,14 @@ export function PosPage() {
         </div>
       </AppCard>
 
-      <Modal open={Boolean(invoice)} title="تم إنشاء الفاتورة" onClose={() => setInvoice(null)}>
+      <Modal open={Boolean(invoice)} title="تم إنشاء الفاتورة" onClose={closeReceipt}>
         {invoice && (
           <div className="space-y-3 text-sm">
-            <div className="rounded-lg bg-muted p-3"><b>{invoice.invoiceNumber}</b></div>
-            {invoice.customer && <div className="rounded-lg bg-muted p-3">العميل: {invoice.customer.name} - {invoice.customer.phone}</div>}
-            {invoice.items?.map((item) => <div key={item.id} className="flex justify-between"><span>{item.productName} x{item.quantity}</span><span>{formatMoney(item.lineTotal)}</span></div>)}
-            <div className="border-t border-border pt-3 text-lg font-bold">الإجمالي: {formatMoney(invoice.total)}</div>
-            <AppButton icon={Printer} onClick={() => window.print()}>طباعة</AppButton>
+            {receiptPayload ? <ReceiptPreview payload={receiptPayload} /> : <div className="rounded-lg bg-muted p-3"><b>{invoice.invoiceNumber}</b></div>}
+            <div className="flex flex-wrap justify-end gap-2">
+              {canPrintReceipts && <PrintButton label="طباعة الفاتورة" disabled={!receiptPayload} />}
+              <AppButton variant="outline" onClick={closeReceipt}>بيع جديد</AppButton>
+            </div>
           </div>
         )}
       </Modal>

@@ -49,6 +49,8 @@ export const productsService = {
     apiRequest<Product>(`/products/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
   updateProductStatus: (id: string, status: Product["status"]) =>
     apiRequest<Product>(`/products/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  generateBarcode: (id: string, force = false) =>
+    apiRequest<{ productId: string; barcode: string }>(`/products/${id}/generate-barcode`, { method: "POST", body: JSON.stringify({ force }) }),
   deleteProduct: (id: string) =>
     apiRequest<{ success: boolean }>(`/products/${id}`, { method: "DELETE" }),
 };

@@ -8,8 +8,10 @@ import { DataTable } from "../../components/tables/DataTable";
 import { AppButton } from "../../components/ui/AppButton";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { PrintButton } from "../../components/printing/PrintButton";
+import { ReceiptPreview } from "../../components/printing/ReceiptPreview";
 import { invoicesService } from "../../services/invoicesService";
-import type { Invoice, Payment } from "../../types";
+import type { Invoice, Payment, ReceiptPayload } from "../../types";
 
 const paymentLabels: Record<Payment["method"], string> = {
   CASH: "نقدي",
@@ -20,12 +22,14 @@ const paymentLabels: Record<Payment["method"], string> = {
 export function SalesInvoicesPage() {
   const { hasPermission } = useAuth();
   const canCreateReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
+  const canPrintReceipts = hasPermission("printing.receipts") || hasPermission("invoices.print");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<Payment["method"] | "">("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [receiptPayload, setReceiptPayload] = useState<ReceiptPayload | null>(null);
 
   const load = async () => {
     setError(null);
@@ -40,6 +44,17 @@ export function SalesInvoicesPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  const openDetails = async (invoice: Invoice) => {
+    setSelected(invoice);
+    setReceiptPayload(null);
+    if (!canPrintReceipts && !hasPermission("invoices.view")) return;
+    try {
+      setReceiptPayload(await invoicesService.getInvoiceReceipt(invoice.id));
+    } catch (receiptError) {
+      setError(receiptError instanceof Error ? receiptError.message : "تعذر تحميل إيصال الفاتورة");
+    }
+  };
 
   return (
     <div>
@@ -72,34 +87,23 @@ export function SalesInvoicesPage() {
               <td className="px-4 py-3"><StatusBadge label={invoice.status === "PAID" ? "مدفوعة" : invoice.status} tone={invoice.status === "PAID" ? "success" : "warning"} /></td>
               <td className="px-4 py-3">
                 <div className="flex gap-2">
-                  <AppButton variant="outline" icon={Eye} onClick={() => setSelected(invoice)}>عرض</AppButton>
+                  <AppButton variant="outline" icon={Eye} onClick={() => void openDetails(invoice)}>عرض</AppButton>
                   {canCreateReturn && invoice.status !== "REFUNDED" && <AppButton variant="ghost" icon={RotateCcw} onClick={() => goToReturn(invoice.invoiceNumber)}>مرتجع</AppButton>}
-                  <AppButton variant="ghost" icon={Printer} onClick={() => window.print()}>طباعة</AppButton>
+                  {canPrintReceipts && <AppButton variant="ghost" icon={Printer} onClick={() => void openDetails(invoice)}>طباعة</AppButton>}
                 </div>
               </td>
             </tr>
           )}
         />
       )}
-      <Modal open={Boolean(selected)} title="تفاصيل الفاتورة" onClose={() => setSelected(null)}>
+      <Modal open={Boolean(selected)} title="تفاصيل الفاتورة" onClose={() => { setSelected(null); setReceiptPayload(null); }}>
         {selected && (
           <div className="space-y-3 text-sm">
-            <div className="rounded-lg bg-muted p-3 font-bold">{selected.invoiceNumber}</div>
-            {selected.customer && <div className="rounded-lg bg-muted p-3">العميل: {selected.customer.name} - {selected.customer.phone}</div>}
-            {selected.items?.map((item) => (
-              <div key={item.id} className="border-b border-border pb-2">
-                <div className="flex justify-between">
-                  <span>{item.productName} x{item.quantity}</span>
-                  <span>{formatMoney(item.lineTotal)}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">مرتجع: {item.returnedQuantity ?? 0} - متاح للإرجاع: {item.returnableQuantity ?? item.quantity}</p>
-              </div>
-            ))}
-            <div className="flex justify-between"><span>الخصم</span><span>{formatMoney(selected.discountTotal)}</span></div>
-            <div className="flex justify-between"><span>المدفوع</span><span>{formatMoney(selected.paidAmount)}</span></div>
-            <div className="text-lg font-bold">الإجمالي: {formatMoney(selected.total)}</div>
-            {canCreateReturn && selected.status !== "REFUNDED" && <AppButton icon={RotateCcw} onClick={() => goToReturn(selected.invoiceNumber)}>إنشاء مرتجع</AppButton>}
-            <AppButton icon={Printer} onClick={() => window.print()}>طباعة</AppButton>
+            {receiptPayload ? <ReceiptPreview payload={receiptPayload} /> : <div className="rounded-lg bg-muted p-3 font-bold">{selected.invoiceNumber}</div>}
+            <div className="flex flex-wrap justify-end gap-2">
+              {canCreateReturn && selected.status !== "REFUNDED" && <AppButton icon={RotateCcw} onClick={() => goToReturn(selected.invoiceNumber)}>إنشاء مرتجع</AppButton>}
+              {canPrintReceipts && <PrintButton label="طباعة الإيصال" disabled={!receiptPayload} />}
+            </div>
           </div>
         )}
       </Modal>

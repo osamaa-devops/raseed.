@@ -147,11 +147,15 @@ Implemented in this foundation step:
 - SaaS subscription plans, subscription payments, owner subscription visibility, and subscription-based access enforcement
 - Super admin overview, stores, plans, subscriptions, and subscription payments APIs
 - Frontend super admin dashboard, stores, plans, payments, and owner subscription billing pages integrated with the backend API
+- Browser-based receipt printing with per-store/branch receipt settings
+- Product barcode generation and browser-printable barcode label sheets
+- Settings page sections for receipts, barcode labels, and future hardware setup
 
 Not implemented yet:
 
 - Advanced return approvals/cancellations
 - PDF/Excel export
+- Electron desktop, silent printing, and advanced hardware control
 - Advanced accounting and tax redistribution
 - Credit sale / partially paid invoice workflow
 - Loyalty, coupons, and offers
@@ -203,6 +207,20 @@ Products and categories are the first real store-owned business modules. Every r
 
 Category permissions use `categories.view`, `categories.create`, `categories.update`, and `categories.delete`.
 Product permissions use `products.view`, `products.create`, `products.update`, and `products.delete`.
+
+Additional printing/catalog endpoints:
+
+- `POST /api/products/:id/generate-barcode`
+- `POST /api/products/barcode-labels`
+- `GET /api/settings/receipt`
+- `PATCH /api/settings/receipt`
+- `GET /api/settings/barcode-labels`
+- `PATCH /api/settings/barcode-labels`
+- `GET /api/invoices/:id/receipt`
+
+Receipt and label printing use normal browser print preview and print CSS. Silent printing, cash drawer integration, barcode printer drivers, scales, and other direct hardware controls are reserved for the future Electron desktop app.
+
+Migration note: if Prisma reports a blank `Schema engine error` while PostgreSQL is healthy, confirm whether the command is running inside a restricted sandbox that cannot connect to `127.0.0.1:5432`. The receipt/barcode migration was applied normally with Prisma once local database access was allowed; no manual SQL or database reset was used.
 
 ## Inventory Endpoints
 

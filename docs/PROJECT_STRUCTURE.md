@@ -47,6 +47,7 @@ frontend/src
 │   ├── forms
 │   ├── navigation
 │   ├── pos
+│   ├── printing
 │   ├── tables
 │   ├── theme
 │   └── ui
@@ -92,6 +93,7 @@ Current state:
 - `frontend/src/pages` contains route-level page modules for every current Raseed screen.
 - `frontend/src/components/ui` contains generated reusable UI primitives.
 - `frontend/src/components/navigation` contains the dashboard and super-admin navigation.
+- `frontend/src/components/printing` contains reusable receipt previews, printable receipts, barcode labels, label sheets, and print buttons.
 - `frontend/src/styles` contains Arabic RTL, Tailwind, and light/dark theme foundations.
 - `frontend/src/data/demo` contains static UI preview data.
 - `frontend/src/services` contains API clients and route-level service modules.
@@ -102,6 +104,9 @@ Current state:
 - `frontend/src/services/posService.ts` integrates sale creation, recent invoices, and held orders.
 - `frontend/src/services/shiftsService.ts` integrates cashier shift open/close/history.
 - `frontend/src/services/invoicesService.ts` integrates invoice listing and details.
+- `frontend/src/services/receiptService.ts` integrates receipt settings and invoice receipt payloads.
+- `frontend/src/services/barcodeService.ts` integrates barcode generation, barcode label settings, and label payloads.
+- `frontend/src/services/settingsService.ts` integrates receipt and barcode-label settings forms.
 - `frontend/src/services/returnsService.ts` integrates returns and refunds.
 - `frontend/src/services/expensesService.ts` integrates expenses CRUD.
 - `frontend/src/services/dashboardService.ts` integrates the owner dashboard overview.
@@ -228,6 +233,8 @@ Current backend implementation:
 - Supplier models: `Supplier` and `SupplierTransaction`
 - Purchase models: `PurchaseOrder` and `PurchaseOrderItem`
 - Receiving flow: purchase-order receive updates inventory stock, purchase movements, optional batches, purchase-order status, and supplier balance transactionally.
+- Receipt settings, barcode label settings, invoice receipt payloads, product barcode generation, and barcode label payload APIs support browser print workflows.
+- Receipt/barcode migration verification requires Prisma CLI access to the local PostgreSQL port; a restricted sandbox can surface this as a blank schema-engine error even when the database and migration files are healthy.
 - `PATCH /api/users/:id/status`
 - `GET /api/users/:id/permissions`
 - `GET /api/stores/me`

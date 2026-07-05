@@ -6,6 +6,8 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../../common/guards/permissions.guard";
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { CreateProductDto } from "./dto/create-product.dto";
+import { BarcodeLabelsDto } from "./dto/barcode-labels.dto";
+import { GenerateBarcodeDto } from "./dto/generate-barcode.dto";
 import { ListProductsDto } from "./dto/list-products.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { ProductsService } from "./products.service";
@@ -31,6 +33,18 @@ export class ProductsController {
   @Post()
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateProductDto) {
     return this.productsService.create(user, dto);
+  }
+
+  @RequirePermissions("printing.barcodes")
+  @Post("barcode-labels")
+  getBarcodeLabels(@CurrentUser() user: AuthenticatedUser, @Body() dto: BarcodeLabelsDto) {
+    return this.productsService.getBarcodeLabels(user, dto);
+  }
+
+  @RequirePermissions("products.generate_barcode")
+  @Post(":id/generate-barcode")
+  generateBarcode(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string, @Body() dto: GenerateBarcodeDto) {
+    return this.productsService.generateBarcode(user, id, dto.force);
   }
 
   @RequirePermissions("products.update")

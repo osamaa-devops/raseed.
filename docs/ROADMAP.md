@@ -28,11 +28,11 @@
 ## Phase 4: Retail Core Data Model
 
 - Products and categories master data. Completed: first store-scoped CRUD foundation.
-- Product/category polish: import/export, barcode validation helpers, richer units, and catalog test coverage.
+- Product/category polish: barcode generation and label printing completed for browser demo. Remaining: import/export, barcode validation helpers, richer units, and catalog test coverage.
 - Inventory stock balances and stock movements. Completed: branch-level balances, add/remove/adjust flows, low-stock alerts, expiry alerts, and movement history.
 - Inventory polish: automated tests, stock transfer workflow, and later POS-safe stock consumption. Completed: purchase receiving increases stock through `PURCHASE` movements.
 - POS sessions, cashier shifts, paid invoices, payments, held orders, and stock decrement on sale. Completed: first real end-to-end POS sale flow.
-- POS polish: receipt layout, barcode focus flow, mixed-payment UX, offline queue, and automated sale rollback tests.
+- POS polish: receipt layout completed for browser print. Remaining: barcode focus flow, mixed-payment UX, offline queue, and automated sale rollback tests.
 - Returns and refunds. Completed: partial/full returns, returned quantities, refund payment records, optional restock, and `RETURN` inventory movements.
 - Returns polish: approval workflow, cancellation rules, receipt layout, and accounting-grade tax/discount redistribution.
 - Suppliers and purchase orders. Completed: supplier profiles, balances, payments, adjustments, purchase-order draft/send/cancel, partial/full receiving, and inventory integration.
@@ -65,6 +65,7 @@
 ## Phase 7: Desktop And Offline
 
 - Electron desktop shell.
+- Silent receipt/barcode printing and advanced device settings.
 - Local SQLite database.
 - Sync queue.
 - Conflict handling.
@@ -74,6 +75,7 @@
 
 - Tests.
 - CI checks.
+- Keep migration verification in CI outside localhost-restricted sandboxes so Prisma schema-engine diagnostics remain visible.
 - Security hardening.
 - Backups.
 - Monitoring.

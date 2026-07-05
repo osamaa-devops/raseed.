@@ -1,4 +1,4 @@
-import type { Invoice, Payment } from "../types";
+import type { Invoice, Payment, ReceiptPayload } from "../types";
 import { apiRequest } from "./apiClient";
 
 type ListResponse<T> = {
@@ -33,4 +33,5 @@ export const invoicesService = {
     apiRequest<ListResponse<Invoice>>(`/invoices${toQuery(params)}`),
   getInvoice: (id: string) => apiRequest<Invoice>(`/invoices/${id}`),
   getInvoiceByNumber: (invoiceNumber: string) => apiRequest<Invoice>(`/invoices/by-number/${invoiceNumber}`),
+  getInvoiceReceipt: (id: string) => apiRequest<ReceiptPayload>(`/invoices/${id}/receipt`),
 };

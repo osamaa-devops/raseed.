@@ -24,6 +24,7 @@ import { SuppliersModule } from "./modules/suppliers/suppliers.module";
 import { PurchaseOrdersModule } from "./modules/purchase-orders/purchase-orders.module";
 import { SubscriptionModule } from "./modules/subscription/subscription.module";
 import { AdminModule } from "./modules/admin/admin.module";
+import { SettingsModule } from "./modules/settings/settings.module";
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { AdminModule } from "./modules/admin/admin.module";
     PurchaseOrdersModule,
     SubscriptionModule,
     AdminModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}
