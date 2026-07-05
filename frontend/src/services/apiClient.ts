@@ -26,6 +26,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     }
     const errorBody = await response.json().catch(() => null);
     const message = errorBody?.error?.message ?? errorBody?.message ?? `API request failed: ${response.status}`;
+    if (response.status === 403 && typeof message === "string" && message.includes("انتهى اشتراك المتجر أو تم إيقافه")) {
+      window.dispatchEvent(new CustomEvent("raseed:subscription-blocked", { detail: { message } }));
+      if (!window.location.pathname.startsWith("/super-admin") && window.location.pathname !== "/subscription-billing") {
+        window.location.assign("/subscription-billing");
+      }
+    }
     throw new Error(Array.isArray(message) ? message.join(", ") : message);
   }
 

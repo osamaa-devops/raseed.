@@ -8,7 +8,7 @@ export function ProtectedRoute({ superAdminOnly = false }: { superAdminOnly?: bo
     return <Navigate to="/login" replace />;
   }
 
-  if (superAdminOnly && auth?.role?.name !== "super_admin") {
+  if (superAdminOnly && !auth?.permissions.includes("admin.platform_access")) {
     return <Navigate to="/dashboard" replace />;
   }
 

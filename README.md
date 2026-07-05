@@ -10,7 +10,7 @@ This repository is now organized as a production-oriented full-stack workspace.
 - Backend: NestJS, TypeScript
 - Database: PostgreSQL
 - ORM: Prisma
-- Auth later: JWT and role-based access control
+- Auth: JWT and role-based access control
 - Desktop later: Electron
 - Offline later: local SQLite plus sync queue
 
@@ -144,6 +144,9 @@ Implemented in this foundation step:
 - Real suppliers with balances, payments, adjustments, and transaction history
 - Purchase orders with draft/send/cancel flows and transactional receiving into inventory
 - Frontend Suppliers and Purchase Orders pages integrated with the backend API
+- SaaS subscription plans, subscription payments, owner subscription visibility, and subscription-based access enforcement
+- Super admin overview, stores, plans, subscriptions, and subscription payments APIs
+- Frontend super admin dashboard, stores, plans, payments, and owner subscription billing pages integrated with the backend API
 
 Not implemented yet:
 
@@ -152,7 +155,34 @@ Not implemented yet:
 - Advanced accounting and tax redistribution
 - Credit sale / partially paid invoice workflow
 - Loyalty, coupons, and offers
-- Subscription billing
+- Online billing provider integration and automated invoicing
+
+## Subscription Endpoints
+
+- `GET /api/subscription/me`
+- `GET /api/subscription/usage`
+
+Store access is now subscription-aware. Non-super-admin store users are blocked from most protected routes when the store or current subscription is suspended, cancelled, expired, or missing.
+
+## Super Admin SaaS Endpoints
+
+- `GET /api/admin/overview`
+- `GET /api/admin/stores`
+- `GET /api/admin/stores/:id`
+- `POST /api/admin/stores`
+- `PATCH /api/admin/stores/:id`
+- `PATCH /api/admin/stores/:id/status`
+- `GET /api/admin/plans`
+- `GET /api/admin/plans/:id`
+- `POST /api/admin/plans`
+- `PATCH /api/admin/plans/:id`
+- `PATCH /api/admin/plans/:id/status`
+- `GET /api/admin/subscriptions`
+- `GET /api/admin/subscriptions/:id`
+- `PATCH /api/admin/subscriptions/:id`
+- `POST /api/admin/subscriptions/:id/renew`
+- `GET /api/admin/subscription-payments`
+- `POST /api/admin/subscription-payments`
 
 ## Catalog Endpoints
 

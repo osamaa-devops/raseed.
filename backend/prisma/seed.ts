@@ -61,15 +61,30 @@ const permissions = [
   "purchase_orders.update",
   "purchase_orders.cancel",
   "purchase_orders.receive",
+  "subscription.view",
+  "subscription.request_upgrade",
   "users.manage",
   "settings.manage",
   "activity_logs.view",
   "admin.platform_access",
+  "admin.stores.view",
+  "admin.stores.create",
+  "admin.stores.update",
+  "admin.stores.suspend",
+  "admin.stores.activate",
+  "admin.plans.view",
+  "admin.plans.create",
+  "admin.plans.update",
+  "admin.subscriptions.view",
+  "admin.subscriptions.update",
+  "admin.payments.view",
+  "admin.payments.create",
+  "admin.usage.view",
 ];
 
 const rolePermissions: Record<string, string[]> = {
   super_admin: permissions,
-  owner: permissions.filter((permission) => permission !== "admin.platform_access"),
+  owner: permissions.filter((permission) => !permission.startsWith("admin.")).concat(["subscription.view", "subscription.request_upgrade"]),
   manager: [
     "dashboard.view",
     "pos.access",
@@ -128,6 +143,7 @@ const rolePermissions: Record<string, string[]> = {
     "purchase_orders.receive",
     "users.manage",
     "activity_logs.view",
+    "subscription.view",
   ],
   cashier: ["dashboard.view", "pos.access", "pos.sell", "pos.hold_order", "pos.view_recent_invoices", "products.view", "categories.view", "sales.view", "invoices.view", "invoices.print", "invoices.refund", "shifts.open", "shifts.close", "shifts.view", "returns.view", "returns.create", "closing.view", "customers.view", "debts.view", "debts.add", "debts.pay", "suppliers.view"],
   inventory: [
@@ -290,27 +306,119 @@ async function main() {
     await upsertPermission(key);
   }
 
-  const starterPlan = await prisma.subscriptionPlan.upsert({
-    where: { code: "starter" },
-    update: {},
-    create: {
-      code: "starter",
-      name: "Starter",
-      monthlyPrice: 199,
+  const basicPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: "basic" },
+    update: {
+      name: "Basic",
+      description: "خطة مناسبة للمتاجر الصغيرة بفرع واحد.",
+      priceMonthly: 500,
+      priceYearly: 5400,
+      maxUsers: 2,
       maxBranches: 1,
-      maxUsers: 3,
+      maxProducts: 500,
+      maxInvoicesPerMonth: 1000,
+      features: { support: "business_hours", reports: true, inventory: true },
+      status: "ACTIVE",
+    },
+    create: {
+      code: "basic",
+      name: "Basic",
+      description: "خطة مناسبة للمتاجر الصغيرة بفرع واحد.",
+      priceMonthly: 500,
+      priceYearly: 5400,
+      maxUsers: 2,
+      maxBranches: 1,
+      maxProducts: 500,
+      maxInvoicesPerMonth: 1000,
+      features: { support: "business_hours", reports: true, inventory: true },
+      status: "ACTIVE",
+    },
+  });
+
+  const proPlan = await prisma.subscriptionPlan.upsert({
+    where: { code: "pro" },
+    update: {
+      name: "Pro",
+      description: "الخطة المناسبة لمعظم المتاجر النشطة متعددة المستخدمين.",
+      priceMonthly: 900,
+      priceYearly: 9720,
+      maxUsers: 5,
+      maxBranches: 2,
+      maxProducts: 3000,
+      maxInvoicesPerMonth: 5000,
+      features: { support: "priority", reports: true, inventory: true, purchaseOrders: true },
+      status: "ACTIVE",
+    },
+    create: {
+      code: "pro",
+      name: "Pro",
+      description: "الخطة المناسبة لمعظم المتاجر النشطة متعددة المستخدمين.",
+      priceMonthly: 900,
+      priceYearly: 9720,
+      maxUsers: 5,
+      maxBranches: 2,
+      maxProducts: 3000,
+      maxInvoicesPerMonth: 5000,
+      features: { support: "priority", reports: true, inventory: true, purchaseOrders: true },
+      status: "ACTIVE",
     },
   });
 
   await prisma.subscriptionPlan.upsert({
-    where: { code: "pro" },
-    update: {},
+    where: { code: "business" },
+    update: {
+      name: "Business",
+      description: "خطة موسعة للمتاجر متعددة الفروع والفرق الأكبر.",
+      priceMonthly: 1500,
+      priceYearly: 16200,
+      maxUsers: 15,
+      maxBranches: 5,
+      maxProducts: 10000,
+      maxInvoicesPerMonth: 20000,
+      features: { support: "priority", reports: true, inventory: true, purchaseOrders: true, advancedUsers: true },
+      status: "ACTIVE",
+    },
     create: {
-      code: "pro",
-      name: "Pro",
-      monthlyPrice: 399,
-      maxBranches: 3,
-      maxUsers: 10,
+      code: "business",
+      name: "Business",
+      description: "خطة موسعة للمتاجر متعددة الفروع والفرق الأكبر.",
+      priceMonthly: 1500,
+      priceYearly: 16200,
+      maxUsers: 15,
+      maxBranches: 5,
+      maxProducts: 10000,
+      maxInvoicesPerMonth: 20000,
+      features: { support: "priority", reports: true, inventory: true, purchaseOrders: true, advancedUsers: true },
+      status: "ACTIVE",
+    },
+  });
+
+  await prisma.subscriptionPlan.upsert({
+    where: { code: "enterprise" },
+    update: {
+      name: "Enterprise",
+      description: "خطة مخصصة للسلاسل الكبيرة مع حدود مرتفعة ودعم مخصص.",
+      priceMonthly: 0,
+      priceYearly: 0,
+      maxUsers: 100,
+      maxBranches: 50,
+      maxProducts: 100000,
+      maxInvoicesPerMonth: null,
+      features: { support: "dedicated", reports: true, inventory: true, purchaseOrders: true, customPricing: true },
+      status: "ACTIVE",
+    },
+    create: {
+      code: "enterprise",
+      name: "Enterprise",
+      description: "خطة مخصصة للسلاسل الكبيرة مع حدود مرتفعة ودعم مخصص.",
+      priceMonthly: 0,
+      priceYearly: 0,
+      maxUsers: 100,
+      maxBranches: 50,
+      maxProducts: 100000,
+      maxInvoicesPerMonth: null,
+      features: { support: "dedicated", reports: true, inventory: true, purchaseOrders: true, customPricing: true },
+      status: "ACTIVE",
     },
   });
 
@@ -321,7 +429,7 @@ async function main() {
       ownerName: "محمد ناصر",
       phone: "01000000000",
       email: "owner@raseed.local",
-      status: "TRIAL",
+      status: "ACTIVE",
     },
     create: {
       id: "demo-store-city-market",
@@ -329,7 +437,7 @@ async function main() {
       ownerName: "محمد ناصر",
       phone: "01000000000",
       email: "owner@raseed.local",
-      status: "TRIAL",
+      status: "ACTIVE",
     },
   });
 
@@ -355,14 +463,48 @@ async function main() {
 
   await prisma.subscription.upsert({
     where: { id: "demo-subscription-city-market" },
-    update: { status: "TRIAL", planId: starterPlan.id },
+    update: {
+      status: "ACTIVE",
+      planId: proPlan.id,
+      startDate: new Date("2026-07-01T00:00:00.000Z"),
+      endDate: new Date("2026-08-01T00:00:00.000Z"),
+      trialEndsAt: null,
+      billingCycle: "MONTHLY",
+      amount: 900,
+      notes: "Seeded active Pro subscription",
+    },
     create: {
       id: "demo-subscription-city-market",
       storeId: store.id,
-      planId: starterPlan.id,
-      status: "TRIAL",
+      planId: proPlan.id,
+      status: "ACTIVE",
+      startDate: new Date("2026-07-01T00:00:00.000Z"),
+      endDate: new Date("2026-08-01T00:00:00.000Z"),
+      trialEndsAt: null,
+      billingCycle: "MONTHLY",
+      amount: 900,
+      notes: "Seeded active Pro subscription",
     },
   });
+
+  const demoSubscription = await prisma.subscription.findUniqueOrThrow({ where: { id: "demo-subscription-city-market" } });
+  const existingPayment = await prisma.subscriptionPayment.findFirst({
+    where: { subscriptionId: demoSubscription.id, reference: "SEED-PRO-2026-07" },
+  });
+  if (!existingPayment) {
+    await prisma.subscriptionPayment.create({
+      data: {
+        storeId: store.id,
+        subscriptionId: demoSubscription.id,
+        amount: 900,
+        method: "MANUAL",
+        status: "PAID",
+        paidAt: new Date("2026-07-01T09:00:00.000Z"),
+        reference: "SEED-PRO-2026-07",
+        notes: "دفعة اشتراك تجريبية للخطة Pro",
+      },
+    });
+  }
 
   const superAdminRole = await findOrCreateRole("super_admin", null);
   await syncRolePermissions(superAdminRole.id, rolePermissions.super_admin);

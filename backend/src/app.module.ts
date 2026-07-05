@@ -22,6 +22,8 @@ import { ClosingModule } from "./modules/closing/closing.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { SuppliersModule } from "./modules/suppliers/suppliers.module";
 import { PurchaseOrdersModule } from "./modules/purchase-orders/purchase-orders.module";
+import { SubscriptionModule } from "./modules/subscription/subscription.module";
+import { AdminModule } from "./modules/admin/admin.module";
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { PurchaseOrdersModule } from "./modules/purchase-orders/purchase-orders.
     CustomersModule,
     SuppliersModule,
     PurchaseOrdersModule,
+    SubscriptionModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

@@ -110,7 +110,11 @@ Current state:
 - `frontend/src/services/customersService.ts` integrates customers and debt transactions.
 - `frontend/src/services/suppliersService.ts` integrates suppliers, supplier payments, adjustments, and transaction history.
 - `frontend/src/services/purchaseOrdersService.ts` integrates purchase-order CRUD, send/cancel, and receiving.
-- Advanced admin business integrations such as AI and billing remain placeholders.
+- `frontend/src/services/subscriptionService.ts` integrates owner-facing subscription and usage endpoints.
+- `frontend/src/services/superAdminService.ts` integrates SaaS overview, store management, and subscriptions.
+- `frontend/src/services/plansService.ts` integrates super-admin plan management.
+- `frontend/src/services/subscriptionPaymentsService.ts` integrates super-admin subscription payment management.
+- AI and external billing-provider integrations remain placeholders.
 
 ## Frontend Routes
 
@@ -190,7 +194,7 @@ backend
 │   │   ├── suppliers
 │   │   ├── purchase-orders
 │   │   ├── customers
-│   │   ├── subscriptions
+│   │   ├── subscription
 │   │   ├── admin
 │   │   ├── activity-logs
 │   │   ├── notifications
@@ -232,6 +236,21 @@ Current backend implementation:
 - `GET /api/admin/stores/:id`
 - `POST /api/admin/stores`
 - `PATCH /api/admin/stores/:id/status`
+- `GET /api/subscription/me`
+- `GET /api/subscription/usage`
+- `GET /api/admin/overview`
+- `PATCH /api/admin/stores/:id`
+- `GET /api/admin/plans`
+- `GET /api/admin/plans/:id`
+- `POST /api/admin/plans`
+- `PATCH /api/admin/plans/:id`
+- `PATCH /api/admin/plans/:id/status`
+- `GET /api/admin/subscriptions`
+- `GET /api/admin/subscriptions/:id`
+- `PATCH /api/admin/subscriptions/:id`
+- `POST /api/admin/subscriptions/:id/renew`
+- `GET /api/admin/subscription-payments`
+- `POST /api/admin/subscription-payments`
 - `GET /api/branches`
 - `POST /api/branches`
 - `PATCH /api/branches/:id`

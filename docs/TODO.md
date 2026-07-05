@@ -31,8 +31,10 @@
 - Suppliers, supplier transactions, purchase orders, and purchase order items now exist.
 - Purchase-order receiving now increases inventory stock and supplier balance in one transaction.
 - POS invoices can optionally link to a customer; credit sale is deferred.
+- Subscription plans, subscription payments, and super-admin CRUD now exist.
 - Do not add advanced return approvals/cancellations, loyalty, coupons, offers, advanced accounting, or PDF/Excel exports until their dedicated phases.
 - Expand seed data only when it supports a real workflow being implemented.
+- Resolve Prisma migration history for `20260705093000_subscriptions_saas_admin` with explicit approval if this local database will continue using Prisma migrate tracking.
 
 ## Frontend
 
@@ -51,7 +53,7 @@
 - Suppliers page now uses real backend APIs.
 - Purchase Orders page now uses real backend APIs for creating, sending, cancelling, and receiving purchase orders.
 - POS supports optional customer selection for invoice linking.
-- Keep loyalty, AI, and advanced billing services as placeholders until those backend modules exist.
+- Keep loyalty, AI, and external billing-provider services as placeholders until those backend modules exist.
 - Expand placeholders into full page UX screen by screen.
 
 ## Later Product Areas
@@ -73,7 +75,7 @@
 - AI insights
 - Users and permissions
 - Activity logs
-- Subscription billing
-- SaaS super admin
+- Billing provider integration
+- Subscription invoice/receipt automation
 - Electron desktop
 - Local SQLite offline mode and sync queue

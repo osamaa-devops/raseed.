@@ -1,9 +1,21 @@
 export type Id = string;
 
+export type StoreStatus = "ACTIVE" | "TRIAL" | "SUSPENDED" | "EXPIRED" | "CANCELLED";
+export type SubscriptionStatus = "TRIAL" | "ACTIVE" | "SUSPENDED" | "PAST_DUE" | "CANCELLED" | "EXPIRED";
+export type BillingCycle = "MONTHLY" | "YEARLY" | "TRIAL";
+export type SubscriptionPlanStatus = "ACTIVE" | "INACTIVE";
+export type SubscriptionPaymentMethod = "CASH" | "BANK_TRANSFER" | "WALLET" | "CARD" | "MANUAL";
+export type SubscriptionPaymentStatus = "PAID" | "PENDING" | "FAILED" | "REFUNDED";
+
 export type Store = {
   id: Id;
   name: string;
-  status: "active" | "trial" | "suspended";
+  ownerName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  status: StoreStatus;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Branch = {
@@ -539,12 +551,97 @@ export type AddDebtRequest = { branchId?: Id; amount: number; reason: string; no
 export type PayDebtRequest = { branchId?: Id; amount: number; paymentMethod: Payment["method"]; notes?: string };
 export type AdjustDebtRequest = { branchId?: Id; amount: number; direction: "IN" | "OUT"; reason: string; notes?: string };
 
+export type SubscriptionPlan = {
+  id: Id;
+  name: string;
+  code: string;
+  description?: string | null;
+  priceMonthly: number;
+  priceYearly?: number | null;
+  maxUsers: number;
+  maxBranches: number;
+  maxProducts: number;
+  maxInvoicesPerMonth?: number | null;
+  features?: Record<string, unknown> | null;
+  status: SubscriptionPlanStatus;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { subscriptions: number };
+};
+
+export type SubscriptionPayment = {
+  id: Id;
+  storeId: Id;
+  subscriptionId: Id;
+  amount: number;
+  method: SubscriptionPaymentMethod;
+  status: SubscriptionPaymentStatus;
+  paidAt?: string | null;
+  reference?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  store?: Store;
+  subscription?: Subscription;
+};
+
 export type Subscription = {
   id: Id;
   storeId: Id;
-  planName: string;
-  status: "trial" | "active" | "past_due" | "expired";
-  endsAt?: string;
+  planId: Id;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate?: string | null;
+  trialEndsAt?: string | null;
+  billingCycle: BillingCycle;
+  amount: number;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  plan?: SubscriptionPlan;
+  store?: Store;
+  payments?: SubscriptionPayment[];
+};
+
+export type StoreUsage = {
+  usersCount: number;
+  branchesCount: number;
+  productsCount: number;
+  invoicesThisMonth: number;
+  storage?: number | null;
+  limits: {
+    maxUsers: number;
+    maxBranches: number;
+    maxProducts: number;
+    maxInvoicesPerMonth?: number | null;
+  } | null;
+};
+
+export type AdminOverview = {
+  totalStores: number;
+  activeStores: number;
+  trialStores: number;
+  expiredStores: number;
+  suspendedStores: number;
+  monthlyRecurringRevenue: number;
+  yearlyRecurringRevenue: number;
+  expiringSoonSubscriptions: number;
+  recentStores: Store[];
+  recentPayments: SubscriptionPayment[];
+};
+
+export type AdminStoreListItem = Store & {
+  currentSubscription: Subscription | null;
+  usage: StoreUsage;
+};
+
+export type AdminStoreDetails = Store & {
+  branches: Branch[];
+  currentSubscription: Subscription | null;
+  usersSummary: { total: number; byRole: Record<string, number> };
+  usage: StoreUsage;
+  recentActivity: Array<{ id: Id; action: string; createdAt: string; metadata?: Record<string, unknown> | null }>;
+  recentPayments: SubscriptionPayment[];
 };
 
 export type RaseedNotification = {

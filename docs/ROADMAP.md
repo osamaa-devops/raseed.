@@ -54,11 +54,13 @@
 
 ## Phase 6: SaaS Platform
 
-- Subscription plans.
-- Subscription lifecycle.
-- Tenant administration.
-- SaaS super admin panel.
+- Subscription plans. Completed: plan catalog, limits, lifecycle status, and admin CRUD foundation.
+- Subscription lifecycle. Completed: active, trial, suspended, expired, renewal, payments, and store access enforcement.
+- Tenant administration. Completed: create, update, suspend, reactivate, inspect usage, and view subscription/payment history.
+- SaaS super admin panel. Completed: overview, stores, plans, payments, and owner billing UI foundation.
 - Billing provider integration.
+- Subscription invoicing, receipts, and finance reconciliation polish.
+- Usage-based enforcement and alerts beyond the current visibility layer.
 
 ## Phase 7: Desktop And Offline
 
