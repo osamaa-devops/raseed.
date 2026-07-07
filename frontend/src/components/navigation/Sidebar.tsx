@@ -4,6 +4,7 @@ import { useAuth } from "../../app/providers/AuthProvider";
 import { DemoModeBanner } from "../demo/DemoModeBanner";
 import { isDemoStore } from "../../utils/demo";
 import { dashboardNavGroups } from "./navigationConfig";
+import { canAccessPath } from "../../app/routes/accessControl";
 
 export function Sidebar() {
   const { auth } = useAuth();
@@ -32,7 +33,7 @@ export function Sidebar() {
         {dashboardNavGroups.map((group) => (
           <div key={group.label} className="mb-4">
             <p className="hidden px-5 py-1 text-[11px] font-bold tracking-[0.18em] text-sidebar-foreground/45 xl:block">{group.label}</p>
-            {group.items.map((item) => (
+            {group.items.filter((item) => canAccessPath(auth, item.path)).map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}

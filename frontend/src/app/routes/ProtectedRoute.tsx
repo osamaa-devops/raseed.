@@ -1,7 +1,17 @@
+import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../providers/AuthProvider";
+import { canAccessPath } from "./accessControl";
 
-export function ProtectedRoute({ superAdminOnly = false }: { superAdminOnly?: boolean }) {
+export function ProtectedRoute({
+  superAdminOnly = false,
+  path,
+  children,
+}: {
+  superAdminOnly?: boolean;
+  path?: string;
+  children?: ReactNode;
+}) {
   const { auth, isAuthenticated, isReady } = useAuth();
 
   if (!isReady) {
@@ -20,5 +30,9 @@ export function ProtectedRoute({ superAdminOnly = false }: { superAdminOnly?: bo
     return <Navigate to="/super-admin" replace />;
   }
 
-  return <Outlet />;
+  if (path && !canAccessPath(auth, path)) {
+    return <Navigate to={canAccessPath(auth, "/pos") ? "/pos" : "/dashboard"} replace />;
+  }
+
+  return children ?? <Outlet />;
 }

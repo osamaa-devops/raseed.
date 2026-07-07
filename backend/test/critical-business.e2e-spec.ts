@@ -5,7 +5,9 @@ import { createTestApp } from "./utils/test-app";
 import { authHeader, createRole, createTestCategory, createTestProduct, createTestStore, createTestStock, createUser, login, unique } from "./utils/factories";
 import { prisma } from "./utils/test-db";
 
-describe("critical business module coverage", () => {
+const describeDb = process.env.RASEED_SKIP_DB_TESTS === "1" ? describe.skip : describe;
+
+describeDb("critical business module coverage", () => {
   let app: INestApplication;
 
   beforeAll(async () => {

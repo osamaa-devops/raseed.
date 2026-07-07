@@ -37,8 +37,12 @@ Build commands:
 npm run backend:build
 npm run frontend:build
 npm run desktop:build
-npm run desktop:package
 ```
+
+Notes:
+
+- On Windows, `npm run desktop:build` is the main installer command.
+- On Linux, the same command needs `wine32:i386` if you want to produce `RaseedSetup.exe`.
 
 ## Production database
 

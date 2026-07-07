@@ -5,6 +5,7 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { TextInput } from "../../components/forms/FormControls";
 import { bootstrapService } from "../../services/bootstrapService";
+import { canAccessPath } from "../../app/routes/accessControl";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -22,7 +23,13 @@ export function LoginPage() {
       setError(null);
       try {
         const response = await login(identity, password);
-        navigate(response.role?.name === "super_admin" ? "/super-admin" : "/dashboard");
+        if (response.role?.name === "super_admin") {
+          navigate("/super-admin");
+        } else if (canAccessPath(response, "/pos") && !canAccessPath(response, "/reports") && !canAccessPath(response, "/products")) {
+          navigate("/pos");
+        } else {
+          navigate("/dashboard");
+        }
       } catch (loginError) {
         setError(loginError instanceof Error ? loginError.message : "تعذر تسجيل الدخول");
       }

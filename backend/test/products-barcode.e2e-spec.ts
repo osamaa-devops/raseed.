@@ -4,7 +4,9 @@ import { createTestApp } from "./utils/test-app";
 import { authHeader, createTestCategory, createTestStore, login } from "./utils/factories";
 import { prisma } from "./utils/test-db";
 
-describe("barcode generation", () => {
+const describeDb = process.env.RASEED_SKIP_DB_TESTS === "1" ? describe.skip : describe;
+
+describeDb("barcode generation", () => {
   let app: INestApplication;
 
   beforeAll(async () => {

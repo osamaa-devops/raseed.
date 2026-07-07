@@ -7,6 +7,14 @@ const isWin = process.platform === "win32";
 const npmCmd = isWin ? "npm.cmd" : "npm";
 const electronCmd = path.join(root, "node_modules", ".bin", isWin ? "electron.cmd" : "electron");
 
+function run(command, args) {
+  return spawn(command, args, {
+    cwd: root,
+    stdio: "inherit",
+    shell: false,
+  });
+}
+
 function spawnProcess(command, args, options = {}) {
   return spawn(command, args, {
     cwd: root,
@@ -44,6 +52,12 @@ function waitFor(url, timeoutMs = 180000) {
 }
 
 async function main() {
+  const setup = run(npmCmd, ["run", "local:setup"]);
+  const setupCode = await new Promise((resolve) => setup.on("exit", (code) => resolve(code ?? 1)));
+  if (setupCode !== 0) {
+    process.exit(setupCode);
+  }
+
   const frontend = spawnProcess(npmCmd, ["--prefix", "frontend", "run", "dev"]);
 
   const shutdown = () => {

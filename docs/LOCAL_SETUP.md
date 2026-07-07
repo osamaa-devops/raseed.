@@ -54,8 +54,8 @@ From the repository root:
 
 ```bash
 npm install
-npm run db:migrate
-npm run db:seed
+npm run local:check
+npm run local:setup
 npm run dev
 ```
 
@@ -69,6 +69,12 @@ For the desktop preview shell:
 
 ```bash
 npm run desktop:dev
+```
+
+For a Windows installer build:
+
+```bash
+npm run desktop:build
 ```
 
 Optional Prisma tools:

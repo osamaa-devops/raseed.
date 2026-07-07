@@ -4,7 +4,9 @@ import { createTestApp } from "./utils/test-app";
 import { authHeader, createPlatformAdmin, createTestCategory, createTestProduct, createTestStore, login } from "./utils/factories";
 import { prisma } from "./utils/test-db";
 
-describe("auth, permissions, and tenant isolation", () => {
+const describeDb = process.env.RASEED_SKIP_DB_TESTS === "1" ? describe.skip : describe;
+
+describeDb("auth, permissions, and tenant isolation", () => {
   let app: INestApplication;
 
   beforeAll(async () => {

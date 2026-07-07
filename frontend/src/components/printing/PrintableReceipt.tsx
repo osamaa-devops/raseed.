@@ -44,6 +44,7 @@ export function PrintableReceipt({ payload }: PrintableReceiptProps) {
             <th>الصنف</th>
             <th>كمية</th>
             <th>السعر</th>
+            <th>الخصم</th>
             <th>الإجمالي</th>
           </tr>
         </thead>
@@ -53,6 +54,7 @@ export function PrintableReceipt({ payload }: PrintableReceiptProps) {
               <td>{item.productName}</td>
               <td>{formatQty(item.quantity)}</td>
               <td>{formatMoney(item.unitPrice)}</td>
+              <td>{formatMoney(item.discount)}</td>
               <td>{formatMoney(item.lineTotal)}</td>
             </tr>
           ))}
@@ -70,6 +72,10 @@ export function PrintableReceipt({ payload }: PrintableReceiptProps) {
 
       <section className="receipt-payments">
         <p className="receipt-section-title">تفاصيل الدفع</p>
+        <Row
+          label="طريقة السداد"
+          value={payload.payments.map((payment) => paymentLabels[payment.method]).join(" + ")}
+        />
         {payload.payments.map((payment) => (
           <Row key={payment.id} label={paymentLabels[payment.method]} value={formatMoney(payment.amount)} />
         ))}

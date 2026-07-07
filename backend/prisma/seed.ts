@@ -5,48 +5,105 @@ import { rolePermissions, seedCoreReferenceData } from "../src/bootstrap/bootstr
 const prisma = new PrismaClient();
 
 const demoCategories = [
-  { name: "ألبان", color: "#0f766e", icon: "milk" },
-  { name: "بقالة", color: "#d97706", icon: "package" },
-  { name: "مشروبات", color: "#2563eb", icon: "cup" },
-  { name: "منظفات", color: "#7c3aed", icon: "sparkles" },
-  { name: "معلبات", color: "#dc2626", icon: "archive" },
-  { name: "مجمدات", color: "#0891b2", icon: "snowflake" },
+  { name: "تيشيرتات", color: "#0f766e", icon: "shirt" },
+  { name: "بناطيل", color: "#1d4ed8", icon: "stretch-horizontal" },
+  { name: "فساتين", color: "#be185d", icon: "sparkles" },
+  { name: "جاكيتات", color: "#92400e", icon: "shield" },
+  { name: "إكسسوارات", color: "#6d28d9", icon: "gem" },
 ];
 
 const demoProducts = [
-  { name: "لبن جهينة", barcode: "6223001234567", category: "ألبان", purchasePrice: 13, sellingPrice: 18, minStock: 20, unitType: "كرتونة", variants: [{ size: "One Size", color: "Standard", sku: "MILK-001", barcode: "6223001234567", purchasePrice: 13, sellingPrice: 18, minStock: 20, stockQuantity: 12 }] },
-  { name: "سكر أبيض", barcode: "6223001234568", category: "بقالة", purchasePrice: 28, sellingPrice: 35, minStock: 30, unitType: "كيلو", variants: [{ size: "One Size", color: "White", sku: "SUGAR-001", barcode: "6223001234568", purchasePrice: 28, sellingPrice: 35, minStock: 30, stockQuantity: 80 }] },
-  { name: "أرز مصري", barcode: "6223001234569", category: "بقالة", purchasePrice: 35, sellingPrice: 45, minStock: 25, unitType: "كيلو", variants: [{ size: "One Size", color: "White", sku: "RICE-001", barcode: "6223001234569", purchasePrice: 35, sellingPrice: 45, minStock: 25, stockQuantity: 50 }] },
-  { name: "زيت خليط", barcode: "6223001234570", category: "بقالة", purchasePrice: 42, sellingPrice: 55, minStock: 15, unitType: "لتر", variants: [{ size: "One Size", color: "Mixed", sku: "OIL-001", barcode: "6223001234570", purchasePrice: 42, sellingPrice: 55, minStock: 15, stockQuantity: 22 }] },
-  { name: "شاي العروسة", barcode: "6223001234571", category: "بقالة", purchasePrice: 16, sellingPrice: 22, minStock: 20, unitType: "علبة", variants: [{ size: "One Size", color: "Red", sku: "TEA-001", barcode: "6223001234571", purchasePrice: 16, sellingPrice: 22, minStock: 20, stockQuantity: 18 }] },
-  { name: "مياه معدنية", barcode: "6223001234572", category: "مشروبات", purchasePrice: 3, sellingPrice: 5, minStock: 50, unitType: "عبوة", variants: [{ size: "One Size", color: "Clear", sku: "WATER-001", barcode: "6223001234572", purchasePrice: 3, sellingPrice: 5, minStock: 50, stockQuantity: 120 }] },
-  { name: "جبنة بيضاء", barcode: "6223001234573", category: "ألبان", purchasePrice: 50, sellingPrice: 65, minStock: 15, unitType: "كيلو", variants: [{ size: "One Size", color: "White", sku: "CHEESE-001", barcode: "6223001234573", purchasePrice: 50, sellingPrice: 65, minStock: 15, stockQuantity: 14 }] },
-  { name: "مكرونة", barcode: "6223001234574", category: "بقالة", purchasePrice: 9, sellingPrice: 12, minStock: 40, unitType: "كيس", variants: [{ size: "One Size", color: "Yellow", sku: "PASTA-001", barcode: "6223001234574", purchasePrice: 9, sellingPrice: 12, minStock: 40, stockQuantity: 70 }] },
-  { name: "بسكويت", barcode: "6223001234575", category: "بقالة", purchasePrice: 6, sellingPrice: 8, minStock: 30, unitType: "علبة", variants: [{ size: "One Size", color: "Blue", sku: "BISCUIT-001", barcode: "6223001234575", purchasePrice: 6, sellingPrice: 8, minStock: 30, stockQuantity: 26 }] },
-  { name: "مسحوق غسيل", barcode: "6223001234576", category: "منظفات", purchasePrice: 32, sellingPrice: 42, minStock: 10, unitType: "كيلو", variants: [{ size: "One Size", color: "Blue", sku: "DETERGENT-001", barcode: "6223001234576", purchasePrice: 32, sellingPrice: 42, minStock: 10, stockQuantity: 30 }] },
-  { name: "عصير مانجو", barcode: "6223001234577", category: "مشروبات", purchasePrice: 10, sellingPrice: 15, minStock: 20, unitType: "علبة", variants: [{ size: "One Size", color: "Orange", sku: "JUICE-001", barcode: "6223001234577", purchasePrice: 10, sellingPrice: 15, minStock: 20, stockQuantity: 16 }] },
-  { name: "بيبسي", barcode: "6223001234578", category: "مشروبات", purchasePrice: 7, sellingPrice: 10, minStock: 48, unitType: "علبة", variants: [{ size: "One Size", color: "Black", sku: "PEPSI-001", barcode: "6223001234578", purchasePrice: 7, sellingPrice: 10, minStock: 48, stockQuantity: 64 }] },
-  { name: "زبادي", barcode: "6223001234579", category: "ألبان", purchasePrice: 4, sellingPrice: 6, minStock: 12, unitType: "كوب", variants: [{ size: "One Size", color: "White", sku: "YOG-001", barcode: "6223001234579", purchasePrice: 4, sellingPrice: 6, minStock: 12, stockQuantity: 8 }] },
-  { name: "تونة", barcode: "6223001234580", category: "معلبات", purchasePrice: 14, sellingPrice: 20, minStock: 24, unitType: "علبة", variants: [{ size: "One Size", color: "Silver", sku: "TUNA-001", barcode: "6223001234580", purchasePrice: 14, sellingPrice: 20, minStock: 24, stockQuantity: 28 }] },
-  { name: "صابون", barcode: "6223001234581", category: "منظفات", purchasePrice: 9, sellingPrice: 14, minStock: 20, unitType: "قطعة", variants: [{ size: "One Size", color: "Green", sku: "SOAP-001", barcode: "6223001234581", purchasePrice: 9, sellingPrice: 14, minStock: 20, stockQuantity: 9 }] },
+  {
+    name: "تيشيرت أساسي قطن",
+    barcode: "6291001000011",
+    category: "تيشيرتات",
+    brand: "Raseed Wear",
+    gender: "UNISEX",
+    season: "SUMMER",
+    purchasePrice: 180,
+    sellingPrice: 280,
+    minStock: 4,
+    unitType: "قطعة",
+    variants: [
+      { size: "M", color: "أبيض", sku: "TSHIRT-BASIC-WHT-M", barcode: "6291001000011", purchasePrice: 180, sellingPrice: 280, minStock: 2, stockQuantity: 7 },
+      { size: "L", color: "أبيض", sku: "TSHIRT-BASIC-WHT-L", barcode: "6291001000012", purchasePrice: 180, sellingPrice: 280, minStock: 2, stockQuantity: 5 },
+      { size: "XL", color: "أسود", sku: "TSHIRT-BASIC-BLK-XL", barcode: "6291001000013", purchasePrice: 185, sellingPrice: 295, minStock: 2, stockQuantity: 4 },
+    ],
+  },
+  {
+    name: "جينز Slim Fit",
+    barcode: "6291001000021",
+    category: "بناطيل",
+    brand: "Denim House",
+    gender: "MEN",
+    season: "ALL_SEASON",
+    purchasePrice: 320,
+    sellingPrice: 490,
+    minStock: 3,
+    unitType: "قطعة",
+    variants: [
+      { size: "32", color: "أزرق", sku: "JEANS-SLIM-BLU-32", barcode: "6291001000021", purchasePrice: 320, sellingPrice: 490, minStock: 1, stockQuantity: 6 },
+      { size: "34", color: "أزرق", sku: "JEANS-SLIM-BLU-34", barcode: "6291001000022", purchasePrice: 320, sellingPrice: 490, minStock: 1, stockQuantity: 5 },
+      { size: "36", color: "أسود", sku: "JEANS-SLIM-BLK-36", barcode: "6291001000023", purchasePrice: 330, sellingPrice: 510, minStock: 1, stockQuantity: 3 },
+    ],
+  },
+  {
+    name: "فستان صيفي مورد",
+    barcode: "6291001000031",
+    category: "فساتين",
+    brand: "Bloom",
+    gender: "WOMEN",
+    season: "SUMMER",
+    purchasePrice: 420,
+    sellingPrice: 650,
+    minStock: 2,
+    unitType: "قطعة",
+    variants: [
+      { size: "S", color: "وردي", sku: "DRESS-FLORAL-PNK-S", barcode: "6291001000031", purchasePrice: 420, sellingPrice: 650, minStock: 1, stockQuantity: 4 },
+      { size: "M", color: "وردي", sku: "DRESS-FLORAL-PNK-M", barcode: "6291001000032", purchasePrice: 420, sellingPrice: 650, minStock: 1, stockQuantity: 3 },
+      { size: "L", color: "أزرق سماوي", sku: "DRESS-FLORAL-SKY-L", barcode: "6291001000033", purchasePrice: 430, sellingPrice: 670, minStock: 1, stockQuantity: 2 },
+    ],
+  },
+  {
+    name: "جاكيت جينز",
+    barcode: "6291001000041",
+    category: "جاكيتات",
+    brand: "Layer",
+    gender: "UNISEX",
+    season: "WINTER",
+    purchasePrice: 540,
+    sellingPrice: 820,
+    minStock: 2,
+    unitType: "قطعة",
+    variants: [
+      { size: "M", color: "أزرق داكن", sku: "JACKET-DENIM-DBL-M", barcode: "6291001000041", purchasePrice: 540, sellingPrice: 820, minStock: 1, stockQuantity: 3 },
+      { size: "L", color: "أزرق داكن", sku: "JACKET-DENIM-DBL-L", barcode: "6291001000042", purchasePrice: 540, sellingPrice: 820, minStock: 1, stockQuantity: 2 },
+    ],
+  },
+  {
+    name: "حزام جلد كلاسيك",
+    barcode: "6291001000051",
+    category: "إكسسوارات",
+    brand: "Urban Line",
+    gender: "MEN",
+    season: "ALL_SEASON",
+    purchasePrice: 90,
+    sellingPrice: 160,
+    minStock: 5,
+    unitType: "قطعة",
+    variants: [
+      { size: "110", color: "بني", sku: "BELT-CLASSIC-BRN-110", barcode: "6291001000051", purchasePrice: 90, sellingPrice: 160, minStock: 2, stockQuantity: 8 },
+      { size: "120", color: "أسود", sku: "BELT-CLASSIC-BLK-120", barcode: "6291001000052", purchasePrice: 90, sellingPrice: 160, minStock: 2, stockQuantity: 6 },
+    ],
+  },
 ];
 
 const demoInventory: Record<string, { quantity: number; batchNumber?: string; expiryDays?: number; purchasePrice?: number }> = {
-  "لبن جهينة": { quantity: 12, batchNumber: "MILK-EXP-01", expiryDays: 9, purchasePrice: 13 },
-  "سكر أبيض": { quantity: 80 },
-  "أرز مصري": { quantity: 50 },
-  "زيت خليط": { quantity: 22 },
-  "شاي العروسة": { quantity: 18 },
-  "مياه معدنية": { quantity: 120 },
-  "جبنة بيضاء": { quantity: 14, batchNumber: "CHEESE-01", expiryDays: 18, purchasePrice: 50 },
-  "مكرونة": { quantity: 70 },
-  "بسكويت": { quantity: 26 },
-  "مسحوق غسيل": { quantity: 30 },
-  "عصير مانجو": { quantity: 16, batchNumber: "JUICE-01", expiryDays: 24, purchasePrice: 10 },
-  "بيبسي": { quantity: 64 },
-  "زبادي": { quantity: 8, batchNumber: "YOG-EXP-01", expiryDays: 5, purchasePrice: 4 },
-  "تونة": { quantity: 28 },
-  "صابون": { quantity: 9 },
+  "تيشيرت أساسي قطن": { quantity: 16, batchNumber: "TSHIRT-2026-01", purchasePrice: 180 },
+  "جينز Slim Fit": { quantity: 14, batchNumber: "JEANS-2026-01", purchasePrice: 320 },
+  "فستان صيفي مورد": { quantity: 9, batchNumber: "DRESS-2026-01", purchasePrice: 420 },
+  "جاكيت جينز": { quantity: 5, batchNumber: "JACKET-2026-01", purchasePrice: 540 },
+  "حزام جلد كلاسيك": { quantity: 14, batchNumber: "BELT-2026-01", purchasePrice: 90 },
 };
 
 const demoCustomers = [
@@ -72,11 +129,11 @@ const demoInvoicesSeed = [
     customerPhone: "01010000001",
     paymentMethod: "CASH" as const,
     items: [
-      { barcode: "6223001234567", quantity: 2, discount: 0 },
-      { barcode: "6223001234578", quantity: 6, discount: 0 },
-      { barcode: "6223001234571", quantity: 1, discount: 2 },
+      { barcode: "6291001000011", quantity: 1, discount: 0 },
+      { barcode: "6291001000051", quantity: 1, discount: 10 },
+      { barcode: "6291001000022", quantity: 1, discount: 20 },
     ],
-    notes: "فاتورة عرض سريعة للعميل الدائم",
+    notes: "فاتورة عرض سريعة لعميل متجر الملابس",
   },
   {
     invoiceNumber: "INV-DEMO-1002",
@@ -84,11 +141,10 @@ const demoInvoicesSeed = [
     customerPhone: null,
     paymentMethod: "CARD" as const,
     items: [
-      { barcode: "6223001234568", quantity: 3, discount: 0 },
-      { barcode: "6223001234574", quantity: 4, discount: 0 },
-      { barcode: "6223001234580", quantity: 2, discount: 0 },
+      { barcode: "6291001000032", quantity: 1, discount: 25 },
+      { barcode: "6291001000041", quantity: 1, discount: 0 },
     ],
-    notes: "فاتورة تجريبية لعميل بيع مباشر",
+    notes: "فاتورة تجريبية لبيع مباشر من الكاشير",
   },
   {
     invoiceNumber: "INV-DEMO-0999",
@@ -96,11 +152,11 @@ const demoInvoicesSeed = [
     customerPhone: "01010000002",
     paymentMethod: "WALLET" as const,
     items: [
-      { barcode: "6223001234577", quantity: 5, discount: 0 },
-      { barcode: "6223001234572", quantity: 12, discount: 0 },
-      { barcode: "6223001234581", quantity: 2, discount: 0 },
+      { barcode: "6291001000012", quantity: 1, discount: 0 },
+      { barcode: "6291001000031", quantity: 1, discount: 30 },
+      { barcode: "6291001000052", quantity: 2, discount: 0 },
     ],
-    notes: "فاتورة يوم أمس للمقارنة في الداشبورد",
+    notes: "فاتورة يوم أمس للمقارنة في لوحة التقارير",
   },
 ];
 
@@ -108,12 +164,12 @@ const demoReturnSeed = {
   invoiceNumber: "INV-DEMO-1001",
   returnNumber: "RT-DEMO-0001",
   createdAt: minutesAgo(1),
-  reason: "العميل أعاد منتجًا زائدًا بعد المراجعة",
+  reason: "العميل استبدل مقاسًا بعد الشراء",
   refundMethod: "CASH" as const,
-  itemBarcode: "6223001234578",
+  itemBarcode: "6291001000051",
   quantity: 1,
   restocked: true,
-  notes: "مرتجع تجريبي يعيد الكمية إلى المخزون",
+  notes: "مرتجع تجريبي يعيد القطعة إلى المخزون",
 };
 
 const demoExpensesSeed = [
@@ -471,10 +527,16 @@ export async function main() {
     return;
   }
 
+  const demoMode = process.env.RASEED_SEED_PROFILE === "demo" || (process.env.NODE_ENV !== "production" && process.env.RASEED_SEED_PROFILE !== "core");
+  if (!demoMode) {
+    await prisma.$disconnect();
+    return;
+  }
+
   const store = await prisma.store.upsert({
     where: { id: "demo-store-city-market" },
     update: {
-      name: "ماركت المدينة",
+      name: "بوتيك المدينة",
       ownerName: "محمد ناصر",
       phone: "01000000000",
       email: "owner@raseed.local",
@@ -482,7 +544,7 @@ export async function main() {
     },
     create: {
       id: "demo-store-city-market",
-      name: "ماركت المدينة",
+      name: "بوتيك المدينة",
       ownerName: "محمد ناصر",
       phone: "01000000000",
       email: "owner@raseed.local",
@@ -515,10 +577,10 @@ export async function main() {
     await prisma.receiptSettings.update({
       where: { id: existingReceiptSettings.id },
       data: {
-        storeName: "ماركت المدينة",
+        storeName: "بوتيك المدينة",
         storePhone: store.phone,
         storeAddress: "القاهرة",
-        receiptFooter: "شكراً لتعاملكم معنا",
+        receiptFooter: "شكراً لزيارتكم بوتيك المدينة",
         paperSize: "MM_80",
       },
     });
@@ -526,10 +588,10 @@ export async function main() {
     await prisma.receiptSettings.create({
       data: {
         storeId: store.id,
-        storeName: "ماركت المدينة",
+        storeName: "بوتيك المدينة",
         storePhone: store.phone,
         storeAddress: "القاهرة",
-        receiptFooter: "شكراً لتعاملكم معنا",
+        receiptFooter: "شكراً لزيارتكم بوتيك المدينة",
         paperSize: "MM_80",
       },
     });

@@ -4,7 +4,9 @@ import { createTestApp } from "./utils/test-app";
 import { authHeader, createTestCategory, createTestProduct, createTestStore, login } from "./utils/factories";
 import { prisma } from "./utils/test-db";
 
-describe("import/export safety", () => {
+const describeDb = process.env.RASEED_SKIP_DB_TESTS === "1" ? describe.skip : describe;
+
+describeDb("import/export safety", () => {
   let app: INestApplication;
 
   beforeAll(async () => {

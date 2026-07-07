@@ -73,19 +73,31 @@ Local development uses the host PostgreSQL service and npm scripts.
 
 Follow the full setup guide in [docs/LOCAL_SETUP.md](/home/osos/Desktop/raseed./docs/LOCAL_SETUP.md).
 
-Quick local flow:
+Development commands:
 
-1. Start PostgreSQL locally.
-2. Set `backend/.env` to `DATABASE_URL=postgresql://raseed:raseed_password@localhost:5432/raseed_dev?schema=public`.
-3. Run `npm run db:migrate`.
-4. Run `npm run db:seed`.
-5. Run `npm run dev`.
+```bash
+sudo systemctl start postgresql
+npm install
+npm run local:setup
+npm run dev
+npm run desktop:dev
+```
 
-Desktop preview flow:
+Local verification:
 
-1. Start PostgreSQL locally.
-2. Run `npm run desktop:dev`.
-3. The Electron shell opens after backend and frontend are ready.
+```bash
+npm run local:check
+npm --prefix backend test
+npm --prefix frontend test
+npx prisma validate --schema backend/prisma/schema.prisma
+```
+
+What the local scripts do:
+
+- `npm run local:check`: checks PostgreSQL reachability, checks `DATABASE_URL`, and validates Prisma schema.
+- `npm run local:setup`: checks PostgreSQL, creates the local database if needed, runs Prisma migrations, and runs demo seed only when no Owner/Admin exists yet.
+- `npm run desktop:dev`: runs `local:setup`, starts the frontend dev server, and opens Electron. Electron starts the backend automatically.
+- `npm run desktop:build`: builds backend and frontend, then packages the Windows installer.
 
 Packaged desktop builds keep their app data under the Electron user-data directory. In development, runtime data stays inside `runtime/` in the repo unless overridden with `RASEED_DATA_DIR`.
 
@@ -109,8 +121,7 @@ The frontend remains Arabic RTL-first, keeps the existing Raseed screens, and su
 
 ```bash
 npm install
-npm run db:migrate
-npm run db:seed
+npm run local:setup
 npm run dev
 npm run backend:build
 ```
@@ -180,6 +191,13 @@ npm run db:seed
 npm run db:studio
 ```
 
+If backend integration tests should run fully, start PostgreSQL and prepare a test database:
+
+```bash
+sudo systemctl start postgresql
+sudo -u postgres createdb raseed_test || true
+```
+
 Migration note:
 
 - The auth-session migration is `20260706044500_auth_sessions`.
@@ -245,6 +263,16 @@ Implemented in this foundation step:
 - Demo-ready dashboard and POS polish with visible demo-mode badges for the seeded store
 - Internal demo walkthrough page at `/demo-script`
 - Barcode labels now use a real CODE128 engine through `jsbarcode`, so browser printouts stay scannable instead of decorative
+
+## Windows Install
+
+- Installer target: `release/RaseedSetup.exe`
+- Local packaging on Windows: `npm run desktop:build`
+- Local packaging on Linux: requires `wine32:i386` for the Windows resource-edit step
+- PostgreSQL is still required on the target machine
+- First run order: license check, PostgreSQL check, bootstrap, onboarding, login
+- Desktop runtime data location: Electron user-data folder
+- Backup default location: app data `backups/` folder unless changed from Settings
 
 Not implemented yet:
 
