@@ -3,7 +3,7 @@ import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 
 const steps = [
-  { title: "تسجيل الدخول", description: "ادخل بحساب المالك التجريبي لفتح لوحة ماركت المدينة وعرض المؤشرات الجاهزة." },
+  { title: "تسجيل الدخول", description: "ادخل بحساب المالك التجريبي لفتح لوحة القاسم وعرض المؤشرات الجاهزة." },
   { title: "فتح الكاشير", description: "اذهب إلى شاشة POS وامسح باركود منتج أو ابحث بالاسم لإظهار سرعة البيع." },
   { title: "إتمام البيع", description: "أكمل فاتورة نقدية واظهر شاشة النجاح ثم افتح معاينة الإيصال للطباعة." },
   { title: "طباعة الإيصال", description: "اعرض الإيصال بالأبيض والأسود لتوضيح جاهزية الطباعة الحرارية." },
@@ -28,10 +28,10 @@ const highlights = [
 export function DemoScriptPage() {
   return (
     <div>
-      <PageHeader title="سيناريو العرض" description="خطوات قصيرة ومنظمة لعرض رصيد أمام أصحاب السوبر ماركت والمتاجر بشكل احترافي." />
+      <PageHeader title="دليل بدء التشغيل" description="خطوات قصيرة ومنظمة لتشغيل رصيد على محل حقيقي بشكل عملي." />
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <AppCard>
-          <h2 className="mb-4 text-lg font-bold">خطوات الديمو المقترحة</h2>
+          <h2 className="mb-4 text-lg font-bold">خطوات التشغيل المقترحة</h2>
           <div className="space-y-3">
             {steps.map((step, index) => (
               <div key={step.title} className="rounded-2xl border border-border bg-background p-4">

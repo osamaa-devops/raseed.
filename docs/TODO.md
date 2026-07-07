@@ -51,7 +51,7 @@
 - Preserve all current Raseed screens.
 - Keep light/dark mode.
 - Keep route configuration in `frontend/src/app/routes/routeConfig.tsx`.
-- Keep demo-only fixtures in `frontend/src/data/demo`.
+- Keep starter fixtures in `frontend/src/data/demo` only if they remain useful for local testing.
 - Auth service and login integration now use the backend.
 - Access tokens now live in memory only; refresh-token sessions now use `HttpOnly` cookies with rotation and logout revocation.
 - Products and categories pages now use the backend API.
@@ -68,8 +68,8 @@
 - Barcode labels now render a real CODE128 barcode via `jsbarcode`; keep browser-print output black/white and reserve hardware barcode-printer support for the desktop phase.
 - Settings page now includes receipt settings, barcode label settings, and a hardware placeholder for future desktop device control.
 - Import/export page now supports templates, preview-before-write imports, and XLSX/CSV exports.
-- Keep loyalty, AI, and external billing-provider services as placeholders until those backend modules exist.
-- Expand placeholders into full page UX screen by screen.
+- Keep loyalty, AI, and external billing-provider services scoped until those backend modules exist.
+- Expand remaining partial screens into full page UX screen by screen.
 
 ## Later Product Areas
 

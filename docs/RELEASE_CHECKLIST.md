@@ -9,7 +9,7 @@ Release target: `v1.0.0-RC1`
 - [ ] Configure frontend environment if needed
 - [ ] Start PostgreSQL
 - [ ] Run Prisma migrations
-- [ ] Seed demo data if demo mode is required
+- [ ] Seed starter data if a fresh install needs it
 - [ ] Start backend
 - [ ] Start frontend
 - [ ] Verify health endpoints
@@ -33,5 +33,5 @@ Release target: `v1.0.0-RC1`
 ## RC1 notes
 
 - This RC is intended to prove the stack can be installed on a fresh Ubuntu server.
-- Seed data is optional and should only be enabled for demo or staging environments.
+- Seed data is optional and should only be enabled for fresh local installs or staging environments.
 - Production restores should target a fresh database or a dedicated recovery database.

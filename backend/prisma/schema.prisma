@@ -29,6 +29,13 @@ enum SubscriptionPlanStatus {
   INACTIVE
 }
 
+enum DemoRequestStatus {
+  PENDING
+  CONTACTED
+  CONVERTED
+  REJECTED
+}
+
 enum BillingCycle {
   MONTHLY
   YEARLY
@@ -303,6 +310,7 @@ model User {
   purchaseOrders PurchaseOrder[]
   activityLogs    ActivityLog[]
   sessions        UserSession[]
+  handledDemoRequests DemoRequest[] @relation("DemoRequestHandledBy")
 
   @@unique([storeId, email])
   @@unique([storeId, phone])
@@ -326,6 +334,26 @@ model UserSession {
   @@index([userId])
   @@index([expiresAt])
   @@index([revokedAt])
+}
+
+model DemoRequest {
+  id             String            @id @default(cuid())
+  storeName      String
+  ownerName      String
+  phone          String
+  email          String?
+  businessType   String
+  notes          String?
+  status         DemoRequestStatus  @default(PENDING)
+  contactedAt    DateTime?
+  contactedById  String?
+  contactedBy    User?             @relation("DemoRequestHandledBy", fields: [contactedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([phone])
 }
 
 model Role {

@@ -95,7 +95,7 @@ npx prisma validate --schema backend/prisma/schema.prisma
 What the local scripts do:
 
 - `npm run local:check`: checks PostgreSQL reachability, checks `DATABASE_URL`, and validates Prisma schema.
-- `npm run local:setup`: checks PostgreSQL, creates the local database if needed, runs Prisma migrations, and runs demo seed only when no Owner/Admin exists yet.
+- `npm run local:setup`: checks PostgreSQL, creates the local database if needed, runs Prisma migrations, and runs starter seed only when no Owner/Admin exists yet.
 - `npm run desktop:dev`: runs `local:setup`, starts the frontend dev server, and opens Electron. Electron starts the backend automatically.
 - `npm run desktop:build`: builds backend and frontend, then packages the Windows installer.
 
@@ -142,23 +142,25 @@ Production checklist:
 - Point `DATABASE_URL` at PostgreSQL
 - Confirm `UPLOAD_MAX_MB` is appropriate for import files
 
-## Demo Credentials
+## Local Shop Credentials
 
 Seeded development users:
 
 | Role | Email | Password |
 | --- | --- | --- |
 | Super Admin | `admin@raseed.local` | `RaseedAdmin!2026` |
-| Owner | `mahmoud@local` | `hello` |
-| Owner 2 | `owner2@local` | `hello` |
+| Owner | `mahmoud@local` | `hello2026` |
+| Owner 2 | `owner2@local` | `hello2026` |
 | Manager | `manager@raseed.local` | `RaseedManager!2026` |
-| Cashier | `ahmed@local` | `hello` |
-| Cashier 2 | `cashier2@local` | `hello` |
+| Cashier | `ahmed@local` | `hello2026` |
+| Cashier 2 | `cashier2@local` | `hello2026` |
 | Inventory | `inventory@raseed.local` | `RaseedInventory!2026` |
 
 These are local development credentials only. After the first real setup wizard, the owner account you create becomes the production login.
 
-The app no longer exposes these credentials to normal users inside the login screen. In development mode, the login page can show a local helper button, but the canonical source of demo credentials remains this README.
+The app keeps these credentials out of normal user-facing screens. In development mode, the login page can still show a local helper box for fast testing.
+
+The public contact page creates a real support request record that super-admins can review from the platform panel.
 
 ## Auth Flow
 
@@ -230,7 +232,7 @@ Implemented in this foundation step:
 - Foundational Prisma models
 - JWT login foundation with role/permission guards
 - Store-scoped Products and Categories CRUD
-- Seeded demo categories and products for the demo store
+- Seeded clothing-ready categories and products for the starter local store
 - Frontend Products and Categories pages integrated with the API
 - Branch-scoped inventory stock balances and movement history
 - Inventory add/remove/adjust flows with transactional stock updates
@@ -262,8 +264,8 @@ Implemented in this foundation step:
 - Product barcode generation and browser-printable barcode label sheets
 - Excel/CSV import and export for products, initial inventory stock, operational lists, and key reports
 - Settings page sections for receipts, barcode labels, and future hardware setup
-- Demo-ready dashboard and POS polish with visible demo-mode badges for the seeded store
-- Internal demo walkthrough page at `/demo-script`
+- Dashboard and POS polish for the seeded local store
+- Operational walkthrough page at `/help`
 - Barcode labels now use a real CODE128 engine through `jsbarcode`, so browser printouts stay scannable instead of decorative
 
 ## Windows Install
@@ -286,13 +288,13 @@ Not implemented yet:
 - Loyalty, coupons, and offers
 - Online billing provider integration and automated invoicing
 
-## Demo Script
+## Operational Walkthrough
 
-For live walkthroughs inside the app, open `/demo-script` after logging in.
+For a quick operational walkthrough inside the app, open `/help` after logging in.
 
 Suggested order:
 
-1. Login as the demo owner for `ماركت المدينة`
+1. Login as the owner for `القاسم`
 2. Open POS and scan or search a product
 3. Complete a sale and preview/print the receipt
 4. Open Inventory and show the stock decrease with `SALE` movement

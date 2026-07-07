@@ -29,6 +29,7 @@ import { AdminModule } from "./modules/admin/admin.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { ImportExportModule } from "./modules/import-export/import-export.module";
 import { SystemModule } from "./modules/system/system.module";
+import { DemoRequestsModule } from "./modules/demo-requests/demo-requests.module";
 import { validateEnv } from "./config/env.validation";
 import { AppLogger } from "./common/logger/app.logger";
 import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
@@ -79,6 +80,7 @@ import { BootstrapModule } from "./bootstrap/bootstrap.module";
     SettingsModule,
     ImportExportModule,
     SystemModule,
+    DemoRequestsModule,
     BootstrapModule,
   ],
   providers: [

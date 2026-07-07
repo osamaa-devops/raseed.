@@ -7,7 +7,7 @@ Audited by: Codex
 
 ### What Raseed does
 
-Raseed is an Arabic RTL POS and retail management SaaS for supermarkets, mini markets, grocery stores, electronics/mobile shops, cosmetics shops, and general retail stores. It combines cashier sales, inventory, invoices, returns, expenses, supplier and customer balances, reporting, subscription-aware SaaS administration, and demo-friendly printing/import tools.
+Raseed is an Arabic RTL POS and retail management SaaS for supermarkets, mini markets, grocery stores, electronics/mobile shops, cosmetics shops, and general retail stores. It combines cashier sales, inventory, invoices, returns, expenses, supplier and customer balances, reporting, subscription-aware SaaS administration, and printing/import tools.
 
 ### Main users
 
@@ -34,16 +34,16 @@ Raseed is an Arabic RTL POS and retail management SaaS for supermarkets, mini ma
 - Suppliers and purchase orders
 - Subscription management and SaaS admin
 - Receipt settings, barcode labels, import/export
-- Demo mode and demo walkthrough
+- Operational walkthrough and support requests
 
 ### Current product status
 
 Current status is best described as:
 
-- **Operational demo-ready MVP** for real walkthroughs
+- **Operational MVP** for real walkthroughs
 - **Technically substantial** on backend business flows
 - **Not fully production-ready yet** despite recent deployment groundwork
-- **Feature-complete in breadth**, but with a few frontend areas still placeholder/demo-only
+- **Feature-complete in breadth**, but with a few frontend areas still placeholder-only
 
 The implemented backend covers many real transactional flows. The main gap is not missing breadth; it is production hardening and a few weak/placeholder frontend areas.
 
@@ -698,7 +698,7 @@ Seed file: [backend/prisma/seed.ts](/home/osos/Desktop/raseed./backend/prisma/se
 
 Seed coverage includes:
 
-- Demo store `ماركت المدينة`
+- Demo store `القاسم`
 - Subscription plan and active subscription
 - Super admin and store users
 - Demo categories and products
@@ -1065,14 +1065,14 @@ UI/UX conclusion:
 Documented in [README.md](/home/osos/Desktop/raseed./README.md):
 
 - `admin@raseed.local` / `RaseedAdmin!2026`
-- `owner@raseed.local` / `RaseedOwner!2026`
+- `mahmoud@local` / `hello2026`
 - other seeded roles as well
 
 ### Demo data quality
 
 Demo data is strong:
 
-- Realistic store name: `ماركت المدينة`
+- Realistic store name: `القاسم`
 - Products, categories, stock, suppliers, customers
 - Seeded invoices and return
 - Seeded expenses and shift

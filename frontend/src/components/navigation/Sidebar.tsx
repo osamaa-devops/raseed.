@@ -1,14 +1,11 @@
 import { NavLink } from "react-router";
 import { LayoutDashboard } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { DemoModeBanner } from "../demo/DemoModeBanner";
-import { isDemoStore } from "../../utils/demo";
 import { dashboardNavGroups } from "./navigationConfig";
 import { canAccessPath } from "../../app/routes/accessControl";
 
 export function Sidebar() {
   const { auth } = useAuth();
-  const demoMode = isDemoStore(auth?.store);
 
   return (
     <aside className="fixed right-0 top-0 z-30 hidden h-full w-20 flex-col border-l border-sidebar-border bg-sidebar text-sidebar-foreground md:flex xl:w-72">
@@ -49,9 +46,6 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-      <div className="border-t border-sidebar-border px-3 py-4">
-        <div className="hidden xl:block">{demoMode && <DemoModeBanner compact />}</div>
-      </div>
     </aside>
   );
 }

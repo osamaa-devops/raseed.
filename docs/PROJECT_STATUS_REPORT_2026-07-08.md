@@ -38,20 +38,20 @@ The core POS business flows are implemented across backend and frontend: auth, p
 
 Super admin store creation already exists. From `/super-admin/stores`, the platform admin can create a store, main branch, owner user, and subscription in one backend transaction through `POST /api/admin/stores`.
 
-The seed also already creates the first demo store and a practical local shop account set:
+The seed also already creates the first starter local shop and a practical account set:
 
 - Store: `القاسم`
 - Main branch: `الفرع الرئيسي`
 - Super admin: `admin@raseed.local` / `RaseedAdmin!2026`
-- Owner: `mahmoud@local` / `hello`
-- Additional owner: `owner2@local` / `hello`
-- Cashier: `ahmed@local` / `hello`
-- Additional cashier: `cashier2@local` / `hello`
-- Manager and inventory users, demo stock, demo invoices, demo returns, customers, suppliers, and reports data
+- Owner: `mahmoud@local` / `hello2026`
+- Additional owner: `owner2@local` / `hello2026`
+- Cashier: `ahmed@local` / `hello2026`
+- Additional cashier: `cashier2@local` / `hello2026`
+- Manager and inventory users, starter stock, starter invoices, starter returns, customers, suppliers, and reports data
 
 ## Where we have reached
 
-The core business system is now present across backend and frontend, and the app can be used as a real local POS foundation rather than a mock demo shell.
+The core business system is now present across backend and frontend, and the app can be used as a real local POS foundation rather than a mock shell.
 
 What is already working at a practical level:
 
@@ -61,6 +61,7 @@ What is already working at a practical level:
 - products, categories, inventory, POS sales, invoices, returns, expenses, customers/debts, suppliers, purchase orders, shifts, closing, and reports
 - browser receipt printing and barcode label printing
 - super admin store creation and SaaS administration
+- real public contact-request capture with super-admin review
 - first-run owner setup, backup/restore hooks, license activation hooks, and Electron packaging
 - local-first development scripts and PostgreSQL-based setup
 
@@ -85,7 +86,7 @@ Attempting to start PostgreSQL from this session required a sudo password, so th
 
 ## Workspace note
 
-The current workspace includes the seed/demo account updates, the shop deployment checklist, and the status-report edits in this repository.
+The current workspace includes the starter account updates, the shop deployment checklist, and the status-report edits in this repository.
 
 The seed work now includes variant barcode mapping plus a practical local shop account set for owners and cashiers.
 
@@ -103,7 +104,7 @@ Implemented frontend:
 
 - `/super-admin/stores`
 - "متجر جديد" modal
-- Inputs for store name, owner, phone, email, plan, billing cycle, trial days, owner login, owner password, main branch name, and branch address
+- Inputs for store name, owner, phone, email, plan, billing cycle, owner login, owner password, main branch name, and branch address
 
 When the super admin creates a store, the backend creates:
 
@@ -176,13 +177,13 @@ Medium priority:
 - Add credit/partial-payment sale workflow.
 - Add subscription upgrade/request/payment-provider integration.
 - Add support tickets backend/frontend.
-- Replace notification demo data with live operational alerts.
+- Replace notification preview data with live operational alerts.
 - Add code splitting for the frontend bundle; current production build warns about a chunk over 500 KB.
 
 Lower priority:
 
-- AI insights are placeholder-only.
-- Hardware/device controls are placeholders.
+- AI insights remain an open product area.
+- Hardware/device controls remain an open product area.
 - Silent printing and deeper device integration need platform testing.
 - Product image upload/storage is not implemented.
 - PDF report export is not implemented.
@@ -206,7 +207,7 @@ admin@raseed.local
 RaseedAdmin!2026
 ```
 
-3. Open `/super-admin/stores` and create a real first store if you do not want to use the seeded demo store.
+3. Open `/super-admin/stores` and create a real first store if you do not want to use the seeded starter store.
 
 4. Log in as the new owner and test the operational flow:
 
@@ -239,14 +240,14 @@ Everything else is already much closer to a working shop system than a prototype
 
 Completed in this pass:
 
-- Replaced the demo-only users/permissions page with a real API-connected user management page.
+- Replaced the preview-only users/permissions page with a real API-connected user management page.
 - Added user create/edit/status workflows in the frontend.
 - Connected roles and branches into the user form.
 - Added a real activity logs read API with filters and pagination.
-- Replaced the demo activity logs page with a real API-connected page.
+- Replaced the preview activity logs page with a real API-connected page.
 - Added owner/admin branch management UI for listing, creating, editing, activating, and deactivating branches.
 - Added branch status activity logging.
-- Replaced demo notifications with operational alerts from existing inventory, expiry, customer debt, and subscription APIs.
+- Replaced preview notifications with operational alerts from existing inventory, expiry, customer debt, and subscription APIs.
 - Added frontend route-level lazy loading, which removed the previous Vite bundle warning over 500 KB.
 
 Files changed in this pass:

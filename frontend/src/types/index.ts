@@ -18,6 +18,22 @@ export type Store = {
   updatedAt?: string;
 };
 
+export type DemoRequestStatus = "PENDING" | "CONTACTED" | "CONVERTED" | "REJECTED";
+
+export type DemoRequest = {
+  id: Id;
+  storeName: string;
+  ownerName: string;
+  phone: string;
+  email?: string | null;
+  businessType: string;
+  notes?: string | null;
+  status: DemoRequestStatus;
+  contactedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Branch = {
   id: Id;
   storeId: Id;

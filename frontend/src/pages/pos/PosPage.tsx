@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CreditCard, Keyboard, Minus, Pause, Plus, Printer, RotateCcw, ScanLine, Search, Trash2, Wallet } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { DemoModeBanner } from "../../components/demo/DemoModeBanner";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Modal } from "../../components/feedback/Modal";
 import { SelectInput, TextInput } from "../../components/forms/FormControls";
@@ -15,7 +14,6 @@ import { productsService } from "../../services/productsService";
 import { shiftsService } from "../../services/shiftsService";
 import { receiptService } from "../../services/receiptService";
 import type { CashierShift, Customer, HeldOrder, Invoice, Payment, Product, ProductVariant, ReceiptPayload } from "../../types";
-import { isDemoStore } from "../../utils/demo";
 
 type CatalogItem = { product: Product; variant: ProductVariant; displayName: string; searchText: string };
 type CartItem = { product: Product; variant: ProductVariant; quantity: number; discount: number };
@@ -33,7 +31,6 @@ export function PosPage() {
   const canReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
   const canPrintReceipts = hasPermission("printing.receipts") || hasPermission("invoices.print");
   const canViewCustomers = hasPermission("customers.view");
-  const demoMode = isDemoStore(auth?.store);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -249,7 +246,6 @@ export function PosPage() {
   return (
     <div className="grid min-h-[calc(100vh-5rem)] gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_460px]" dir="rtl">
       <section>
-        {demoMode && <DemoModeBanner />}
         <AppCard className="mb-4 overflow-hidden border-primary/10 bg-background">
           <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
             <div>

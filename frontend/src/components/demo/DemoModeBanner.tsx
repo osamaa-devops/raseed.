@@ -10,8 +10,8 @@ export function DemoModeBanner({ compact = false }: { compact?: boolean }) {
       }
     >
       <Sparkles size={compact ? 14 : 16} />
-      <span className="font-semibold">وضع العرض التجريبي</span>
-      {!compact && <span className="text-warning/90">البيانات الحالية مهيأة لعرض سريع على ملاك السوبر ماركت ومتاجر التجزئة.</span>}
+      <span className="font-semibold">وضع التشغيل المحلي</span>
+      {!compact && <span className="text-warning/90">البيانات الحالية مهيأة للتشغيل المحلي السريع على جهاز المحل.</span>}
     </div>
   );
 }

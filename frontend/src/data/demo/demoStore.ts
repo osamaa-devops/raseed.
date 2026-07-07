@@ -2,7 +2,7 @@ import type { Branch, Store } from "../../types";
 
 export const demoStore: Store = {
   id: "store_city_market",
-  name: "ماركت المدينة",
+  name: "القاسم",
   status: "TRIAL",
 };
 

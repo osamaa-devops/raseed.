@@ -97,7 +97,7 @@ Current state:
 - `frontend/src/components/navigation` contains the dashboard and super-admin navigation.
 - `frontend/src/components/printing` contains reusable receipt previews, printable receipts, barcode labels, label sheets, and print buttons.
 - `frontend/src/styles` contains Arabic RTL, Tailwind, and light/dark theme foundations.
-- `frontend/src/data/demo` contains static UI preview data.
+- `frontend/src/data/demo` contains static starter UI preview data.
 - `frontend/src/services` contains API clients and route-level service modules.
 - `frontend/src/services/authService.ts` integrates login and `/auth/me`.
 - `frontend/src/services/productsService.ts` integrates store-scoped product CRUD.
@@ -130,7 +130,7 @@ Public routes:
 
 - `/`
 - `/login`
-- `/request-demo`
+- `/contact`
 - `/onboarding`
 
 Store routes:
@@ -381,11 +381,11 @@ Prisma foundational models:
 Auth-related seed data:
 
 - Platform super admin
-- Demo store: `ماركت المدينة`
+- Starter store: `القاسم`
 - Main branch: `الفرع الرئيسي`
 - Roles: `super_admin`, `owner`, `manager`, `cashier`, `inventory`
 - Permission keys for dashboard, POS selling, held orders, shifts, categories, products, inventory, inventory stock actions, sales, invoices, invoice refunds, returns, expenses CRUD, reports/export, closing view/create, customers/debts, users, settings, activity logs, and platform admin access
-- Demo product categories and products for local frontend/API validation
-- Demo branch-level stock balances, opening inventory movements, and near-expiry batches for `ماركت المدينة`
+- Starter product categories and products for local frontend/API validation
+- Starter branch-level stock balances, opening inventory movements, and near-expiry batches for `القاسم`
 
 Products and categories are catalog master data. Inventory owns branch-level stock balances and movement history. POS creates paid invoices, payment rows, and `SALE` inventory movements transactionally. POS invoices can optionally link to a customer, while credit sales are deferred. Returns create return records, refund payment rows, optional restocks, and `RETURN` inventory movements transactionally. Expenses are branch-scoped and soft-deleted. Dashboard and reports read operational data as JSON and can be exported as XLSX/CSV. End-of-day closing saves a `DailyClosing` snapshot and blocks closing while shifts are still open. Customer debts are tracked through immutable `CustomerDebtTransaction` records that update `Customer.currentDebt` inside database transactions.

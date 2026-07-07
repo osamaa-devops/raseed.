@@ -28,7 +28,7 @@
 ## Phase 4: Retail Core Data Model
 
 - Products and categories master data. Completed: first store-scoped CRUD foundation.
-- Product/category polish: barcode generation, label printing, and XLSX/CSV import/export completed for browser demo. Remaining: barcode validation helpers, richer units, and catalog test coverage.
+- Product/category polish: barcode generation, label printing, and XLSX/CSV import/export completed for browser print flow. Remaining: barcode validation helpers, richer units, and catalog test coverage.
 - Inventory stock balances and stock movements. Completed: branch-level balances, add/remove/adjust flows, low-stock alerts, expiry alerts, and movement history.
 - Inventory polish: automated tests, stock transfer workflow, and later POS-safe stock consumption. Completed: initial-stock import and purchase receiving increases stock through inventory movements.
 - POS sessions, cashier shifts, paid invoices, payments, held orders, and stock decrement on sale. Completed: first real end-to-end POS sale flow.

@@ -76,7 +76,6 @@ export const dashboardNavGroups = [
     label: "الدعم",
     items: [
       { label: "المساعدة والدعم", path: "/help", icon: HelpCircle },
-      { label: "سيناريو العرض", path: "/demo-script", icon: LifeBuoy },
     ],
   },
 ];
@@ -86,5 +85,5 @@ export const superAdminNav = [
   { label: "المحلات", path: "/super-admin/stores", icon: Store },
   { label: "الخطط", path: "/super-admin/plans", icon: CreditCard },
   { label: "المدفوعات", path: "/super-admin/payments", icon: Receipt },
-  { label: "الدعم", path: "/super-admin/support", icon: LifeBuoy },
+  { label: "طلبات التواصل", path: "/super-admin/support", icon: LifeBuoy },
 ];

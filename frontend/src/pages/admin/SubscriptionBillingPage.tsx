@@ -103,7 +103,7 @@ export function SubscriptionBillingPage() {
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{plan.description ?? "-"}</p>
                   <p className="mt-3 text-lg font-bold">{formatMoney(plan.priceMonthly)} / شهريًا</p>
-                  <p className="text-sm text-muted-foreground">زر طلب الترقية سيبقى placeholder في هذه المرحلة.</p>
+                  <p className="text-sm text-muted-foreground">يمكن تفعيل الترقية من لوحة المنصة عند ربط مسار الدفع النهائي.</p>
                 </div>
               ))}
             </div>

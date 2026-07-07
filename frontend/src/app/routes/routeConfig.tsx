@@ -10,7 +10,6 @@ import { RootRoute } from "./RootRoute";
 
 const ActivityLogsPage = lazy(() => import("../../pages/admin/ActivityLogsPage").then((module) => ({ default: module.ActivityLogsPage })));
 const BranchesPage = lazy(() => import("../../pages/admin/BranchesPage").then((module) => ({ default: module.BranchesPage })));
-const DemoScriptPage = lazy(() => import("../../pages/admin/DemoScriptPage").then((module) => ({ default: module.DemoScriptPage })));
 const HelpSupportPage = lazy(() => import("../../pages/admin/HelpSupportPage").then((module) => ({ default: module.HelpSupportPage })));
 const SettingsPage = lazy(() => import("../../pages/admin/SettingsPage").then((module) => ({ default: module.SettingsPage })));
 const SubscriptionBlockedPage = lazy(() => import("../../pages/admin/SubscriptionBlockedPage").then((module) => ({ default: module.SubscriptionBlockedPage })));
@@ -52,7 +51,8 @@ export const routeConfig: RouteObject[] = [
       { path: "/landing", element: <LandingPage /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/activate", element: <ActivationPage /> },
-      { path: "/request-demo", element: <RequestDemoPage /> },
+      { path: "/contact", element: <RequestDemoPage /> },
+      { path: "/request-demo", element: <Navigate to="/contact" replace /> },
       { path: "/onboarding", element: <OnboardingWizardPage /> },
     ],
   },
@@ -84,7 +84,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/subscription-billing", element: <ProtectedRoute path="/subscription-billing"><SubscriptionBillingPage /></ProtectedRoute> },
           { path: "/subscription-blocked", element: <SubscriptionBlockedPage /> },
           { path: "/help", element: <HelpSupportPage /> },
-          { path: "/demo-script", element: <DemoScriptPage /> },
+          { path: "/demo-script", element: <Navigate to="/help" replace /> },
           { path: "/settings", element: <ProtectedRoute path="/settings"><SettingsPage /></ProtectedRoute> },
         ],
       },

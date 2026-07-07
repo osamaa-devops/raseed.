@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsOptional, IsString, MinLength } from "class-validator";
+import { IsIn, IsOptional, IsString, Matches, MinLength } from "class-validator";
 
 export class UpdateUserDto {
   @IsOptional()
@@ -6,7 +6,7 @@ export class UpdateUserDto {
   name?: string;
 
   @IsOptional()
-  @IsEmail()
+  @Matches(/^[^\s@]+@[^\s@]+$/)
   email?: string;
 
   @IsOptional()

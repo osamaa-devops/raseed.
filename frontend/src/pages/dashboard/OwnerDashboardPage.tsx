@@ -2,14 +2,12 @@ import { AlertTriangle, ArrowLeft, BarChart3, Package, Receipt, ShoppingCart, Tr
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { DemoModeBanner } from "../../components/demo/DemoModeBanner";
 import { LoadingSkeleton } from "../../components/feedback/LoadingSkeleton";
 import { AppCard } from "../../components/ui/AppCard";
 import { AppButton } from "../../components/ui/AppButton";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { dashboardService } from "../../services/dashboardService";
 import type { DashboardOverview } from "../../types";
-import { isDemoStore } from "../../utils/demo";
 
 export function OwnerDashboardPage() {
   const { auth, hasPermission } = useAuth();
@@ -17,7 +15,6 @@ export function OwnerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const branchId = auth?.branch?.id ?? auth?.user.branchId ?? undefined;
-  const demoMode = isDemoStore(auth?.store);
 
   useEffect(() => {
     if (!hasPermission("dashboard.view")) {
@@ -43,7 +40,6 @@ export function OwnerDashboardPage() {
         description={`ملخص تشغيل ${auth?.store?.name ?? "المتجر"} ليوم ${new Date(overview.date).toLocaleDateString("ar-EG")} بطريقة سريعة ومفهومة.`}
         actions={<AppButton icon={ShoppingCart} onClick={() => (window.location.href = "/pos")}>فتح الكاشير</AppButton>}
       />
-      {demoMode && <DemoModeBanner />}
 
       <div className="mb-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <AppCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(15,118,110,0.12),rgba(245,158,11,0.08),rgba(255,255,255,0.02))]">

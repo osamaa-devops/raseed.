@@ -2,18 +2,15 @@ import { Bell, ChevronDown, Store } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../../app/providers/AuthProvider";
-import { DemoModeBanner } from "../demo/DemoModeBanner";
 import { ConnectionPill } from "../status/ConnectionPill";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { dashboardNavGroups } from "./navigationConfig";
-import { isDemoStore } from "../../utils/demo";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 
 export function Topbar() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const demoMode = isDemoStore(auth?.store);
   const { isOnline } = useNetworkStatus();
   const navigationOptions = useMemo(
     () => [
@@ -35,13 +32,12 @@ export function Topbar() {
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary md:hidden">ر</span>
           <div className="flex items-center gap-2">
             <Store size={16} className="text-muted-foreground" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-foreground">{auth?.store?.name ?? "رصيد"}</span>
-                {demoMode && <DemoModeBanner compact />}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-foreground">{auth?.store?.name ?? "رصيد"}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{auth?.branch?.name ?? "بدون فرع"} • تشغيل يومي مباشر</p>
               </div>
-              <p className="text-xs text-muted-foreground">{auth?.branch?.name ?? "بدون فرع"} • تشغيل يومي مباشر</p>
-            </div>
           </div>
         </div>
         <div className="mr-auto flex w-full flex-wrap items-center justify-end gap-2 md:w-auto">

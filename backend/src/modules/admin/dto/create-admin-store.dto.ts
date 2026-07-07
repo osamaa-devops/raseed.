@@ -1,6 +1,6 @@
 import { BillingCycle } from "@prisma/client";
 import { Type } from "class-transformer";
-import { IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, Min } from "class-validator";
 
 export class CreateAdminStoreDto {
   @IsString()
@@ -16,7 +16,7 @@ export class CreateAdminStoreDto {
   phone!: string;
 
   @IsOptional()
-  @IsEmail()
+  @Matches(/^[^\s@]+@[^\s@]+$/)
   email?: string;
 
   @IsString()
@@ -38,7 +38,7 @@ export class CreateAdminStoreDto {
   ownerUserName!: string;
 
   @IsOptional()
-  @IsEmail()
+  @Matches(/^[^\s@]+@[^\s@]+$/)
   ownerUserEmail?: string;
 
   @IsString()

@@ -687,7 +687,7 @@ export async function main() {
     name: "محمود القاسم",
     email: "mahmoud@local",
     phone: "01000000010",
-    password: "hello",
+    password: "hello2026",
   });
 
   await findOrCreateUser({
@@ -697,7 +697,7 @@ export async function main() {
     name: "أحمد القاسم",
     email: "owner2@local",
     phone: "01000000011",
-    password: "hello",
+    password: "hello2026",
   });
 
   await findOrCreateUser({
@@ -717,7 +717,7 @@ export async function main() {
     name: "أحمد محمود",
     email: "ahmed@local",
     phone: "01000000030",
-    password: "hello",
+    password: "hello2026",
   });
 
   await findOrCreateUser({
@@ -727,7 +727,7 @@ export async function main() {
     name: "محمود علي",
     email: "cashier2@local",
     phone: "01000000031",
-    password: "hello",
+    password: "hello2026",
   });
 
   await findOrCreateUser({

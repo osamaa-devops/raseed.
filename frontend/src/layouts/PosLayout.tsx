@@ -2,16 +2,13 @@ import { Outlet } from "react-router";
 import { useNavigate } from "react-router";
 import { Clock, Keyboard, ScanLine, Store, User } from "lucide-react";
 import { useAuth } from "../app/providers/AuthProvider";
-import { DemoModeBanner } from "../components/demo/DemoModeBanner";
 import { ConnectionPill } from "../components/status/ConnectionPill";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
-import { isDemoStore } from "../utils/demo";
 
 export function PosLayout() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
-  const demoMode = isDemoStore(auth?.store);
   const { isOnline } = useNetworkStatus();
   const handleLogout = async () => {
     await logout();
@@ -25,11 +22,8 @@ export function PosLayout() {
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20">ر</span>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-bold">رصيد POS</p>
-                {demoMode && <DemoModeBanner compact />}
-              </div>
-              <p className="text-xs text-muted-foreground">واجهة بيع سريعة وواضحة للعرض أمام أصحاب المتاجر</p>
+              <p className="font-bold">رصيد POS</p>
+              <p className="text-xs text-muted-foreground">واجهة بيع سريعة وواضحة للاستخدام اليومي داخل المحل</p>
             </div>
           </div>
           <div className="mr-auto flex flex-wrap items-center gap-3 text-sm text-muted-foreground">

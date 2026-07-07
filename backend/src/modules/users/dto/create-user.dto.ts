@@ -1,11 +1,11 @@
-import { IsEmail, IsIn, IsOptional, IsString, MinLength } from "class-validator";
+import { IsIn, IsOptional, IsString, Matches, MinLength } from "class-validator";
 
 export class CreateUserDto {
   @IsString()
   name!: string;
 
   @IsOptional()
-  @IsEmail()
+  @Matches(/^[^\s@]+@[^\s@]+$/)
   email?: string;
 
   @IsOptional()

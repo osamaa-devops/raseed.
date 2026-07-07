@@ -19,11 +19,11 @@ export function LandingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-white">ر</span>
-            <span className="text-lg font-bold">رصيد</span>
+          <span className="text-lg font-bold">رصيد</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/login"><AppButton variant="ghost">تسجيل الدخول</AppButton></Link>
-            <Link to="/request-demo"><AppButton>اطلب تجربة مجانية</AppButton></Link>
+            <Link to="/contact"><AppButton>تواصل مع الدعم</AppButton></Link>
           </div>
         </div>
       </header>
@@ -32,27 +32,27 @@ export function LandingPage() {
           <div>
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-secondary px-3 py-1.5 text-xs font-bold text-secondary-foreground">
               <ShieldCheck size={14} />
-              نظام POS عربي للسوبر ماركت والمحلات
+              نظام POS عربي للمحال المحلية
             </div>
             <h1 className="text-4xl font-extrabold leading-tight text-foreground md:text-5xl">
-              نظام كاشير ومخزون ذكي للسوبر ماركت والمحلات
+              نظام كاشير ومخزون ذكي للمحل الحقيقي
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground">
-              تابع مبيعاتك، مخزونك، أرباحك، وموظفينك من مكان واحد.
+              اشتغل محليًا على جهازك، وسجّل المبيعات، وتابع المخزون، واطبع الإيصالات من شاشة واحدة.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/request-demo"><AppButton>اطلب تجربة مجانية</AppButton></Link>
-              <Link to="/login"><AppButton variant="outline">شاهد العرض التوضيحي</AppButton></Link>
+              <Link to="/login"><AppButton>ابدأ التشغيل</AppButton></Link>
+              <Link to="/contact"><AppButton variant="outline">طلب تواصل</AppButton></Link>
             </div>
           </div>
           <AppCard className="p-4">
             <div className="rounded-lg bg-sidebar p-4 text-white">
-              <p className="text-sm text-white/70">ماركت المدينة</p>
-              <p className="mt-2 text-3xl font-bold">8,500 ج</p>
-              <p className="text-sm text-white/70">مبيعات اليوم</p>
+              <p className="text-sm text-white/70">تشغيل محلي</p>
+              <p className="mt-2 text-3xl font-bold">بدون إنترنت</p>
+              <p className="text-sm text-white/70">نسخة جاهزة للمحل</p>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {["47 فاتورة", "3 منتجات منخفضة", "2,300 ج ربح", "شيفت نشط"].map((item) => (
+              {["بيع بالباركود", "صلاحيات للموظفين", "إيصال سريع", "شيفت مفتوح"].map((item) => (
                 <div key={item} className="rounded-lg bg-muted p-3 text-sm font-bold">{item}</div>
               ))}
             </div>
