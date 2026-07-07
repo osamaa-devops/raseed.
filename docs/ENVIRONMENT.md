@@ -35,6 +35,11 @@ Environment validation now fails fast on startup when required values are missin
 | `THROTTLE_TTL_SECONDS` | Rate-limit window | Default `60` |
 | `THROTTLE_LIMIT` | Rate-limit max requests | Default `120` |
 | `LOG_LEVEL` | Nest logger levels | Example `log,warn,error` |
+| `LICENSE_SECRET` | Offline license and backup encryption secret | Optional in local dev, required in production |
+| `RASEED_DATA_DIR` | Desktop runtime data root | Electron sets this automatically in packaged mode |
+| `RASEED_LOGS_DIR` | Local logs folder | Defaults to `RASEED_DATA_DIR/logs` |
+| `RASEED_BACKUP_DIR` | Backup folder | Defaults to `RASEED_DATA_DIR/backups` |
+| `RASEED_LICENSE_PATH` | Local encrypted license file | Defaults to `RASEED_DATA_DIR/license.json` |
 
 ### Example files
 
@@ -71,6 +76,7 @@ The frontend currently requires:
 - Never reuse development JWT secrets in production.
 - Keep `DATABASE_URL` pointed at the production database only inside production env files or secrets storage.
 - Desktop packaging or another deployment platform can own production secrets.
+- In packaged desktop mode, Electron passes the local runtime paths into the backend automatically.
 - Prefer passing secrets through your deployment platform or an untracked `backend/.env.production`.
 - In production, configure `FRONTEND_URL` with the exact HTTPS app origin only, such as `https://app.example.com`.
 - Access tokens are intentionally short-lived and should not be persisted in browser storage.

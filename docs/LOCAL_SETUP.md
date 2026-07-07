@@ -59,6 +59,12 @@ npm run db:seed
 npm run dev
 ```
 
+If you are running the React app separately, make sure `frontend/.env` contains:
+
+```env
+VITE_API_URL=http://localhost:4000/api
+```
+
 For the desktop preview shell:
 
 ```bash
@@ -76,3 +82,5 @@ npm run db:studio
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:4000/api`
 - Health check: `http://localhost:4000/api/health`
+
+The first launch flow will ask for license activation in packaged desktop mode and then show the setup wizard if no owner exists yet.

@@ -1,82 +1,70 @@
 # Deployment
 
-## Desktop packaging
+## Local-first development
 
-Current packaging work is moving toward a Windows desktop app with Electron and a local PostgreSQL database on the user's machine.
+Raseed is designed to run locally without Docker or Docker Compose.
 
-Primary files:
+- PostgreSQL runs as a normal host service
+- Backend runs with `npm --prefix backend run dev`
+- Frontend runs with `npm --prefix frontend run dev`
+- Electron desktop runs with `npm run desktop:dev`
 
-- [desktop/main.cjs](/home/osos/Desktop/raseed./desktop/main.cjs)
-- [desktop/preload.cjs](/home/osos/Desktop/raseed./desktop/preload.cjs)
-- [scripts/dev-desktop.cjs](/home/osos/Desktop/raseed./scripts/dev-desktop.cjs)
+See [docs/LOCAL_SETUP.md](/home/osos/Desktop/raseed./docs/LOCAL_SETUP.md) for the exact Ubuntu setup.
+
+## Windows desktop installer
+
+The Windows build uses Electron Builder and produces `RaseedSetup.exe`.
+
+The packaged app includes:
+
 - `frontend/dist`
 - `backend/dist`
+- Prisma schema and migrations
+- desktop bootstrap files
+- runtime scripts needed for local startup
 
-## First-time setup
+Desktop behavior:
 
-1. Create `backend/.env.production` from [backend/.env.production.example](/home/osos/Desktop/raseed./backend/.env.production.example).
-2. Set strong production values for `DATABASE_URL`, `JWT_SECRET`, and `FRONTEND_URL`.
-3. Use the desktop installer or another packaging workflow that matches the environment.
+- launches from one icon
+- starts the backend automatically
+- waits for `/api/health`
+- restarts the backend if it crashes
+- hides terminal windows on Windows
 
-## Local development
+Build commands:
 
-Local development uses the host PostgreSQL service and npm scripts.
+```bash
+npm run backend:build
+npm run frontend:build
+npm run desktop:build
+npm run desktop:package
+```
 
-Use the local setup guide in [docs/LOCAL_SETUP.md](/home/osos/Desktop/raseed./docs/LOCAL_SETUP.md) and the npm scripts in the root `package.json`.
+## Production database
 
-## Start packaged app
+Production mode still expects a real PostgreSQL server, but Docker is optional and not required for local use.
 
-Build the backend and frontend and then package the desktop app with Electron Builder.
+Recommended desktop and local connection string:
 
-## Ports
+```env
+DATABASE_URL=postgresql://raseed:raseed_password@localhost:5432/raseed_dev?schema=public
+```
 
-- Backend: `4000`
-- Frontend dev server: `5173`
-- PostgreSQL: `5432`
+## Data location
+
+- Development runtime data: `runtime/`
+- Packaged desktop runtime data: Electron user-data directory
+- Logs: local `logs/` folder in development, user-data logs in packaged mode
+- Backups: configured from inside the app
 
 ## Health checks
 
-- Backend app health: `GET /api/health`
-- Backend health includes a database readiness check and returns degraded state when PostgreSQL is unavailable.
-- Desktop shell health should rely on the backend health endpoint and local process checks.
+- Backend health: `GET /api/health`
+- Local bootstrap status: `GET /api/bootstrap/status`
+- License status: `GET /api/system/license`
 
-## Monitoring placeholders
+## Troubleshooting
 
-This phase does not fully implement metrics storage or dashboards, but production is now prepared for:
-
-- uptime checks against `/healthz`
-- application checks against `/api/health`
-- future Prometheus scraping through an additional metrics endpoint or sidecar
-- future Grafana dashboards for uptime, response times, and database health
-
-## Database migrations
-
-Run Prisma migrations before or during rollout:
-
-```bash
-cd backend
-npx prisma migrate deploy
-```
-
-For desktop or local deployment, use `npm run db:migrate` after PostgreSQL is running locally.
-
-## Upgrade flow
-
-1. Pull updated code.
-2. Rebuild images.
-3. Run `npx prisma migrate deploy`.
-4. Restart the app or service wrapper.
-5. Verify `/api/health`.
-
-## Rollback note
-
-Application rollback is straightforward.
-Database rollback is not automatic.
-Treat production restores as destructive unless you are restoring into a fresh database.
-
-Before every production migration:
-
-- take a backup first
-- confirm restore works in a staging or local recovery database
-
-See [docs/BACKUP.md](/home/osos/Desktop/raseed./docs/BACKUP.md).
+- If the app opens a PostgreSQL error screen, confirm the local PostgreSQL service is running.
+- If you copied the app to another PC, the license screen will ask for activation again.
+- If the backend crashes immediately, check the local logs folder for the captured error output.

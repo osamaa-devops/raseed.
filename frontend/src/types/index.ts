@@ -782,3 +782,19 @@ export type ActivityLog = {
   entity?: string;
   createdAt: string;
 };
+
+export type LicenseStatus = {
+  developmentBypass: boolean;
+  activated: boolean;
+  valid: boolean;
+  fingerprint: string;
+  activatedAt?: string | null;
+  storeName?: string | null;
+  message: string;
+};
+
+export type BackupStatus = {
+  backupDir: string;
+  lastBackupAt: string | null;
+  lastBackupPath: string | null;
+};

@@ -39,6 +39,10 @@
       "backend/prisma/**",
       "package.json"
     ],
+    "asarUnpack": [
+      "**/node_modules/.prisma/**",
+      "**/node_modules/@prisma/engines/**"
+    ],
     "asar": true,
     "win": {
       "target": "nsis",

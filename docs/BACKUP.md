@@ -1,47 +1,32 @@
-# Backup
+# Backup and Restore
 
-## Scripts
+Raseed now exposes backup and restore from inside the app for Owner users.
 
-- Backup: [scripts/backup-db.sh](/home/osos/Desktop/raseed./scripts/backup-db.sh)
-- Restore: [scripts/restore-db.sh](/home/osos/Desktop/raseed./scripts/restore-db.sh)
+## Where it lives
 
-Both scripts require `DATABASE_URL`.
+Open `Settings` and switch to the `الترخيص والنسخ` tab.
 
-## Backup example
+## What it does
 
-```bash
-export DATABASE_URL="postgresql://user:password@host:5432/raseed_prod?schema=public"
-./scripts/backup-db.sh
-```
+- Creates encrypted local backup files
+- Restores from encrypted backup files
+- Stores the last backup time in the local runtime config
+- Records backup and restore actions in the audit log
 
-Custom output path:
+## Backup location
 
-```bash
-./scripts/backup-db.sh backups/raseed-manual-20260706.sql.gz
-```
+- Development default: `runtime/backups`
+- Packaged desktop default: the Electron user-data folder
 
-## Restore example
+You can change the backup folder from the settings screen.
 
-```bash
-export DATABASE_URL="postgresql://user:password@host:5432/raseed_restore?schema=public"
-./scripts/restore-db.sh backups/raseed-manual-20260706.sql.gz
-```
+## Important notes
 
-## Recommended schedule
+- Restore requires Owner access.
+- Backups are machine-bound in this version.
+- Keep the backup folder outside the active app folder if you want easier manual copies.
+- If PostgreSQL is unavailable, backup and restore will fail with a clear error.
 
-- Daily full backup at minimum
-- Additional pre-deploy backup before every migration or release
-- Keep at least:
-  - 7 daily backups
-  - 4 weekly backups
-  - 3 monthly backups
+## Legacy scripts
 
-## Operational guidance
-
-- Test restore regularly, not only backup creation.
-- Store backup files outside the application host when you move to real infrastructure.
-- Encrypt backup files at rest when moving beyond local or staging usage.
-- Keep restore drills documented per environment.
-- Treat production restores as destructive unless you are targeting a fresh recovery database.
-
-Cloud backup automation is intentionally not implemented in this phase.
+The older `scripts/backup-db.sh` and `scripts/restore-db.sh` scripts still exist as operational helpers, but they are no longer the primary local workflow.

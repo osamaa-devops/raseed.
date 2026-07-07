@@ -19,6 +19,7 @@ import { NotificationsPage } from "../../pages/insights/NotificationsPage";
 import { InventoryPage } from "../../pages/inventory/InventoryPage";
 import { ImportExportPage } from "../../pages/import-export/ImportExportPage";
 import { OnboardingWizardPage } from "../../pages/onboarding/OnboardingWizardPage";
+import { ActivationPage } from "../../pages/public/ActivationPage";
 import { CategoriesPage } from "../../pages/products/CategoriesPage";
 import { ProductsPage } from "../../pages/products/ProductsPage";
 import { LandingPage } from "../../pages/public/LandingPage";
@@ -47,6 +48,7 @@ export const routeConfig: RouteObject[] = [
       { path: "/", element: <RootRoute /> },
       { path: "/landing", element: <LandingPage /> },
       { path: "/login", element: <LoginPage /> },
+      { path: "/activate", element: <ActivationPage /> },
       { path: "/request-demo", element: <RequestDemoPage /> },
       { path: "/onboarding", element: <OnboardingWizardPage /> },
     ],

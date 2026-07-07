@@ -4,7 +4,7 @@ Raseed is an Arabic RTL POS and retail management SaaS for supermarkets, mini ma
 
 Release candidate: `v1.0.0-RC1`
 
-This repository is now organized as a local-first full-stack workspace with desktop packaging support in progress.
+This repository is now organized as a local-first full-stack workspace with Electron desktop packaging for Windows.
 
 ## Final Stack
 
@@ -13,8 +13,8 @@ This repository is now organized as a local-first full-stack workspace with desk
 - Database: PostgreSQL
 - ORM: Prisma
 - Auth: JWT and role-based access control
-- Desktop later: Electron
-- Offline later: local SQLite plus sync queue
+- Desktop: Electron
+- Offline: local PostgreSQL on the host machine or the packaged machine
 
 PostgreSQL + Prisma is the chosen direction because invoices, stock movements, payments, shifts, returns, reports, subscriptions, and permissions need relational consistency and reliable transactions.
 
@@ -59,6 +59,7 @@ Recommended for a small production deployment:
 
 For deployment and operations, use these guides:
 
+- `docs/LOCAL_SETUP.md`
 - `docs/ENVIRONMENT.md`
 - `docs/DEPLOYMENT.md`
 - `docs/RELEASE_CHECKLIST.md`
@@ -85,6 +86,8 @@ Desktop preview flow:
 1. Start PostgreSQL locally.
 2. Run `npm run desktop:dev`.
 3. The Electron shell opens after backend and frontend are ready.
+
+Packaged desktop builds keep their app data under the Electron user-data directory. In development, runtime data stays inside `runtime/` in the repo unless overridden with `RASEED_DATA_DIR`.
 
 Local URLs:
 
@@ -140,7 +143,7 @@ Seeded development users:
 | Cashier | `cashier@raseed.local` | `RaseedCashier!2026` |
 | Inventory | `inventory@raseed.local` | `RaseedInventory!2026` |
 
-These are local development credentials only.
+These are local development credentials only. After the first real setup wizard, the owner account you create becomes the production login.
 
 The app no longer exposes these credentials to normal users inside the login screen. In development mode, the login page can show a local helper button, but the canonical source of demo credentials remains this README.
 
@@ -187,7 +190,7 @@ Known limitations:
 
 - Build logs still show dependency deprecation warnings from the existing lockfile.
 - Frontend bundle size is acceptable for RC1 but still deserves code-splitting later.
-- Offline mode, Electron, and silent printing are intentionally out of scope for RC1.
+- Silent printing and deeper hardware integration still need more platform-specific hardening.
 
 ## Tenancy Rule
 
@@ -231,6 +234,11 @@ Implemented in this foundation step:
 - Super admin overview, stores, plans, subscriptions, and subscription payments APIs
 - Frontend super admin dashboard, stores, plans, payments, and owner subscription billing pages integrated with the backend API
 - Browser-based receipt printing with per-store/branch receipt settings
+- First-run setup wizard for the owner and shop profile
+- License activation screen and local encrypted license storage
+- Owner-only backup and restore screen with encrypted backups
+- Electron bootstrap that waits for the local backend and can relaunch it on crash
+- Windows installer packaging via Electron Builder
 - Product barcode generation and browser-printable barcode label sheets
 - Excel/CSV import and export for products, initial inventory stock, operational lists, and key reports
 - Settings page sections for receipts, barcode labels, and future hardware setup

@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { RequireAnyPermissions } from "../../common/decorators/require-any-permissions.decorator";
 import { RequirePermissions } from "../../common/decorators/require-permissions.decorator";
 import { UpdateCatalogStatusDto } from "../../common/dto/update-catalog-status.dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -17,13 +18,13 @@ import { ProductsService } from "./products.service";
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @RequirePermissions("products.view")
+  @RequireAnyPermissions("products.view", "pos.catalog.view")
   @Get()
   list(@CurrentUser() user: AuthenticatedUser, @Query() query: ListProductsDto) {
     return this.productsService.list(user, query);
   }
 
-  @RequirePermissions("products.view")
+  @RequireAnyPermissions("products.view", "pos.catalog.view")
   @Get(":id")
   getById(@CurrentUser() user: AuthenticatedUser, @Param("id") id: string) {
     return this.productsService.getById(user, id);

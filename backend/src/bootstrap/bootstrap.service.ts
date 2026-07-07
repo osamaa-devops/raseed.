@@ -7,6 +7,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { seedCoreReferenceData, rolePermissions } from "./bootstrap-core";
 import { BootstrapSetupDto } from "./bootstrap.dto";
 import * as bcrypt from "bcryptjs";
+import { getLogsDir } from "../common/runtime/runtime-paths";
 
 type BootstrapStatus = {
   postgresConfigured: boolean;
@@ -19,7 +20,7 @@ type BootstrapStatus = {
 @Injectable()
 export class BootstrapService implements OnApplicationBootstrap {
   private readonly logger = new Logger(BootstrapService.name);
-  private readonly logsDir = path.resolve(process.cwd(), "logs");
+  private readonly logsDir = getLogsDir();
 
   constructor(private readonly prisma: PrismaService) {}
 

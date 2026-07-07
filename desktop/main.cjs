@@ -2,12 +2,12 @@ const { spawn } = require("node:child_process");
 const { promises: fs } = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 
 const root = path.resolve(__dirname, "..");
-const logsDir = path.join(root, "logs");
 const isWin = process.platform === "win32";
 const npmCmd = isWin ? "npm.cmd" : "npm";
+let logsDir = path.join(root, "logs");
 
 let backendProcess = null;
 let backendRestartCount = 0;
@@ -23,6 +23,7 @@ async function writeLog(message) {
 function spawnProcess(command, args, env = {}) {
   return spawn(command, args, {
     cwd: root,
+    windowsHide: true,
     stdio: "inherit",
     shell: false,
     env: {
@@ -123,6 +124,7 @@ async function startBackend() {
   backendOutputBuffer = "";
   backendProcess = spawn(command, args, {
     cwd: root,
+    windowsHide: true,
     shell: false,
     stdio: ["ignore", "pipe", "pipe"],
     env: {
@@ -130,6 +132,11 @@ async function startBackend() {
       NODE_ENV: app.isPackaged ? "production" : "development",
       RASEED_DESKTOP: "true",
       ELECTRON_RUN_AS_NODE: "1",
+      RASEED_DATA_DIR: process.env.RASEED_DATA_DIR ?? (app.isPackaged ? app.getPath("userData") : path.join(root, "runtime")),
+      RASEED_LOGS_DIR: logsDir,
+      RASEED_BACKUP_DIR: path.join(logsDir, "backups"),
+      RASEED_LICENSE_PATH: path.join(logsDir, "license.json"),
+      RASEED_RUNTIME_CONFIG_PATH: path.join(logsDir, "runtime-config.json"),
     },
   });
 
@@ -168,6 +175,7 @@ async function startBackend() {
   });
 
   await waitFor("http://localhost:4000/api/health");
+  backendRestartCount = 0;
 }
 
 function formatBackendFailure(message, output) {
@@ -181,6 +189,14 @@ function formatBackendFailure(message, output) {
       "PostgreSQL is not reachable or the credentials are wrong.",
       "Install and start PostgreSQL locally, then create the raseed_dev database and raseed user.",
       "Expected local URL: postgresql://raseed:raseed_password@localhost:5432/raseed_dev?schema=public",
+      "",
+      friendly,
+    ].join("\n");
+  }
+  if (friendly.includes("createdb") || friendly.includes("pg_dump") || friendly.includes("psql")) {
+    return [
+      "PostgreSQL command-line tools are missing from this machine.",
+      "Install PostgreSQL locally so that `createdb`, `pg_dump`, and `psql` are available on PATH.",
       "",
       friendly,
     ].join("\n");
@@ -221,6 +237,13 @@ function createWindow() {
 
 async function bootstrapApp() {
   app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
+  const dataDir = app.isPackaged ? app.getPath("userData") : path.join(root, "runtime");
+  logsDir = path.join(dataDir, "logs");
+  process.env.RASEED_DATA_DIR = dataDir;
+  process.env.RASEED_LOGS_DIR = logsDir;
+  process.env.RASEED_BACKUP_DIR = path.join(dataDir, "backups");
+  process.env.RASEED_LICENSE_PATH = path.join(dataDir, "license.json");
+  process.env.RASEED_RUNTIME_CONFIG_PATH = path.join(dataDir, "runtime-config.json");
   await writeLog("app.bootstrap");
   try {
     await startBackend();
@@ -237,6 +260,26 @@ async function bootstrapApp() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle("raseed:choose-directory", async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ["openDirectory", "createDirectory"],
+    });
+    return result.canceled ? null : result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle("raseed:choose-file", async (_event, options = {}) => {
+    const result = await dialog.showOpenDialog({
+      properties: ["openFile"],
+      filters: options.filters ?? [],
+    });
+    return result.canceled ? null : result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle("raseed:show-item-in-folder", async (_event, filePath) => {
+    if (filePath) shell.showItemInFolder(filePath);
+    return true;
+  });
+
   void bootstrapApp();
 });
 
