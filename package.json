@@ -2,8 +2,9 @@
   "name": "raseed-workspace",
   "private": true,
   "version": "1.0.0-rc.1",
+  "main": "desktop/main.cjs",
   "scripts": {
-    "dev": "npm run dev:backend & npm run dev:frontend",
+    "dev": "node scripts/dev-web.cjs",
     "dev:frontend": "npm --prefix frontend run dev",
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
@@ -12,10 +13,42 @@
     "backend:build": "npm --prefix backend run build",
     "db:migrate": "npm --prefix backend run prisma:migrate",
     "db:seed": "npm --prefix backend run prisma:seed",
-    "db:studio": "npm --prefix backend run prisma:studio"
+    "db:studio": "npm --prefix backend run prisma:studio",
+    "desktop:dev": "node scripts/dev-desktop.cjs",
+    "desktop:build": "npm run backend:build && npm run frontend:build",
+    "desktop:package": "electron-builder"
   },
   "workspaces": [
     "frontend",
     "backend"
-  ]
+  ],
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.raseed.pos",
+    "productName": "Raseed",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**",
+      "frontend/dist/**",
+      "backend/dist/**",
+      "backend/prisma/**",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": "nsis",
+      "artifactName": "RaseedSetup.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
 }

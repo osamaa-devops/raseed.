@@ -33,6 +33,7 @@ import { AppLogger } from "./common/logger/app.logger";
 import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { ThrottlerGuard } from "@nestjs/throttler";
+import { BootstrapModule } from "./bootstrap/bootstrap.module";
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { ThrottlerGuard } from "@nestjs/throttler";
     AdminModule,
     SettingsModule,
     ImportExportModule,
+    BootstrapModule,
   ],
   providers: [
     AppLogger,

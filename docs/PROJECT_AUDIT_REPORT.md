@@ -109,24 +109,12 @@ Reference files:
 - Backend: Jest + Supertest + PostgreSQL-backed e2e tests
 - Frontend: Vitest + Testing Library
 
-### Docker / deployment setup
+### Deployment setup
 
-- Backend Dockerfile
-- Frontend Dockerfile
-- Production compose file with:
-  - PostgreSQL
-  - Backend
-  - Frontend
-  - Nginx reverse proxy
-- Healthchecks and restart policies included
-
-Reference files:
-
-- [backend/Dockerfile](/home/osos/Desktop/raseed./backend/Dockerfile)
-- [frontend/Dockerfile](/home/osos/Desktop/raseed./frontend/Dockerfile)
-- [docker-compose.production.yml](/home/osos/Desktop/raseed./docker-compose.production.yml)
-- [nginx/nginx.conf](/home/osos/Desktop/raseed./nginx/nginx.conf)
-- [nginx/conf.d/default.conf](/home/osos/Desktop/raseed./nginx/conf.d/default.conf)
+- Local-first development with PostgreSQL installed on the host
+- Electron desktop launch path for offline POS use
+- Production packaging remains a separate, optional concern
+- Healthchecks and local logs are included
 
 ### Important libraries
 
@@ -1138,12 +1126,12 @@ Demo conclusion:
 
 ## 10. Deployment readiness
 
-### Docker status
+### Local desktop status
 
-- Production compose exists
-- Backend and frontend Dockerfiles exist
-- Docker compose config validates successfully
-- Backend and frontend production image builds were previously validated successfully in this workspace
+- Electron desktop bootstrap exists
+- Local PostgreSQL is the expected development database
+- Backend and frontend build successfully in this workspace
+- First-run setup wizard is wired to the bootstrap flow
 
 ### Environment variables
 
@@ -1330,11 +1318,6 @@ Commands run during this audit and recent verification:
 - `cd frontend && npm test`
   - Result: **Passed**
   - Output summary: `2` files, `3` tests passed
-
-### Docker
-
-- `docker-compose -f docker-compose.production.yml config`
-  - Result: **Passed**
 
 ### Runtime probe
 

@@ -8,10 +8,11 @@ import { RequestLoggingInterceptor } from "./common/interceptors/request-logging
 import { AppLogger } from "./common/logger/app.logger";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
-  const config = app.get(ConfigService);
-  const logger = app.get(AppLogger);
-  app.useLogger(logger);
+  try {
+    const app = await NestFactory.create(AppModule, { bufferLogs: true });
+    const config = app.get(ConfigService);
+    const logger = app.get(AppLogger);
+    app.useLogger(logger);
 
   const configuredOrigins = config.getOrThrow<string>("FRONTEND_URL");
   const baseOrigins = configuredOrigins.split(",").map((origin) => origin.trim()).filter(Boolean);
@@ -47,9 +48,28 @@ async function bootstrap() {
   app.useGlobalInterceptors(app.get(RequestLoggingInterceptor));
   app.useGlobalFilters(app.get(AllExceptionsFilter));
 
-  const port = config.get<number>("PORT", 4000);
-  await app.listen(port);
-  logger.log(`API listening on port ${port} in ${config.get<string>("NODE_ENV", "development")} mode`, "Bootstrap");
+    const port = config.get<number>("PORT", 4000);
+    await app.listen(port);
+    logger.log(`API listening on port ${port} in ${config.get<string>("NODE_ENV", "development")} mode`, "Bootstrap");
+  } catch (error) {
+    const message = formatBootstrapError(error);
+    // eslint-disable-next-line no-console
+    console.error(message);
+    process.exit(1);
+  }
 }
 
 void bootstrap();
+
+function formatBootstrapError(error: unknown) {
+  const text = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  if (text.includes("P1001") || text.includes("Can't reach database server") || text.includes("Authentication failed against database server")) {
+    return [
+      "Local PostgreSQL is not ready.",
+      "Make sure PostgreSQL is installed and running on localhost:5432.",
+      "Create a database named raseed_dev and a user named raseed with password raseed_password.",
+      text,
+    ].join("\n");
+  }
+  return text;
+}

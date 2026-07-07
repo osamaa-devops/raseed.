@@ -11,7 +11,6 @@
 - [ ] Fresh backup taken
 - [ ] Restore script tested against a non-production database
 - [ ] `UPLOAD_MAX_MB` set appropriately for import files
-- [ ] `docker-compose.production.yml` validated for production or staging only
 - [ ] Backend build passed
 - [ ] Backend tests passed
 - [ ] Frontend typecheck passed
@@ -25,15 +24,15 @@
 - [ ] Confirm owner login works
 - [ ] Confirm POS sale works
 - [ ] Confirm dashboard loads real production data
-- [ ] Confirm receipt preview/printing still works through nginx
+- [ ] Confirm receipt preview/printing still works in the packaged app
 - [ ] Confirm export endpoints still download correctly
 - [ ] Confirm backup job schedule is active
 - [ ] Confirm logs do not expose secrets
-- [ ] Confirm `/healthz` works for both nginx layers
+- [ ] Confirm `/api/health` works
 
 ## Future operations
 
-- [ ] Add staging deployment that mirrors production nginx and optional Docker
+- [ ] Add a formal packaging pipeline for Windows installers
 - [ ] Add centralized log shipping
 - [ ] Add uptime alerting
 - [ ] Add metrics collection for Prometheus/Grafana

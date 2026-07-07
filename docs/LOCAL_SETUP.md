@@ -1,6 +1,6 @@
 # Local Setup
 
-Raseed runs locally without Docker when PostgreSQL is installed on the host machine.
+Raseed runs locally when PostgreSQL is installed on the host machine.
 
 ## 1. Install PostgreSQL on Ubuntu
 
@@ -57,6 +57,12 @@ npm install
 npm run db:migrate
 npm run db:seed
 npm run dev
+```
+
+For the desktop preview shell:
+
+```bash
+npm run desktop:dev
 ```
 
 Optional Prisma tools:

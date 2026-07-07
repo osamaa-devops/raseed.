@@ -38,12 +38,14 @@ import { PurchaseOrdersPage } from "../../pages/suppliers/PurchaseOrdersPage";
 import { SuppliersPage } from "../../pages/suppliers/SuppliersPage";
 import { PosPage } from "../../pages/pos/PosPage";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { RootRoute } from "./RootRoute";
 
 export const routeConfig: RouteObject[] = [
   {
     element: <PublicLayout />,
     children: [
-      { path: "/", element: <LandingPage /> },
+      { path: "/", element: <RootRoute /> },
+      { path: "/landing", element: <LandingPage /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/request-demo", element: <RequestDemoPage /> },
       { path: "/onboarding", element: <OnboardingWizardPage /> },

@@ -70,8 +70,8 @@ The frontend currently requires:
 
 - Never reuse development JWT secrets in production.
 - Keep `DATABASE_URL` pointed at the production database only inside production env files or secrets storage.
-- Docker is optional for production or staging, not required for local development.
-- For Docker production, prefer passing secrets through your deployment platform or an untracked `backend/.env.production`.
+- Desktop packaging or another deployment platform can own production secrets.
+- Prefer passing secrets through your deployment platform or an untracked `backend/.env.production`.
 - In production, configure `FRONTEND_URL` with the exact HTTPS app origin only, such as `https://app.example.com`.
 - Access tokens are intentionally short-lived and should not be persisted in browser storage.
 - Refresh tokens are delivered through an `HttpOnly` cookie and are rotated by `/api/auth/refresh`.

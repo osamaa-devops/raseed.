@@ -1,15 +1,18 @@
 import { Outlet } from "react-router";
 import { useNavigate } from "react-router";
-import { Circle, Clock, Keyboard, ScanLine, Store, User } from "lucide-react";
+import { Clock, Keyboard, ScanLine, Store, User } from "lucide-react";
 import { useAuth } from "../app/providers/AuthProvider";
 import { DemoModeBanner } from "../components/demo/DemoModeBanner";
+import { ConnectionPill } from "../components/status/ConnectionPill";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { isDemoStore } from "../utils/demo";
 
 export function PosLayout() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
   const demoMode = isDemoStore(auth?.store);
+  const { isOnline } = useNetworkStatus();
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -33,7 +36,7 @@ export function PosLayout() {
             <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><Store size={15} /> {auth?.store?.name ?? "رصيد"} / {auth?.branch?.name ?? "بدون فرع"}</span>
             <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><User size={15} /> {auth?.user.name ?? "كاشير"}</span>
             <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><Clock size={15} /> شيفت العمل الحالي</span>
-            <span className="flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-success"><Circle size={9} className="fill-success text-success" /> متصل</span>
+            <ConnectionPill isOnline={isOnline} />
             <span className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 lg:inline-flex"><ScanLine size={15} /> قارئ الباركود جاهز</span>
             <span className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 lg:inline-flex"><Keyboard size={15} /> Enter لإضافة أسرع</span>
             <ThemeToggle />

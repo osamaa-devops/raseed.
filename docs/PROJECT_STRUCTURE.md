@@ -14,11 +14,12 @@
 │   ├── prisma
 │   ├── package.json
 │   └── .env.example
+├── desktop
+├── scripts
 ├── docs
 │   ├── PROJECT_STRUCTURE.md
 │   ├── ROADMAP.md
 │   └── TODO.md
-├── docker-compose.yml
 ├── package.json
 ├── package-lock.json
 ├── pnpm-workspace.yaml
@@ -346,7 +347,7 @@ Current backend implementation:
 ## Database
 
 Local development uses PostgreSQL on the host machine.
-Docker-based PostgreSQL remains optional for production or staging workflows.
+Production packaging should keep PostgreSQL local to the machine unless a different deployment model is intentionally chosen.
 
 Prisma foundational models:
 

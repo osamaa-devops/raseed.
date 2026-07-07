@@ -4,7 +4,7 @@ Raseed is an Arabic RTL POS and retail management SaaS for supermarkets, mini ma
 
 Release candidate: `v1.0.0-RC1`
 
-This repository is now organized as a local-first full-stack workspace with optional Docker production support.
+This repository is now organized as a local-first full-stack workspace with desktop packaging support in progress.
 
 ## Final Stack
 
@@ -33,7 +33,7 @@ Recommended for a small production deployment:
 - 4 CPU cores
 - 8 GB RAM
 - 40 GB disk
-- Docker or another deployment platform for production only
+- Windows desktop packaging or another deployment platform for production only
 
 ## Ports
 
@@ -48,8 +48,9 @@ Recommended for a small production deployment:
 .
 ├── frontend
 ├── backend
+├── desktop
+├── scripts
 ├── docs
-├── docker-compose.yml
 ├── package.json
 └── README.md
 ```
@@ -67,7 +68,7 @@ For deployment and operations, use these guides:
 
 ## Local Development
 
-Local development does not require Docker.
+Local development uses the host PostgreSQL service and npm scripts.
 
 Follow the full setup guide in [docs/LOCAL_SETUP.md](/home/osos/Desktop/raseed./docs/LOCAL_SETUP.md).
 
@@ -78,6 +79,12 @@ Quick local flow:
 3. Run `npm run db:migrate`.
 4. Run `npm run db:seed`.
 5. Run `npm run dev`.
+
+Desktop preview flow:
+
+1. Start PostgreSQL locally.
+2. Run `npm run desktop:dev`.
+3. The Electron shell opens after backend and frontend are ready.
 
 Local URLs:
 
@@ -178,20 +185,9 @@ Migration note:
 
 Known limitations:
 
-- Docker build logs still show dependency deprecation warnings from the existing lockfile.
+- Build logs still show dependency deprecation warnings from the existing lockfile.
 - Frontend bundle size is acceptable for RC1 but still deserves code-splitting later.
 - Offline mode, Electron, and silent printing are intentionally out of scope for RC1.
-
-## Optional Docker Production
-
-Docker and docker-compose are kept for production and staging workflows only.
-
-Use them when you want the containerized deployment path described in:
-
-- [docs/DEPLOYMENT.md](/home/osos/Desktop/raseed./docs/DEPLOYMENT.md)
-- `docker-compose.production.yml`
-- `backend/Dockerfile`
-- `frontend/Dockerfile`
 
 ## Tenancy Rule
 

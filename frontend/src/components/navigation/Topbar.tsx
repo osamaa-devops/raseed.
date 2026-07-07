@@ -1,17 +1,20 @@
-import { Bell, ChevronDown, Circle, Store } from "lucide-react";
+import { Bell, ChevronDown, Store } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { DemoModeBanner } from "../demo/DemoModeBanner";
+import { ConnectionPill } from "../status/ConnectionPill";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { dashboardNavGroups } from "./navigationConfig";
 import { isDemoStore } from "../../utils/demo";
+import { useNetworkStatus } from "../../hooks/useNetworkStatus";
 
 export function Topbar() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const demoMode = isDemoStore(auth?.store);
+  const { isOnline } = useNetworkStatus();
   const navigationOptions = useMemo(
     () => [
       { label: "الرئيسية", path: "/dashboard" },
@@ -56,10 +59,9 @@ export function Topbar() {
               ))}
             </select>
           </label>
-          <span className="hidden items-center gap-1.5 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success md:inline-flex">
-            <Circle size={9} className="fill-success text-success" />
-            متصل
-          </span>
+          <div className="hidden md:block">
+            <ConnectionPill isOnline={isOnline} />
+          </div>
           <ThemeToggle />
           <button className="relative rounded-xl p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
             <Bell size={17} />
