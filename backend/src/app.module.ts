@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 import { HealthModule } from "./modules/health/health.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -26,12 +28,27 @@ import { SubscriptionModule } from "./modules/subscription/subscription.module";
 import { AdminModule } from "./modules/admin/admin.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { ImportExportModule } from "./modules/import-export/import-export.module";
+import { validateEnv } from "./config/env.validation";
+import { AppLogger } from "./common/logger/app.logger";
+import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
+import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
+import { ThrottlerGuard } from "@nestjs/throttler";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [`.env.${process.env.NODE_ENV ?? "development"}`, ".env", ".env.local"],
+      validate: validateEnv,
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [],
+      useFactory: () => [
+        {
+          ttl: Number(process.env.THROTTLE_TTL_SECONDS ?? 60) * 1000,
+          limit: Number(process.env.THROTTLE_LIMIT ?? 120),
+        },
+      ],
     }),
     PrismaModule,
     HealthModule,
@@ -59,6 +76,12 @@ import { ImportExportModule } from "./modules/import-export/import-export.module
     AdminModule,
     SettingsModule,
     ImportExportModule,
+  ],
+  providers: [
+    AppLogger,
+    RequestLoggingInterceptor,
+    AllExceptionsFilter,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

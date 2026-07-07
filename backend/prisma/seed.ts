@@ -639,7 +639,7 @@ async function seedDemoOperationalData({
   }
 }
 
-async function main() {
+export async function main() {
   for (const key of permissions) {
     await upsertPermission(key);
   }
@@ -1248,13 +1248,3 @@ async function main() {
     }
   }
 }
-
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (error) => {
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });

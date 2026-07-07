@@ -10,8 +10,8 @@ export function PosLayout() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
   const demoMode = isDemoStore(auth?.store);
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -37,7 +37,7 @@ export function PosLayout() {
             <span className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 lg:inline-flex"><ScanLine size={15} /> قارئ الباركود جاهز</span>
             <span className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 lg:inline-flex"><Keyboard size={15} /> Enter لإضافة أسرع</span>
             <ThemeToggle />
-            <button type="button" onClick={handleLogout} className="rounded-xl px-3 py-2 text-danger hover:bg-danger/10">خروج</button>
+            <button type="button" onClick={() => void handleLogout()} className="rounded-xl px-3 py-2 text-danger hover:bg-danger/10">خروج</button>
           </div>
         </div>
       </header>

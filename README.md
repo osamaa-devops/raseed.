@@ -2,7 +2,9 @@
 
 Raseed is an Arabic RTL POS and retail management SaaS for supermarkets, mini markets, grocery stores, mobile shops, electronics shops, cosmetics shops, and general retail stores.
 
-This repository is now organized as a production-oriented full-stack workspace.
+Release candidate: `v1.0.0-RC1`
+
+This repository is now organized as a local-first full-stack workspace with optional Docker production support.
 
 ## Final Stack
 
@@ -16,6 +18,30 @@ This repository is now organized as a production-oriented full-stack workspace.
 
 PostgreSQL + Prisma is the chosen direction because invoices, stock movements, payments, shifts, returns, reports, subscriptions, and permissions need relational consistency and reliable transactions.
 
+## System Requirements
+
+Minimum for local development:
+
+- 2 CPU cores
+- 4 GB RAM
+- 20 GB disk
+- Node.js
+- PostgreSQL installed locally
+
+Recommended for a small production deployment:
+
+- 4 CPU cores
+- 8 GB RAM
+- 40 GB disk
+- Docker or another deployment platform for production only
+
+## Ports
+
+- Frontend: `80` in production, `5173` in development
+- Backend: `4000`
+- PostgreSQL: `5432`
+- Nginx health: `/healthz`
+
 ## Structure
 
 ```text
@@ -28,13 +54,43 @@ PostgreSQL + Prisma is the chosen direction because invoices, stock movements, p
 └── README.md
 ```
 
+## Production Docs
+
+For deployment and operations, use these guides:
+
+- `docs/ENVIRONMENT.md`
+- `docs/DEPLOYMENT.md`
+- `docs/RELEASE_CHECKLIST.md`
+- `docs/BACKUP.md`
+- `docs/SECURITY.md`
+- `docs/PRODUCTION_CHECKLIST.md`
+
+## Local Development
+
+Local development does not require Docker.
+
+Follow the full setup guide in [docs/LOCAL_SETUP.md](/home/osos/Desktop/raseed./docs/LOCAL_SETUP.md).
+
+Quick local flow:
+
+1. Start PostgreSQL locally.
+2. Set `backend/.env` to `DATABASE_URL=postgresql://raseed:raseed_password@localhost:5432/raseed_dev?schema=public`.
+3. Run `npm run db:migrate`.
+4. Run `npm run db:seed`.
+5. Run `npm run dev`.
+
+Local URLs:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:4000/api`
+- Health check: `http://localhost:4000/api/health`
+
 ## Frontend
 
 ```bash
-cd frontend
 npm install
-npm run dev
-npm run build
+npm run dev:frontend
+npm run frontend:build
 ```
 
 The frontend remains Arabic RTL-first, keeps the existing Raseed screens, and supports light/dark mode through shared CSS tokens.
@@ -42,13 +98,11 @@ The frontend remains Arabic RTL-first, keeps the existing Raseed screens, and su
 ## Backend
 
 ```bash
-cd backend
 npm install
-cp .env.example .env
-npx prisma migrate dev
-npm run seed
-npm run start:dev
-npm run build
+npm run db:migrate
+npm run db:seed
+npm run dev
+npm run backend:build
 ```
 
 Health check:
@@ -58,6 +112,14 @@ curl http://localhost:4000/api/health
 ```
 
 If you use the default example env, the API runs on `http://localhost:4000/api`.
+
+Production checklist:
+
+- Copy `backend/.env.production.example` to `backend/.env.production`
+- Set a strong `JWT_SECRET`
+- Point `FRONTEND_URL` at the exact HTTPS origin
+- Point `DATABASE_URL` at PostgreSQL
+- Confirm `UPLOAD_MAX_MB` is appropriate for import files
 
 ## Demo Credentials
 
@@ -78,35 +140,58 @@ The app no longer exposes these credentials to normal users inside the login scr
 ## Auth Flow
 
 - `POST /api/auth/login` accepts `identity` and `password`.
-- Login returns `accessToken`, `user`, `store`, `branch`, `role`, and `permissions`.
-- The frontend stores this response in `localStorage` for now.
-- `GET /api/auth/me` refreshes the current auth payload using the bearer token.
+- Login returns a short-lived `accessToken`, plus `user`, `store`, `branch`, `role`, and `permissions`.
+- Login also sets a refresh token in an `HttpOnly` cookie. The refresh token is never exposed to frontend JavaScript.
+- `POST /api/auth/refresh` rotates the refresh token and returns a new short-lived access token.
+- `POST /api/auth/logout` revokes the current refresh-token session and clears the cookie.
+- The frontend keeps the access token in memory only and restores sessions on page load through `/api/auth/refresh`.
+- `GET /api/auth/me` still returns the current auth payload for an already authorized access token.
 - Protected backend routes use JWT, role, and permission guards.
 - Store users are scoped by `storeId`; branch-specific workflows can use `branchId`.
 
+Default auth timing:
+
+- `ACCESS_TOKEN_EXPIRES_IN=15m`
+- `REFRESH_TOKEN_EXPIRES_DAYS=30`
+
 ## Database
 
-Start PostgreSQL:
+Local PostgreSQL:
 
-```bash
-docker-compose up -d postgres
-```
-
-If your Docker installation supports the newer plugin command, this also works:
-
-```bash
-docker compose up -d postgres
-```
+- database: `raseed_dev`
+- user: `raseed`
+- password: `raseed_password`
 
 Prisma commands:
 
 ```bash
-cd backend
-npx prisma generate
-npx prisma migrate dev
-npm run seed
-npx prisma studio
+npm run db:migrate
+npm run db:seed
+npm run db:studio
 ```
+
+Migration note:
+
+- The auth-session migration is `20260706044500_auth_sessions`.
+- If a local database was patched manually and Prisma did not record that migration, verify the live schema matches the migration SQL first, then repair state with `npx prisma migrate resolve --applied 20260706044500_auth_sessions`.
+- Avoid manual table creation on Prisma-managed databases unless you are intentionally repairing drift and have a matching migration file to resolve against.
+
+Known limitations:
+
+- Docker build logs still show dependency deprecation warnings from the existing lockfile.
+- Frontend bundle size is acceptable for RC1 but still deserves code-splitting later.
+- Offline mode, Electron, and silent printing are intentionally out of scope for RC1.
+
+## Optional Docker Production
+
+Docker and docker-compose are kept for production and staging workflows only.
+
+Use them when you want the containerized deployment path described in:
+
+- [docs/DEPLOYMENT.md](/home/osos/Desktop/raseed./docs/DEPLOYMENT.md)
+- `docker-compose.production.yml`
+- `backend/Dockerfile`
+- `frontend/Dockerfile`
 
 ## Tenancy Rule
 
@@ -155,6 +240,7 @@ Implemented in this foundation step:
 - Settings page sections for receipts, barcode labels, and future hardware setup
 - Demo-ready dashboard and POS polish with visible demo-mode badges for the seeded store
 - Internal demo walkthrough page at `/demo-script`
+- Barcode labels now use a real CODE128 engine through `jsbarcode`, so browser printouts stay scannable instead of decorative
 
 Not implemented yet:
 
@@ -182,6 +268,14 @@ Suggested order:
 8. Open Import/Export and show Excel import readiness
 9. Open Products and preview barcode label printing
 10. Login as super admin and show the SaaS control panel
+
+## Barcode Printing
+
+- Barcode format: `CODE128`
+- Frontend rendering library: `jsbarcode`
+- Barcode labels print correctly in the browser print flow and stay black and white in print CSS
+- If a product barcode is missing or invalid, the label preview shows a clear Arabic error instead of a fake barcode
+- Thermal/barcode printer hardware support is still a later desktop hardware phase
 
 ## Subscription Endpoints
 

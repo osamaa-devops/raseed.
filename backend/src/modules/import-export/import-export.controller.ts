@@ -10,9 +10,11 @@ import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { ExportInvoicesQueryDto, ExportQueryDto, ExportReportsQueryDto, ImportInitialStockQueryDto, ImportProductsQueryDto } from "./dto/import-export.dto";
 import { ImportExportService } from "./import-export.service";
 
+const uploadMaxMb = Number(process.env.UPLOAD_MAX_MB ?? 10);
+
 const uploadInterceptor = FileInterceptor("file", {
   storage: memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: uploadMaxMb * 1024 * 1024 },
   fileFilter: (_req, file, callback) => {
     const name = file.originalname.toLowerCase();
     if (!name.endsWith(".xlsx") && !name.endsWith(".csv")) {

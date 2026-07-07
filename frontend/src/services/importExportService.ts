@@ -1,16 +1,7 @@
 import type { ExportFormat, ImportPreviewResult, ImportSummary, ProductImportMode, StockImportMode } from "../types";
-import { apiRequest, getApiBaseUrl, AUTH_STORAGE_KEY } from "./apiClient";
+import { getAccessToken, getApiBaseUrl, refreshAccessToken } from "./apiClient";
 
 type Filters = Record<string, string | number | undefined>;
-
-function authToken() {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? JSON.parse(raw).accessToken as string | undefined : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 function query(params: Filters = {}) {
   const search = new URLSearchParams();
@@ -24,25 +15,14 @@ function query(params: Filters = {}) {
 async function upload<T>(path: string, file: File, params: Filters = {}) {
   const form = new FormData();
   form.set("file", file);
-  const token = authToken();
-  const response = await fetch(`${getApiBaseUrl()}${path}${query(params)}`, {
+  return sendWithRefresh<T>(path, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: form,
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const message = body?.error?.message ?? body?.message ?? `Upload failed: ${response.status}`;
-    throw new Error(Array.isArray(message) ? message.join(", ") : message);
-  }
-  return response.json() as Promise<T>;
+  }, params);
 }
 
 async function download(path: string, filename: string, params: Filters = {}) {
-  const token = authToken();
-  const response = await fetch(`${getApiBaseUrl()}${path}${query(params)}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+  const response = await sendWithRefresh<Response>(path, {}, params, true);
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.error?.message ?? body?.message ?? `Download failed: ${response.status}`);
@@ -56,6 +36,46 @@ async function download(path: string, filename: string, params: Filters = {}) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+async function sendWithRefresh<T>(path: string, init: RequestInit, params: Filters = {}, rawResponse = false) {
+  const execute = async () => {
+    const token = getAccessToken();
+    const headers = new Headers(init.headers);
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    const response = await fetch(`${getApiBaseUrl()}${path}${query(params)}`, {
+      ...init,
+      headers,
+      credentials: "include",
+    });
+    if (response.status === 401) {
+      await refreshAccessToken();
+      const refreshedToken = getAccessToken();
+      const retryHeaders = new Headers(init.headers);
+      if (refreshedToken) {
+        retryHeaders.set("Authorization", `Bearer ${refreshedToken}`);
+      }
+      return fetch(`${getApiBaseUrl()}${path}${query(params)}`, {
+        ...init,
+        headers: retryHeaders,
+        credentials: "include",
+      });
+    }
+    return response;
+  };
+
+  const response = await execute();
+  if (rawResponse) {
+    return response as T;
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const message = body?.error?.message ?? body?.message ?? `Request failed: ${response.status}`;
+    throw new Error(Array.isArray(message) ? message.join(", ") : message);
+  }
+  return response.json() as Promise<T>;
 }
 
 export const importExportService = {

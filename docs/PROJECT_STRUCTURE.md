@@ -345,7 +345,8 @@ Current backend implementation:
 
 ## Database
 
-PostgreSQL runs locally through `docker-compose.yml`.
+Local development uses PostgreSQL on the host machine.
+Docker-based PostgreSQL remains optional for production or staging workflows.
 
 Prisma foundational models:
 

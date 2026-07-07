@@ -8,6 +8,7 @@ export async function createTestApp(): Promise<INestApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication();
   app.setGlobalPrefix("api");
+  app.getHttpAdapter().getInstance().set("trust proxy", 1);
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,7 +16,7 @@ export async function createTestApp(): Promise<INestApplication> {
       transform: true,
     }),
   );
-  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalFilters(app.get(AllExceptionsFilter));
   await app.init();
   return app;
 }

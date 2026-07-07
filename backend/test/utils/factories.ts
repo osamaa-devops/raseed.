@@ -29,6 +29,8 @@ export const ownerPermissions = [
   "expenses.delete",
   "reports.view",
   "reports.export",
+  "closing.view",
+  "closing.create",
   "customers.view",
   "customers.create",
   "customers.update",
@@ -88,6 +90,7 @@ type TestProductOverrides = Omit<Partial<Product>, "purchasePrice" | "sellingPri
 };
 
 let uniqueCounter = 0;
+let loginCounter = 0;
 
 export function unique(prefix: string) {
   uniqueCounter += 1;
@@ -144,7 +147,13 @@ export async function createTestStore(overrides: { status?: "ACTIVE" | "TRIAL" |
 
 export async function createPlatformAdmin() {
   const suffix = unique("admin");
-  const role = await createRole(null, `super_admin-${suffix}`, ["admin.platform_access", "admin.stores.view", "admin.usage.view"]);
+  const role = await createRole(null, `super_admin-${suffix}`, [
+    "admin.platform_access",
+    "admin.stores.view",
+    "admin.usage.view",
+    "admin.roles.view",
+    "admin.permissions.view",
+  ]);
   const password = "AdminPass!2026";
   const user = await createUser(null, null, role.id, `admin-${suffix}@raseed.test`, password, "Super Admin");
   return { role, user, password };
@@ -186,7 +195,13 @@ export async function createUser(storeId: string | null, branchId: string | null
 }
 
 export async function login(app: INestApplication, email: string, password: string) {
-  const response = await request(app.getHttpServer()).post("/api/auth/login").send({ identity: email, password }).expect(201);
+  loginCounter += 1;
+  const forwardedFor = `10.0.${Math.floor(loginCounter / 250) % 250}.${(loginCounter % 250) + 1}`;
+  const response = await request(app.getHttpServer())
+    .post("/api/auth/login")
+    .set("X-Forwarded-For", forwardedFor)
+    .send({ identity: email, password })
+    .expect(201);
   return response.body.accessToken as string;
 }
 

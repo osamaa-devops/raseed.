@@ -12,6 +12,7 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { posService } from "../../services/posService";
 import { customersService } from "../../services/customersService";
+import { inventoryService } from "../../services/inventoryService";
 import { productsService } from "../../services/productsService";
 import { shiftsService } from "../../services/shiftsService";
 import { receiptService } from "../../services/receiptService";
@@ -30,6 +31,7 @@ export function PosPage() {
   const canViewCustomers = hasPermission("customers.view");
   const demoMode = isDemoStore(auth?.store);
   const [products, setProducts] = useState<Product[]>([]);
+  const [stockByProductId, setStockByProductId] = useState<Record<string, number>>({});
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerQuery, setCustomerQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -57,18 +59,20 @@ export function PosPage() {
     if (!branchId) return;
     setError(null);
     try {
-      const [productResponse, currentShift, held, recent, customerResponse] = await Promise.all([
+      const [productResponse, currentShift, held, recent, customerResponse, stockResponse] = await Promise.all([
         productsService.getProducts({ search: query, status: "ACTIVE", limit: 100 }),
         shiftsService.getCurrentShift(branchId),
         canHold ? posService.getHeldOrders(branchId) : Promise.resolve([]),
         posService.getRecentInvoices(branchId),
         canViewCustomers ? customersService.getCustomers({ search: customerQuery, status: "ACTIVE", limit: 8 }) : Promise.resolve({ items: [] }),
+        inventoryService.getInventoryStocks({ branchId, limit: 100 }),
       ]);
       setProducts(productResponse.items);
       setShift(currentShift);
       setHeldOrders(held);
       setRecentInvoices(recent);
       setCustomers(customerResponse.items);
+      setStockByProductId(Object.fromEntries(stockResponse.items.map((stock) => [stock.productId, Number(stock.quantity)])));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "تعذر تحميل بيانات الكاشير");
     }
@@ -90,6 +94,10 @@ export function PosPage() {
   }, [branchId, canViewCustomers, customerQuery]);
 
   const addProduct = (product: Product) => {
+    if ((stockByProductId[product.id] ?? 0) <= 0) {
+      setError(`المنتج ${product.name} غير متوفر في هذا الفرع.`);
+      return;
+    }
     setCart((items) => {
       const existing = items.find((item) => item.product.id === product.id);
       if (existing) return items.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
@@ -250,7 +258,7 @@ export function PosPage() {
         {error && <p className="mb-4 rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
         {notice && <p className="mb-4 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">{notice}</p>}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-5">
-          {products.map((product) => <ProductTile key={product.id} product={product} onAdd={addProduct} />)}
+          {products.map((product) => <ProductTile key={product.id} product={product} stockQuantity={stockByProductId[product.id] ?? 0} onAdd={addProduct} />)}
         </div>
         <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <AppCard>

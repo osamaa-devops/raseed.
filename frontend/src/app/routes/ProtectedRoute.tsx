@@ -2,7 +2,11 @@ import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../providers/AuthProvider";
 
 export function ProtectedRoute({ superAdminOnly = false }: { superAdminOnly?: boolean }) {
-  const { auth, isAuthenticated } = useAuth();
+  const { auth, isAuthenticated, isReady } = useAuth();
+
+  if (!isReady) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

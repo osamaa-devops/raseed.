@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: raseed
+          POSTGRES_PASSWORD: raseed_password
+          POSTGRES_DB: raseed_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U raseed -d raseed_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://raseed:raseed_password@localhost:5432/raseed_test?schema=public
+      TEST_DATABASE_URL: postgresql://raseed:raseed_password@localhost:5432/raseed_test?schema=public
+      FRONTEND_URL: http://localhost:5173
+      FRONTEND_ORIGIN: http://localhost:5173
+      JWT_SECRET: ci-test-secret-ci-test-secret-123456
+      JWT_EXPIRES_IN: 1d
+      THROTTLE_TTL_SECONDS: 60
+      THROTTLE_LIMIT: 500
+      LOG_LEVEL: error,warn
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Frontend typecheck
+        run: npm run typecheck --workspace frontend
+
+      - name: Frontend build
+        run: npm run build --workspace frontend
+
+      - name: Frontend tests
+        run: npm test --workspace frontend
+
+      - name: Prisma validate
+        run: npx prisma validate
+        working-directory: backend
+
+      - name: Backend build
+        run: npm run build --workspace backend
+
+      - name: Backend tests
+        run: npm test --workspace backend
+
+  docker-validate:
+    runs-on: ubuntu-latest
+    needs: test-and-build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker compose production file
+        run: docker compose -f docker-compose.production.yml config
+
+      - name: Build backend image
+        run: docker build -f backend/Dockerfile -t raseed-backend:ci .
+
+      - name: Build frontend image
+        run: docker build -f frontend/Dockerfile -t raseed-frontend:ci .

@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
+import type { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Public } from "../../common/decorators/public.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -12,8 +14,9 @@ export class AuthController {
 
   @Public()
   @Post("login")
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  login(@Body() dto: LoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    return this.authService.login(dto, request, response);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -22,15 +25,15 @@ export class AuthController {
     return this.authService.me(user);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post("logout")
-  logout() {
-    return this.authService.logout();
+  @Public()
+  logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    return this.authService.logout(request, response);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post("refresh")
-  refresh() {
-    return this.authService.refresh();
+  @Public()
+  refresh(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    return this.authService.refresh(request, response);
   }
 }

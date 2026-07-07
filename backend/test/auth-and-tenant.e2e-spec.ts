@@ -15,16 +15,19 @@ describe("auth, permissions, and tenant isolation", () => {
     await app.close();
   });
 
-  it("logs in with valid credentials, rejects invalid credentials, and serves /auth/me with a token", async () => {
+  it("logs in with valid credentials, sets a refresh cookie, rotates refresh tokens, and serves /auth/me with refreshed access", async () => {
     const ctx = await createTestStore();
+    const agent = request.agent(app.getHttpServer());
 
-    const loginResponse = await request(app.getHttpServer())
+    const loginResponse = await agent
       .post("/api/auth/login")
       .send({ identity: ctx.owner.email, password: ctx.ownerPassword })
       .expect(201);
 
     expect(loginResponse.body.accessToken).toEqual(expect.any(String));
     expect(loginResponse.body.permissions).toContain("products.view");
+    expect(loginResponse.headers["set-cookie"]).toEqual(expect.arrayContaining([expect.stringContaining("raseed_refresh_token=")]));
+    const firstRefreshCookie = extractCookie(loginResponse, "raseed_refresh_token");
 
     await request(app.getHttpServer())
       .post("/api/auth/login")
@@ -39,10 +42,60 @@ describe("auth, permissions, and tenant isolation", () => {
         expect(body.user.email).toBe(ctx.owner.email);
       });
 
+    const refreshResponse = await agent
+      .post("/api/auth/refresh")
+      .expect(201);
+
+    expect(refreshResponse.body.accessToken).toEqual(expect.any(String));
+    expect(refreshResponse.body.user.email).toBe(ctx.owner.email);
+    const rotatedRefreshCookie = extractCookie(refreshResponse, "raseed_refresh_token");
+    expect(rotatedRefreshCookie).not.toBe(firstRefreshCookie);
+
+    await request(app.getHttpServer())
+      .post("/api/auth/refresh")
+      .set("Cookie", firstRefreshCookie)
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .get("/api/auth/me")
+      .set(await authHeader(refreshResponse.body.accessToken))
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.user.email).toBe(ctx.owner.email);
+      });
+
     await prisma.user.update({ where: { id: ctx.owner.id }, data: { status: "DISABLED" } });
     await request(app.getHttpServer())
       .post("/api/auth/login")
       .send({ identity: ctx.owner.email, password: ctx.ownerPassword })
+      .expect(401);
+  });
+
+  it("revokes the current refresh token on logout and clears the cookie", async () => {
+    const ctx = await createTestStore();
+    const agent = request.agent(app.getHttpServer());
+
+    await agent
+      .post("/api/auth/login")
+      .send({ identity: ctx.owner.email, password: ctx.ownerPassword })
+      .expect(201);
+
+    const logoutResponse = await agent
+      .post("/api/auth/logout")
+      .expect(201);
+
+    expect(logoutResponse.body.success).toBe(true);
+    expect(logoutResponse.headers["set-cookie"]).toEqual(expect.arrayContaining([expect.stringContaining("raseed_refresh_token=;")]));
+
+    await agent
+      .post("/api/auth/refresh")
+      .expect(401);
+  });
+
+  it("rejects invalid refresh tokens", async () => {
+    await request(app.getHttpServer())
+      .post("/api/auth/refresh")
+      .set("Cookie", "raseed_refresh_token=invalid-token")
       .expect(401);
   });
 
@@ -126,4 +179,39 @@ describe("auth, permissions, and tenant isolation", () => {
       .set(await authHeader(adminToken))
       .expect(403);
   });
+
+  it("requires explicit permission for roles and permissions endpoints", async () => {
+    const ctx = await createTestStore();
+    const ownerToken = await login(app, ctx.owner.email!, ctx.ownerPassword);
+    const admin = await createPlatformAdmin();
+    const adminToken = await login(app, admin.user.email!, admin.password);
+
+    await request(app.getHttpServer())
+      .get("/api/roles")
+      .set(await authHeader(ownerToken))
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .get("/api/permissions")
+      .set(await authHeader(ownerToken))
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .get("/api/roles")
+      .set(await authHeader(adminToken))
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get("/api/permissions")
+      .set(await authHeader(adminToken))
+      .expect(200);
+  });
 });
+
+function extractCookie(response: request.Response, name: string) {
+  const rawCookies = response.headers["set-cookie"];
+  const cookies = Array.isArray(rawCookies) ? rawCookies : rawCookies ? [rawCookies] : undefined;
+  const target = cookies?.find((value) => value.startsWith(`${name}=`));
+  expect(target).toBeDefined();
+  return target!.split(";")[0];
+}

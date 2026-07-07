@@ -7,8 +7,8 @@ import { ThemeToggle } from "../components/theme/ThemeToggle";
 export function SuperAdminLayout() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -22,7 +22,7 @@ export function SuperAdminLayout() {
           <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">سوبر أدمن</span>
           <span className="text-sm text-muted-foreground">{auth?.user.name}</span>
           <ThemeToggle />
-          <button type="button" onClick={handleLogout} className="rounded-lg px-3 py-2 text-sm font-semibold text-danger hover:bg-danger/10">خروج</button>
+          <button type="button" onClick={() => void handleLogout()} className="rounded-lg px-3 py-2 text-sm font-semibold text-danger hover:bg-danger/10">خروج</button>
         </div>
       </header>
       <main className="mr-64 pt-16">

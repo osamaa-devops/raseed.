@@ -1,73 +1,109 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { AUTH_STORAGE_KEY } from "../../services/apiClient";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  clearAccessToken,
+  refreshAccessToken,
+  registerAuthChangeListener,
+  setAccessToken,
+  setAuthSnapshot,
+} from "../../services/apiClient";
 import { authService, type AuthResponse } from "../../services/authService";
 
 type AuthContextValue = {
   auth: AuthResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isReady: boolean;
   login: (identity: string, password: string) => Promise<AuthResponse>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function readStoredAuth() {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as AuthResponse) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [auth, setAuth] = useState<AuthResponse | null>(readStoredAuth);
+  const [auth, setAuth] = useState<AuthResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const unregister = registerAuthChangeListener<AuthResponse>((nextAuth) => {
+      setAuth(nextAuth);
+      setAuthSnapshot(nextAuth);
+    });
+
+    setIsLoading(true);
+    refreshAccessToken<AuthResponse>()
+      .then((response) => {
+        setAuth(response);
+        setAuthSnapshot(response);
+      })
+      .catch(() => {
+        clearAccessToken();
+        setAuth(null);
+        setAuthSnapshot(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setIsReady(true);
+      });
+
+    return unregister;
+  }, []);
 
   const login = useCallback(async (identity: string, password: string) => {
     setIsLoading(true);
     try {
       const response = await authService.login(identity, password);
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(response));
+      setAccessToken(response.accessToken);
       setAuth(response);
+      setAuthSnapshot(response);
+      setIsReady(true);
       return response;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    setAuth(null);
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await authService.logout();
+    } finally {
+      clearAccessToken();
+      setAuth(null);
+      setAuthSnapshot(null);
+      setIsLoading(false);
+      setIsReady(true);
+    }
   }, []);
 
   const refreshMe = useCallback(async () => {
-    if (!auth?.accessToken) return;
     setIsLoading(true);
     try {
-      const response = await authService.me();
-      const nextAuth = { ...response, accessToken: auth.accessToken };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
-      setAuth(nextAuth);
+      const response = await refreshAccessToken<AuthResponse>();
+      setAuth(response);
+      setAuthSnapshot(response);
     } catch {
-      logout();
+      clearAccessToken();
+      setAuth(null);
+      setAuthSnapshot(null);
     } finally {
       setIsLoading(false);
+      setIsReady(true);
     }
-  }, [auth?.accessToken, logout]);
+  }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
     auth,
     isAuthenticated: Boolean(auth?.accessToken),
     isLoading,
+    isReady,
     login,
     logout,
     refreshMe,
     hasPermission: (permission: string) => Boolean(auth?.permissions.includes(permission)),
-  }), [auth, isLoading, login, logout, refreshMe]);
+  }), [auth, isLoading, isReady, login, logout, refreshMe]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

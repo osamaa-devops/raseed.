@@ -244,7 +244,11 @@ export function ProductsPage() {
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   {canUpdate && <AppButton variant="outline" icon={Edit2} onClick={() => openEdit(product)}>تعديل</AppButton>}
-                  {canGenerateBarcode && <AppButton variant="outline" icon={Barcode} onClick={() => void generateBarcode(product)}>{product.barcode ? "الباركود" : "توليد"}</AppButton>}
+                  {canGenerateBarcode && (
+                    <AppButton variant="outline" icon={Barcode} onClick={() => void generateBarcode(product)}>
+                      {product.barcode ? "إعادة توليد" : "توليد باركود"}
+                    </AppButton>
+                  )}
                   {canPrintBarcodes && <AppButton variant="ghost" icon={Printer} onClick={() => void openLabels([product.id])}>ملصق</AppButton>}
                   {canUpdate && <AppButton variant="ghost" onClick={() => void toggleStatus(product)}>{product.status === "ACTIVE" ? "تعطيل" : "تفعيل"}</AppButton>}
                   {canDelete && <AppButton variant="danger" icon={Trash2} onClick={() => void deleteProduct(product)}>حذف</AppButton>}

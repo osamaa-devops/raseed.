@@ -1,14 +1,18 @@
 {
   "name": "raseed-workspace",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0-rc.1",
   "scripts": {
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "dev:frontend": "npm --prefix frontend run dev",
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
+    "dev:backend": "npm --prefix backend run dev",
     "backend:start:dev": "npm --prefix backend run start:dev",
     "backend:build": "npm --prefix backend run build",
-    "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down"
+    "db:migrate": "npm --prefix backend run prisma:migrate",
+    "db:seed": "npm --prefix backend run prisma:seed",
+    "db:studio": "npm --prefix backend run prisma:studio"
   },
   "workspaces": [
     "frontend",

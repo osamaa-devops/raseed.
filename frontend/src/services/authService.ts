@@ -25,7 +25,9 @@ export const authService = {
     apiRequest<AuthResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ identity, password }),
+      skipAuthRetry: true,
     }),
   me: () => apiRequest<AuthResponse>("/auth/me"),
-  logout: () => apiRequest<{ success: boolean; message: string }>("/auth/logout", { method: "POST" }),
+  logout: () => apiRequest<{ success: boolean; message: string }>("/auth/logout", { method: "POST", skipAuthRetry: true }),
+  refresh: () => apiRequest<AuthResponse>("/auth/refresh", { method: "POST", skipAuthRetry: true }),
 };

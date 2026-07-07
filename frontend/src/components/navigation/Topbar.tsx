@@ -20,8 +20,8 @@ export function Topbar() {
     [],
   );
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -72,7 +72,7 @@ export function Topbar() {
               <span className="block text-[11px] text-muted-foreground">{auth?.role?.name ?? "role"}</span>
             </div>
             <ChevronDown size={14} className="hidden text-muted-foreground md:block" />
-            <button type="button" onClick={handleLogout} className="rounded-lg px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/10">خروج</button>
+            <button type="button" onClick={() => void handleLogout()} className="rounded-lg px-2 py-1 text-xs font-semibold text-danger hover:bg-danger/10">خروج</button>
           </div>
         </div>
       </div>

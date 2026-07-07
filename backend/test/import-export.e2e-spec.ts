@@ -61,6 +61,28 @@ describe("import/export safety", () => {
 
     expect(await prisma.product.count({ where: { storeId: ctx.store.id, barcode: "IMP-1" } })).toBe(1);
     expect(await prisma.category.count({ where: { storeId: ctx.store.id, name: "Imported Cat" } })).toBe(1);
+    expect(await prisma.activityLog.count({ where: { storeId: ctx.store.id, action: "import.products_imported" } })).toBe(1);
+  });
+
+  it("rejects duplicate products in create-only mode and records import activity", async () => {
+    const ctx = await createTestStore();
+    const category = await createTestCategory(ctx.store.id);
+    await createTestProduct(ctx.store.id, category.id, { name: "Duplicate Base", barcode: "DUP-1" });
+    const token = await login(app, ctx.owner.email!, ctx.ownerPassword);
+
+    const duplicateCsv = "name,barcode,category,purchasePrice,sellingPrice,minStock,unitType\nDuplicate Incoming,DUP-1,Imported Cat,2,5,1,piece\n";
+    await request(app.getHttpServer())
+      .post("/api/import-export/products/import?mode=CREATE_ONLY")
+      .set(await authHeader(token))
+      .attach("file", Buffer.from(duplicateCsv), "products.csv")
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.created).toBe(0);
+        expect(body.skipped).toBe(1);
+        expect(body.errors[0].message).toBe("Product already exists in this store.");
+      });
+
+    expect(await prisma.product.count({ where: { storeId: ctx.store.id, barcode: "DUP-1" } })).toBe(1);
   });
 
   it("upserts existing products and imports initial stock with movements", async () => {

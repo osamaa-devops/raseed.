@@ -1,3 +1,5 @@
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import JsBarcode from "jsbarcode";
 import type { BarcodeLabelProduct, BarcodeLabelSettings } from "../../types";
 
 type BarcodeLabelProps = {
@@ -5,34 +7,86 @@ type BarcodeLabelProps = {
   settings: BarcodeLabelSettings;
 };
 
+const CODE128_SAFE_VALUE = /^[0-9A-Za-z\-_.:/$+%]+$/;
+
 export function BarcodeLabel({ product, settings }: BarcodeLabelProps) {
+  const barcodeValue = normalizeBarcodeValue(product.barcode);
+  const barcodeId = useId();
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
+  const validationError = useMemo(() => validateBarcodeValue(barcodeValue), [barcodeValue]);
+
+  useEffect(() => {
+    setRenderError(null);
+  }, [barcodeValue]);
+
+  useEffect(() => {
+    if (!svgRef.current || validationError) {
+      return;
+    }
+
+    try {
+      setRenderError(null);
+      svgRef.current.replaceChildren();
+      JsBarcode(svgRef.current, barcodeValue, {
+        format: "CODE128",
+        displayValue: false,
+        background: "#ffffff",
+        lineColor: "#111111",
+        margin: 0,
+        width: 2,
+        height: 56,
+        textMargin: 0,
+      });
+    } catch {
+      setRenderError("تعذر إنشاء الباركود للطباعة.");
+      svgRef.current.replaceChildren();
+      svgRef.current.removeAttribute("aria-label");
+    }
+  }, [barcodeValue, validationError]);
+
   return (
-    <div className={`barcode-label barcode-label-${settings.labelSize.toLowerCase()}`}>
+    <div className={`barcode-label barcode-label-${settings.labelSize.toLowerCase()}`} aria-live="polite">
       {settings.showProductName && <div className="barcode-label-name">{product.name}</div>}
-      <BarcodeBars value={product.barcode} />
-      {settings.showBarcodeText && <div className="barcode-label-code">{product.barcode}</div>}
+
+      {validationError || renderError ? (
+        <div className="barcode-label-error" data-testid="barcode-error">
+          {validationError || renderError}
+        </div>
+      ) : (
+        <div className="barcode-label-graphic">
+          <svg
+            ref={svgRef}
+            id={barcodeId}
+            className="barcode-label-svg"
+            data-testid="barcode-svg"
+            role="img"
+            aria-label={`باركود المنتج ${product.name}`}
+            focusable="false"
+          />
+        </div>
+      )}
+
+      {settings.showBarcodeText && <div className="barcode-label-code" dir="ltr">{barcodeValue}</div>}
       {settings.showPrice && <div className="barcode-label-price">{formatMoney(product.sellingPrice)}</div>}
     </div>
   );
 }
 
-export function BarcodeBars({ value }: { value: string }) {
-  const digits = value.replace(/\D/g, "") || value;
-  const bars = Array.from(digits).flatMap((char, index) => {
-    const digit = Number(char) || 0;
-    return [
-      { width: 1 + (digit % 3), height: 58 + ((digit + index) % 4) * 8 },
-      { width: 1, height: 50 + ((digit * 2 + index) % 5) * 7 },
-    ];
-  });
+function normalizeBarcodeValue(value: string) {
+  return value.trim();
+}
 
-  return (
-    <div className="barcode-bars" aria-label={value}>
-      {bars.map((bar, index) => (
-        <span key={index} style={{ width: `${bar.width}px`, height: `${bar.height}%` }} />
-      ))}
-    </div>
-  );
+function validateBarcodeValue(value: string) {
+  if (!value) {
+    return "لا يمكن طباعة ملصق بدون باركود.";
+  }
+
+  if (!CODE128_SAFE_VALUE.test(value)) {
+    return "الباركود غير صالح للطباعة. استخدم حروفًا وأرقامًا ورموزًا أساسية فقط.";
+  }
+
+  return null;
 }
 
 function formatMoney(value: number) {
