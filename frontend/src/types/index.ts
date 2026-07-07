@@ -44,6 +44,9 @@ export type Product = {
   categoryId?: Id | null;
   category?: Category | null;
   name: string;
+  brand?: string | null;
+  gender?: "MEN" | "WOMEN" | "UNISEX" | "KIDS";
+  season?: "ALL_SEASON" | "SUMMER" | "WINTER" | "SPRING" | "AUTUMN";
   barcode?: string | null;
   sku?: string | null;
   description?: string | null;
@@ -54,6 +57,26 @@ export type Product = {
   unitType: string;
   minStock: number;
   expiryDate?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  variants?: ProductVariant[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProductVariant = {
+  id: Id;
+  storeId: Id;
+  productId: Id;
+  product?: Product;
+  size: string;
+  color: string;
+  sku?: string | null;
+  barcode?: string | null;
+  costPrice: number;
+  sellingPrice: number;
+  discountPrice?: number | null;
+  stockQuantity: number;
+  minStock: number;
   status: "ACTIVE" | "INACTIVE";
   createdAt: string;
   updatedAt: string;
@@ -195,7 +218,7 @@ export type Payment = {
   storeId: Id;
   branchId: Id;
   invoiceId: Id;
-  method: "CASH" | "CARD" | "WALLET";
+  method: "CASH" | "CARD" | "INSTAPAY" | "WALLET";
   amount: number;
   createdAt: string;
 };
@@ -332,7 +355,7 @@ export type CreateSaleRequest = {
   branchId: Id;
   shiftId?: Id;
   customerId?: Id;
-  items: Array<{ productId: Id; quantity: number; unitPrice?: number; discount?: number }>;
+  items: Array<{ variantId: Id; productId?: Id; quantity: number; unitPrice?: number; discount?: number }>;
   payments: Array<{ method: Payment["method"]; amount: number }>;
   invoiceDiscount?: number;
   taxAmount?: number;

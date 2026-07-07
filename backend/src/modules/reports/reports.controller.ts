@@ -61,6 +61,12 @@ export class ReportsController {
   }
 
   @RequirePermissions("reports.view")
+  @Get("low-stock")
+  lowStock(@CurrentUser() user: AuthenticatedUser, @Query() query: ReportQueryDto) {
+    return this.reportsService.lowStock(user, query);
+  }
+
+  @RequirePermissions("reports.view")
   @Get("expenses")
   expenses(@CurrentUser() user: AuthenticatedUser, @Query() query: ReportQueryDto) {
     return this.reportsService.expenses(user, query);

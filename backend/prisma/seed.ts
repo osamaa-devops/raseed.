@@ -14,21 +14,21 @@ const demoCategories = [
 ];
 
 const demoProducts = [
-  { name: "لبن جهينة", barcode: "6223001234567", category: "ألبان", purchasePrice: 13, sellingPrice: 18, minStock: 20, unitType: "كرتونة" },
-  { name: "سكر أبيض", barcode: "6223001234568", category: "بقالة", purchasePrice: 28, sellingPrice: 35, minStock: 30, unitType: "كيلو" },
-  { name: "أرز مصري", barcode: "6223001234569", category: "بقالة", purchasePrice: 35, sellingPrice: 45, minStock: 25, unitType: "كيلو" },
-  { name: "زيت خليط", barcode: "6223001234570", category: "بقالة", purchasePrice: 42, sellingPrice: 55, minStock: 15, unitType: "لتر" },
-  { name: "شاي العروسة", barcode: "6223001234571", category: "بقالة", purchasePrice: 16, sellingPrice: 22, minStock: 20, unitType: "علبة" },
-  { name: "مياه معدنية", barcode: "6223001234572", category: "مشروبات", purchasePrice: 3, sellingPrice: 5, minStock: 50, unitType: "عبوة" },
-  { name: "جبنة بيضاء", barcode: "6223001234573", category: "ألبان", purchasePrice: 50, sellingPrice: 65, minStock: 15, unitType: "كيلو" },
-  { name: "مكرونة", barcode: "6223001234574", category: "بقالة", purchasePrice: 9, sellingPrice: 12, minStock: 40, unitType: "كيس" },
-  { name: "بسكويت", barcode: "6223001234575", category: "بقالة", purchasePrice: 6, sellingPrice: 8, minStock: 30, unitType: "علبة" },
-  { name: "مسحوق غسيل", barcode: "6223001234576", category: "منظفات", purchasePrice: 32, sellingPrice: 42, minStock: 10, unitType: "كيلو" },
-  { name: "عصير مانجو", barcode: "6223001234577", category: "مشروبات", purchasePrice: 10, sellingPrice: 15, minStock: 20, unitType: "علبة" },
-  { name: "بيبسي", barcode: "6223001234578", category: "مشروبات", purchasePrice: 7, sellingPrice: 10, minStock: 48, unitType: "علبة" },
-  { name: "زبادي", barcode: "6223001234579", category: "ألبان", purchasePrice: 4, sellingPrice: 6, minStock: 12, unitType: "كوب" },
-  { name: "تونة", barcode: "6223001234580", category: "معلبات", purchasePrice: 14, sellingPrice: 20, minStock: 24, unitType: "علبة" },
-  { name: "صابون", barcode: "6223001234581", category: "منظفات", purchasePrice: 9, sellingPrice: 14, minStock: 20, unitType: "قطعة" },
+  { name: "لبن جهينة", barcode: "6223001234567", category: "ألبان", purchasePrice: 13, sellingPrice: 18, minStock: 20, unitType: "كرتونة", variants: [{ size: "One Size", color: "Standard", sku: "MILK-001", barcode: "6223001234567", purchasePrice: 13, sellingPrice: 18, minStock: 20, stockQuantity: 12 }] },
+  { name: "سكر أبيض", barcode: "6223001234568", category: "بقالة", purchasePrice: 28, sellingPrice: 35, minStock: 30, unitType: "كيلو", variants: [{ size: "One Size", color: "White", sku: "SUGAR-001", barcode: "6223001234568", purchasePrice: 28, sellingPrice: 35, minStock: 30, stockQuantity: 80 }] },
+  { name: "أرز مصري", barcode: "6223001234569", category: "بقالة", purchasePrice: 35, sellingPrice: 45, minStock: 25, unitType: "كيلو", variants: [{ size: "One Size", color: "White", sku: "RICE-001", barcode: "6223001234569", purchasePrice: 35, sellingPrice: 45, minStock: 25, stockQuantity: 50 }] },
+  { name: "زيت خليط", barcode: "6223001234570", category: "بقالة", purchasePrice: 42, sellingPrice: 55, minStock: 15, unitType: "لتر", variants: [{ size: "One Size", color: "Mixed", sku: "OIL-001", barcode: "6223001234570", purchasePrice: 42, sellingPrice: 55, minStock: 15, stockQuantity: 22 }] },
+  { name: "شاي العروسة", barcode: "6223001234571", category: "بقالة", purchasePrice: 16, sellingPrice: 22, minStock: 20, unitType: "علبة", variants: [{ size: "One Size", color: "Red", sku: "TEA-001", barcode: "6223001234571", purchasePrice: 16, sellingPrice: 22, minStock: 20, stockQuantity: 18 }] },
+  { name: "مياه معدنية", barcode: "6223001234572", category: "مشروبات", purchasePrice: 3, sellingPrice: 5, minStock: 50, unitType: "عبوة", variants: [{ size: "One Size", color: "Clear", sku: "WATER-001", barcode: "6223001234572", purchasePrice: 3, sellingPrice: 5, minStock: 50, stockQuantity: 120 }] },
+  { name: "جبنة بيضاء", barcode: "6223001234573", category: "ألبان", purchasePrice: 50, sellingPrice: 65, minStock: 15, unitType: "كيلو", variants: [{ size: "One Size", color: "White", sku: "CHEESE-001", barcode: "6223001234573", purchasePrice: 50, sellingPrice: 65, minStock: 15, stockQuantity: 14 }] },
+  { name: "مكرونة", barcode: "6223001234574", category: "بقالة", purchasePrice: 9, sellingPrice: 12, minStock: 40, unitType: "كيس", variants: [{ size: "One Size", color: "Yellow", sku: "PASTA-001", barcode: "6223001234574", purchasePrice: 9, sellingPrice: 12, minStock: 40, stockQuantity: 70 }] },
+  { name: "بسكويت", barcode: "6223001234575", category: "بقالة", purchasePrice: 6, sellingPrice: 8, minStock: 30, unitType: "علبة", variants: [{ size: "One Size", color: "Blue", sku: "BISCUIT-001", barcode: "6223001234575", purchasePrice: 6, sellingPrice: 8, minStock: 30, stockQuantity: 26 }] },
+  { name: "مسحوق غسيل", barcode: "6223001234576", category: "منظفات", purchasePrice: 32, sellingPrice: 42, minStock: 10, unitType: "كيلو", variants: [{ size: "One Size", color: "Blue", sku: "DETERGENT-001", barcode: "6223001234576", purchasePrice: 32, sellingPrice: 42, minStock: 10, stockQuantity: 30 }] },
+  { name: "عصير مانجو", barcode: "6223001234577", category: "مشروبات", purchasePrice: 10, sellingPrice: 15, minStock: 20, unitType: "علبة", variants: [{ size: "One Size", color: "Orange", sku: "JUICE-001", barcode: "6223001234577", purchasePrice: 10, sellingPrice: 15, minStock: 20, stockQuantity: 16 }] },
+  { name: "بيبسي", barcode: "6223001234578", category: "مشروبات", purchasePrice: 7, sellingPrice: 10, minStock: 48, unitType: "علبة", variants: [{ size: "One Size", color: "Black", sku: "PEPSI-001", barcode: "6223001234578", purchasePrice: 7, sellingPrice: 10, minStock: 48, stockQuantity: 64 }] },
+  { name: "زبادي", barcode: "6223001234579", category: "ألبان", purchasePrice: 4, sellingPrice: 6, minStock: 12, unitType: "كوب", variants: [{ size: "One Size", color: "White", sku: "YOG-001", barcode: "6223001234579", purchasePrice: 4, sellingPrice: 6, minStock: 12, stockQuantity: 8 }] },
+  { name: "تونة", barcode: "6223001234580", category: "معلبات", purchasePrice: 14, sellingPrice: 20, minStock: 24, unitType: "علبة", variants: [{ size: "One Size", color: "Silver", sku: "TUNA-001", barcode: "6223001234580", purchasePrice: 14, sellingPrice: 20, minStock: 24, stockQuantity: 28 }] },
+  { name: "صابون", barcode: "6223001234581", category: "منظفات", purchasePrice: 9, sellingPrice: 14, minStock: 20, unitType: "قطعة", variants: [{ size: "One Size", color: "Green", sku: "SOAP-001", barcode: "6223001234581", purchasePrice: 9, sellingPrice: 14, minStock: 20, stockQuantity: 9 }] },
 ];
 
 const demoInventory: Record<string, { quantity: number; batchNumber?: string; expiryDays?: number; purchasePrice?: number }> = {
@@ -251,7 +251,7 @@ async function seedDemoOperationalData({
   ownerUserId: string;
   cashierUserId: string;
   shiftId: string | null;
-  productByBarcode: Map<string, { id: string; name: string; barcode: string | null; purchasePrice: Prisma.Decimal; sellingPrice: Prisma.Decimal }>;
+  productByBarcode: Map<string, { id: string; name: string; barcode: string | null; variantId: string; variantSku: string | null; variantBarcode: string | null; variantSize: string; variantColor: string; purchasePrice: Prisma.Decimal; sellingPrice: Prisma.Decimal }>;
   customerByPhone: Map<string, { id: string }>;
 }) {
   for (const invoiceSeed of demoInvoicesSeed) {
@@ -291,8 +291,13 @@ async function seedDemoOperationalData({
             storeId,
             branchId,
             productId: line.product.id,
+            variantId: line.product.variantId,
             productName: line.product.name,
             productBarcode: line.product.barcode,
+            variantSku: line.product.variantSku,
+            variantBarcode: line.product.variantBarcode,
+            variantSize: line.product.variantSize,
+            variantColor: line.product.variantColor,
             quantity: line.quantity,
             purchasePriceSnapshot: line.purchasePrice,
             unitPrice: line.unitPrice,
@@ -765,7 +770,7 @@ export async function main() {
   }
 
   const categoryByName = new Map<string, { id: string }>();
-  const productByBarcode = new Map<string, { id: string; name: string; barcode: string | null; purchasePrice: Prisma.Decimal; sellingPrice: Prisma.Decimal }>();
+  const productByBarcode = new Map<string, { id: string; name: string; barcode: string | null; variantId: string; variantSku: string | null; variantBarcode: string | null; variantSize: string; variantColor: string; purchasePrice: Prisma.Decimal; sellingPrice: Prisma.Decimal }>();
   for (const category of demoCategories) {
     const savedCategory = await prisma.category.upsert({
       where: { storeId_name: { storeId: store.id, name: category.name } },
@@ -809,12 +814,50 @@ export async function main() {
         status: "ACTIVE",
       },
     });
+    const savedVariants = [];
+    for (const variant of product.variants) {
+      const savedVariant = await prisma.productVariant.upsert({
+        where: { storeId_barcode: { storeId: store.id, barcode: variant.barcode } },
+        update: {
+          productId: savedProduct.id,
+          size: variant.size,
+          color: variant.color,
+          sku: variant.sku,
+          costPrice: variant.purchasePrice,
+          sellingPrice: variant.sellingPrice,
+          minStock: variant.minStock,
+          stockQuantity: variant.stockQuantity,
+          status: "ACTIVE",
+        },
+        create: {
+          storeId: store.id,
+          productId: savedProduct.id,
+          size: variant.size,
+          color: variant.color,
+          sku: variant.sku,
+          barcode: variant.barcode,
+          costPrice: variant.purchasePrice,
+          sellingPrice: variant.sellingPrice,
+          minStock: variant.minStock,
+          stockQuantity: variant.stockQuantity,
+          status: "ACTIVE",
+        },
+      });
+      savedVariants.push(savedVariant);
+    }
+    const primaryVariant = savedVariants[0];
+    if (!primaryVariant) throw new Error(`Missing seeded variant for ${product.name}`);
     productByBarcode.set(product.barcode, {
       id: savedProduct.id,
       name: savedProduct.name,
       barcode: savedProduct.barcode,
-      purchasePrice: savedProduct.purchasePrice,
-      sellingPrice: savedProduct.sellingPrice,
+      variantId: primaryVariant.id,
+      variantSku: primaryVariant.sku,
+      variantBarcode: primaryVariant.barcode,
+      variantSize: primaryVariant.size,
+      variantColor: primaryVariant.color,
+      purchasePrice: primaryVariant.costPrice,
+      sellingPrice: primaryVariant.sellingPrice,
     });
 
     const inventory = demoInventory[product.name];

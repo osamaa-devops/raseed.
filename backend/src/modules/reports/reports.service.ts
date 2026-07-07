@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
-import { InvoiceStatus, Prisma } from "@prisma/client";
+import { CatalogStatus, InvoiceStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { ActivityLogsService } from "../activity-logs/activity-logs.service";
@@ -29,6 +29,7 @@ export class ReportsService {
   }
 
   async profit(user: AuthenticatedUser, query: ReportQueryDto) {
+    this.requireProfitAccess(user);
     const { storeId, range } = await this.scope(user, query);
     const items = await this.prisma.invoiceItem.findMany({
       where: { storeId, branchId: query.branchId || undefined, invoice: { status: { in: salesStatuses }, cashierId: query.cashierId || undefined, createdAt: dateFilter(range) } },
@@ -74,39 +75,61 @@ export class ReportsService {
   async productSales(user: AuthenticatedUser, query: ReportQueryDto, direction: "asc" | "desc") {
     const { storeId, range } = await this.scope(user, query);
     const rows = await this.prisma.invoiceItem.groupBy({
-      by: ["productId", "productName"],
+      by: ["variantId", "productName", "variantSize", "variantColor"],
       where: { storeId, branchId: query.branchId || undefined, invoice: { status: { in: salesStatuses }, cashierId: query.cashierId || undefined, createdAt: dateFilter(range) } },
       _sum: { quantity: true, lineTotal: true },
       orderBy: { _sum: { quantity: direction } },
       take: 10,
     });
     await this.log(user, direction === "desc" ? "report.best_products_viewed" : "report.worst_products_viewed", query.branchId);
-    return { range, rows: rows.map((row) => ({ productId: row.productId, productName: row.productName, quantity: Number(row._sum.quantity ?? 0), sales: Number(row._sum.lineTotal ?? 0) })) };
+    return { range, rows: rows.map((row) => ({ variantId: row.variantId, productName: row.productName, variantSize: row.variantSize, variantColor: row.variantColor, quantity: Number(row._sum.quantity ?? 0), sales: Number(row._sum.lineTotal ?? 0) })) };
   }
 
   async worstSellingProducts(user: AuthenticatedUser, query: ReportQueryDto) {
     const sold = await this.productSales(user, query, "asc");
     const { storeId } = await this.scope(user, query);
-    const soldIds = new Set(sold.rows.map((row) => row.productId));
-    const unsold = await this.prisma.product.findMany({
-      where: { storeId, id: { notIn: Array.from(soldIds) }, status: "ACTIVE" },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
+    const soldIds = new Set(sold.rows.map((row) => row.variantId).filter((value): value is string => Boolean(value)));
+    const unsold = await this.prisma.productVariant.findMany({
+      where: { storeId, id: { notIn: Array.from(soldIds) }, status: CatalogStatus.ACTIVE },
+      select: { id: true, productId: true, size: true, color: true },
+      orderBy: { createdAt: "asc" },
       take: Math.max(10 - sold.rows.length, 0),
     });
-    return { range: sold.range, rows: [...sold.rows, ...unsold.map((product) => ({ productId: product.id, productName: product.name, quantity: 0, sales: 0 }))] };
+    const products = await this.prisma.product.findMany({ where: { storeId, id: { in: Array.from(new Set(unsold.map((variant) => variant.productId))) } }, select: { id: true, name: true } });
+    const productNames = new Map(products.map((product) => [product.id, product.name]));
+    return { range: sold.range, rows: [...sold.rows, ...unsold.map((variant) => ({ variantId: variant.id, productName: productNames.get(variant.productId) ?? "غير معروف", variantSize: variant.size, variantColor: variant.color, quantity: 0, sales: 0 }))] };
   }
 
   async inventoryValue(user: AuthenticatedUser, query: ReportQueryDto) {
     const { storeId, range } = await this.scope(user, query);
-    const stocks = await this.prisma.inventoryStock.findMany({ where: { storeId, branchId: query.branchId || undefined }, include: { product: true, branch: true } });
-    const rows = stocks.map((stock) => {
-      const quantity = Number(stock.quantity);
-      const purchasePrice = Number(stock.product.purchasePrice);
-      return { productId: stock.productId, productName: stock.product.name, branchName: stock.branch.name, quantity, purchasePrice, value: round(quantity * purchasePrice) };
+    const variants = await this.prisma.productVariant.findMany({
+      where: { storeId, status: CatalogStatus.ACTIVE, product: { status: CatalogStatus.ACTIVE } },
+      select: { id: true, productId: true, size: true, color: true, stockQuantity: true, costPrice: true },
+    });
+    const products = await this.prisma.product.findMany({ where: { storeId, id: { in: Array.from(new Set(variants.map((variant) => variant.productId))) } }, select: { id: true, name: true } });
+    const productNames = new Map(products.map((product) => [product.id, product.name]));
+    const rows = variants.map((variant) => {
+      const quantity = variant.stockQuantity;
+      const purchasePrice = Number(variant.costPrice);
+      return { variantId: variant.id, productName: productNames.get(variant.productId) ?? "غير معروف", variantSize: variant.size, variantColor: variant.color, quantity, purchasePrice, value: round(quantity * purchasePrice) };
     });
     await this.log(user, "report.inventory_value_viewed", query.branchId);
     return { range, totalValue: round(rows.reduce((sum, row) => sum + row.value, 0)), rows };
+  }
+
+  async lowStock(user: AuthenticatedUser, query: ReportQueryDto) {
+    const { storeId, range } = await this.scope(user, query);
+    const variants = await this.prisma.productVariant.findMany({
+      where: { storeId, status: CatalogStatus.ACTIVE, product: { status: CatalogStatus.ACTIVE } },
+      select: { id: true, productId: true, size: true, color: true, stockQuantity: true, minStock: true },
+    });
+    const products = await this.prisma.product.findMany({ where: { storeId, id: { in: Array.from(new Set(variants.map((variant) => variant.productId))) } }, select: { id: true, name: true } });
+    const productNames = new Map(products.map((product) => [product.id, product.name]));
+    const rows = variants
+      .filter((variant) => variant.stockQuantity <= variant.minStock)
+      .map((variant) => ({ variantId: variant.id, productName: productNames.get(variant.productId) ?? "غير معروف", variantSize: variant.size, variantColor: variant.color, stockQuantity: variant.stockQuantity, minStock: variant.minStock }));
+    await this.log(user, "report.low_stock_viewed", query.branchId);
+    return { range, rows };
   }
 
   async expenses(user: AuthenticatedUser, query: ReportQueryDto) {
@@ -145,6 +168,12 @@ export class ReportsService {
   private requireStore(user: AuthenticatedUser) {
     if (user.isSuperAdmin || !user.storeId) throw new ForbiddenException("Reports require a store user context.");
     return user.storeId;
+  }
+
+  private requireProfitAccess(user: AuthenticatedUser) {
+    if (!(user.roleName === "owner" || user.roleName === "manager" || user.permissions.includes("users.manage"))) {
+      throw new ForbiddenException("Profit reports are restricted.");
+    }
   }
 
   private async assertBranch(storeId: string, branchId: string) {

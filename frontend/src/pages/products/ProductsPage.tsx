@@ -15,21 +15,27 @@ import { PrintButton } from "../../components/printing/PrintButton";
 import { barcodeService } from "../../services/barcodeService";
 import { categoriesService } from "../../services/categoriesService";
 import { importExportService } from "../../services/importExportService";
-import { productsService, type ProductPayload } from "../../services/productsService";
+import { productsService, type ProductPayload, type ProductVariantPayload } from "../../services/productsService";
 import type { BarcodeLabelPayload, BarcodeLabelSize, Category, Product } from "../../types";
+
+type ProductVariantRecord = NonNullable<Product["variants"]>[number];
 
 const emptyForm: ProductPayload = {
   name: "",
   categoryId: "",
+  brand: "",
+  gender: "UNISEX",
+  season: "ALL_SEASON",
   barcode: "",
   sku: "",
   description: "",
   imageUrl: "",
+  unitType: "قطعة",
+  expiryDate: "",
   purchasePrice: 0,
   sellingPrice: 0,
-  unitType: "قطعة",
   minStock: 0,
-  expiryDate: "",
+  variants: [emptyVariant()],
 };
 
 export function ProductsPage() {
@@ -90,18 +96,25 @@ export function ProductsPage() {
   const openEdit = (product: Product) => {
     setEditing(product);
     setModalOpen(true);
+    const primaryVariant = product.variants?.[0];
     setForm({
       name: product.name,
       categoryId: product.categoryId ?? "",
+      brand: product.brand ?? "",
+      gender: product.gender ?? "UNISEX",
+      season: product.season ?? "ALL_SEASON",
       barcode: product.barcode ?? "",
       sku: product.sku ?? "",
       description: product.description ?? "",
       imageUrl: product.imageUrl ?? "",
+      unitType: product.unitType ?? "قطعة",
+      expiryDate: product.expiryDate ? product.expiryDate.slice(0, 10) : "",
       purchasePrice: product.purchasePrice,
       sellingPrice: product.sellingPrice,
-      unitType: product.unitType,
       minStock: product.minStock,
-      expiryDate: product.expiryDate ? product.expiryDate.slice(0, 10) : "",
+      variants: product.variants?.length
+        ? product.variants.map((variant) => variantToForm(variant))
+        : [variantFromProduct(product, primaryVariant)],
     });
   };
 
@@ -115,14 +128,20 @@ export function ProductsPage() {
     setSaving(true);
     setError(null);
     try {
+      const variants = normalizeVariants(form);
       const payload = {
         ...form,
         categoryId: form.categoryId || null,
+        brand: form.brand || null,
+        gender: form.gender,
+        season: form.season,
         barcode: form.barcode || null,
         sku: form.sku || null,
         description: form.description || null,
         imageUrl: form.imageUrl || null,
+        unitType: form.unitType || null,
         expiryDate: form.expiryDate || null,
+        variants,
       };
       if (editing) {
         await productsService.updateProduct(editing.id, payload);
@@ -190,6 +209,15 @@ export function ProductsPage() {
     setLabelPayload((payload) => payload ? { ...payload, products: payload.products.map((product) => ({ ...product, copies: nextCopies })) } : payload);
   };
 
+  const updateVariant = (index: number, patch: Partial<ProductVariantPayload>) => {
+    setForm((current) => ({
+      ...current,
+      variants: (current.variants ?? [emptyVariant()]).map((variant, currentIndex) =>
+        currentIndex === index ? { ...variant, ...patch } : variant,
+      ),
+    }));
+  };
+
   return (
     <div>
       <PageHeader
@@ -226,7 +254,7 @@ export function ProductsPage() {
         <EmptyState icon={Package} title="لا توجد منتجات" description="ابدأ بإضافة أول منتج في المتجر." />
       ) : (
         <DataTable
-          columns={["", "الاسم", "الباركود", "التصنيف", "سعر الشراء", "سعر البيع", "هامش الربح", "الحد الأدنى", "الحالة", "الإجراءات"]}
+          columns={["", "الاسم", "الباركود", "التصنيف", "العلامة", "النسخ", "سعر الشراء", "سعر البيع", "هامش الربح", "الحد الأدنى", "الحالة", "الإجراءات"]}
           rows={products}
           renderRow={(product) => (
             <tr key={product.id} className="border-t border-border hover:bg-table-row-hover">
@@ -236,6 +264,8 @@ export function ProductsPage() {
               <td className="px-4 py-3 font-semibold">{product.name}</td>
               <td className="px-4 py-3 font-mono text-muted-foreground" dir="ltr">{product.barcode ?? "-"}</td>
               <td className="px-4 py-3">{product.category?.name ?? "-"}</td>
+              <td className="px-4 py-3">{product.brand ?? "-"}</td>
+              <td className="px-4 py-3">{product.variants?.length ?? 0}</td>
               <td className="px-4 py-3">{product.purchasePrice.toLocaleString("ar-EG")} ج</td>
               <td className="px-4 py-3">{product.sellingPrice.toLocaleString("ar-EG")} ج</td>
               <td className="px-4 py-3">{product.profitMargin.toLocaleString("ar-EG")}%</td>
@@ -266,14 +296,68 @@ export function ProductsPage() {
             {activeCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </SelectInput>
           <div className="grid gap-3 md:grid-cols-2">
+            <TextInput label="العلامة التجارية" value={form.brand ?? ""} onChange={(event) => setForm({ ...form, brand: event.target.value })} />
+            <SelectInput label="النوع" value={form.gender ?? "UNISEX"} onChange={(event) => setForm({ ...form, gender: event.target.value as Product["gender"] })}>
+              <option value="UNISEX">موحد</option>
+              <option value="MEN">رجالي</option>
+              <option value="WOMEN">حريمي</option>
+              <option value="KIDS">أطفال</option>
+            </SelectInput>
+            <SelectInput label="الموسم" value={form.season ?? "ALL_SEASON"} onChange={(event) => setForm({ ...form, season: event.target.value as Product["season"] })}>
+              <option value="ALL_SEASON">كل المواسم</option>
+              <option value="SUMMER">صيفي</option>
+              <option value="WINTER">شتوي</option>
+              <option value="SPRING">ربيعي</option>
+              <option value="AUTUMN">خريفي</option>
+            </SelectInput>
+            <TextInput label="الوحدة" value={form.unitType ?? "قطعة"} onChange={(event) => setForm({ ...form, unitType: event.target.value })} />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
             <TextInput label="الباركود" value={form.barcode ?? ""} onChange={(event) => setForm({ ...form, barcode: event.target.value })} />
             <TextInput label="SKU" value={form.sku ?? ""} onChange={(event) => setForm({ ...form, sku: event.target.value })} />
             <TextInput label="سعر الشراء" type="number" value={form.purchasePrice} onChange={(event) => setForm({ ...form, purchasePrice: Number(event.target.value) })} />
             <TextInput label="سعر البيع" type="number" value={form.sellingPrice} onChange={(event) => setForm({ ...form, sellingPrice: Number(event.target.value) })} />
-            <TextInput label="الوحدة" value={form.unitType} onChange={(event) => setForm({ ...form, unitType: event.target.value })} />
             <TextInput label="الحد الأدنى للمخزون" type="number" value={form.minStock} onChange={(event) => setForm({ ...form, minStock: Number(event.target.value) })} />
+            <TextInput label="تاريخ الصلاحية" type="date" value={form.expiryDate ?? ""} onChange={(event) => setForm({ ...form, expiryDate: event.target.value })} />
           </div>
           <TextInput label="الوصف" value={form.description ?? ""} onChange={(event) => setForm({ ...form, description: event.target.value })} />
+          <div className="rounded-xl border border-border p-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h3 className="font-bold">النسخ / المقاسات</h3>
+              <AppButton variant="outline" onClick={() => setForm((current) => ({ ...current, variants: [...(current.variants ?? []), emptyVariant()] }))}>إضافة نسخة</AppButton>
+            </div>
+            <div className="space-y-3">
+              {(form.variants ?? []).map((variant, index) => (
+                <div key={index} className="rounded-lg border border-border p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-semibold">النسخة {index + 1}</p>
+                    <AppButton
+                      variant="ghost"
+                      onClick={() => setForm((current) => ({ ...current, variants: (current.variants ?? []).filter((_, currentIndex) => currentIndex !== index) || [emptyVariant()] }))}
+                      disabled={(form.variants?.length ?? 0) <= 1}
+                    >
+                      حذف
+                    </AppButton>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <TextInput label="المقاس" value={variant.size} onChange={(event) => updateVariant(index, { size: event.target.value })} />
+                    <TextInput label="اللون" value={variant.color} onChange={(event) => updateVariant(index, { color: event.target.value })} />
+                    <TextInput label="SKU" value={variant.sku ?? ""} onChange={(event) => updateVariant(index, { sku: event.target.value })} />
+                    <TextInput label="الباركود" value={variant.barcode ?? ""} onChange={(event) => updateVariant(index, { barcode: event.target.value })} />
+                    <TextInput label="سعر الشراء" type="number" value={variant.costPrice} onChange={(event) => updateVariant(index, { costPrice: Number(event.target.value) })} />
+                    <TextInput label="سعر البيع" type="number" value={variant.sellingPrice} onChange={(event) => updateVariant(index, { sellingPrice: Number(event.target.value) })} />
+                    <TextInput label="سعر الخصم" type="number" value={variant.discountPrice ?? ""} onChange={(event) => updateVariant(index, { discountPrice: event.target.value === "" ? null : Number(event.target.value) })} />
+                    <TextInput label="الكمية" type="number" value={variant.stockQuantity} onChange={(event) => updateVariant(index, { stockQuantity: Number(event.target.value) })} />
+                    <TextInput label="حد التنبيه" type="number" value={variant.minStock} onChange={(event) => updateVariant(index, { minStock: Number(event.target.value) })} />
+                    <SelectInput label="حالة النسخة" value={variant.status ?? "ACTIVE"} onChange={(event) => updateVariant(index, { status: event.target.value as ProductVariantPayload["status"] })}>
+                      <option value="ACTIVE">نشطة</option>
+                      <option value="INACTIVE">غير نشطة</option>
+                    </SelectInput>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <AppButton variant="outline" onClick={closeModal}>إلغاء</AppButton>
             <AppButton onClick={save} disabled={saving}>{saving ? "جار الحفظ..." : "حفظ"}</AppButton>
@@ -308,4 +392,65 @@ export function ProductsPage() {
       </Modal>
     </div>
   );
+}
+
+function emptyVariant(): ProductVariantPayload {
+  return {
+    size: "",
+    color: "",
+    sku: "",
+    barcode: "",
+    costPrice: 0,
+    sellingPrice: 0,
+    discountPrice: null,
+    stockQuantity: 0,
+    minStock: 0,
+    status: "ACTIVE",
+  };
+}
+
+function variantToForm(variant: ProductVariantRecord): ProductVariantPayload {
+  return {
+    size: variant.size,
+    color: variant.color,
+    sku: variant.sku ?? "",
+    barcode: variant.barcode ?? "",
+    costPrice: variant.costPrice,
+    sellingPrice: variant.sellingPrice,
+    discountPrice: variant.discountPrice ?? null,
+    stockQuantity: variant.stockQuantity,
+    minStock: variant.minStock,
+    status: variant.status,
+  };
+}
+
+function variantFromProduct(product: Product, variant?: ProductVariantRecord): ProductVariantPayload {
+  return {
+    size: variant?.size ?? "One Size",
+    color: variant?.color ?? "Mixed",
+    sku: variant?.sku ?? product.sku ?? "",
+    barcode: variant?.barcode ?? product.barcode ?? "",
+    costPrice: variant?.costPrice ?? product.purchasePrice,
+    sellingPrice: variant?.sellingPrice ?? product.sellingPrice,
+    discountPrice: variant?.discountPrice ?? null,
+    stockQuantity: variant?.stockQuantity ?? 0,
+    minStock: variant?.minStock ?? product.minStock,
+    status: variant?.status ?? product.status,
+  };
+}
+
+function normalizeVariants(form: ProductPayload) {
+  const variants = form.variants?.length ? form.variants : [emptyVariant()];
+  return variants.map((variant, index) => ({
+    size: variant.size.trim() || `Size ${index + 1}`,
+    color: variant.color.trim() || "Mixed",
+    sku: variant.sku?.trim() || null,
+    barcode: variant.barcode?.trim() || null,
+    costPrice: Number(variant.costPrice ?? 0),
+    sellingPrice: Number(variant.sellingPrice ?? 0),
+    discountPrice: variant.discountPrice === null || variant.discountPrice === undefined ? null : Number(variant.discountPrice),
+    stockQuantity: Number(variant.stockQuantity ?? 0),
+    minStock: Number(variant.minStock ?? 0),
+    status: variant.status ?? "ACTIVE",
+  }));
 }

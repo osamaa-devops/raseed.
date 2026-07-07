@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { InventoryMovementType, Prisma } from "@prisma/client";
+import { CatalogStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { ActivityLogsService } from "../activity-logs/activity-logs.service";
@@ -10,7 +10,12 @@ const invoiceInclude = {
   branch: true,
   cashier: { select: { id: true, name: true, email: true } },
   customer: { select: { id: true, name: true, phone: true } },
-  items: { include: { product: { include: { category: true } } } },
+  items: {
+    include: {
+      product: { include: { category: true } },
+      variant: { include: { product: { include: { category: true } } } },
+    },
+  },
   payments: true,
 } as const;
 
@@ -25,48 +30,49 @@ export class PosService {
     const storeId = this.requireStore(user);
     await this.assertBranch(storeId, dto.branchId);
     if (dto.customerId) await this.assertCustomer(storeId, dto.customerId);
-    const shift = await this.validateShift(user, storeId, dto.branchId, dto.shiftId);
-    const productIds = [...new Set(dto.items.map((item) => item.productId))];
-    const products = await this.prisma.product.findMany({ where: { storeId, id: { in: productIds }, status: "ACTIVE" } });
-    if (products.length !== productIds.length) throw new BadRequestException("One or more products do not belong to this store.");
-    const productById = new Map(products.map((product) => [product.id, product]));
 
-    const stockRows = await this.prisma.inventoryStock.findMany({ where: { storeId, branchId: dto.branchId, productId: { in: productIds } } });
-    const stockByProductId = new Map(stockRows.map((stock) => [stock.productId, stock]));
-
-    const aggregatedQuantities = new Map<string, Prisma.Decimal>();
-    for (const item of dto.items) {
-      const current = aggregatedQuantities.get(item.productId) ?? new Prisma.Decimal(0);
-      aggregatedQuantities.set(item.productId, current.plus(item.quantity));
+    const shift = await this.requireOpenShift(user, storeId, dto.branchId, dto.shiftId);
+    const variantIds = [...new Set(dto.items.map((item) => item.variantId))];
+    const variants = await this.prisma.productVariant.findMany({
+      where: {
+        storeId,
+        id: { in: variantIds },
+        status: CatalogStatus.ACTIVE,
+        product: { status: CatalogStatus.ACTIVE },
+      },
+      include: { product: { include: { category: true } } },
+    });
+    if (variants.length !== variantIds.length) {
+      throw new BadRequestException("Product or variant not found.");
     }
-    for (const [productId, quantity] of aggregatedQuantities) {
-      const stock = stockByProductId.get(productId);
-      if (!stock) throw new BadRequestException("Stock does not exist for one or more products in this branch.");
-      if (stock.quantity.lessThan(quantity)) throw new BadRequestException("Insufficient stock for one or more products.");
-    }
+    const variantById = new Map(variants.map((variant) => [variant.id, variant]));
 
     const invoiceDiscount = new Prisma.Decimal(dto.invoiceDiscount ?? 0);
     const taxTotal = new Prisma.Decimal(dto.taxAmount ?? 0);
     let itemDiscountTotal = new Prisma.Decimal(0);
     let subtotal = new Prisma.Decimal(0);
+
     const calculatedItems = dto.items.map((item) => {
-      const product = productById.get(item.productId)!;
+      const variant = variantById.get(item.variantId);
+      if (!variant) throw new BadRequestException("Product or variant not found.");
       const quantity = new Prisma.Decimal(item.quantity);
-      const unitPrice = new Prisma.Decimal(item.unitPrice ?? product.sellingPrice);
+      const unitPrice = new Prisma.Decimal(item.unitPrice ?? variant.discountPrice ?? variant.sellingPrice);
       const discount = new Prisma.Decimal(item.discount ?? 0);
       const gross = unitPrice.mul(quantity);
       if (discount.greaterThan(gross)) throw new BadRequestException("Item discount cannot exceed line total.");
       const lineTotal = gross.minus(discount);
       subtotal = subtotal.plus(gross);
       itemDiscountTotal = itemDiscountTotal.plus(discount);
-      return { item, product, quantity, unitPrice, discount, lineTotal };
+      return { item, variant, quantity, unitPrice, discount, lineTotal };
     });
+
     const discountTotal = itemDiscountTotal.plus(invoiceDiscount);
     const total = subtotal.minus(discountTotal).plus(taxTotal);
     if (total.lessThan(0)) throw new BadRequestException("Invoice total cannot be negative.");
-    const paidAmount = dto.payments.reduce((sum, payment) => sum.plus(payment.amount), new Prisma.Decimal(0));
-    if (paidAmount.lessThan(total)) throw new BadRequestException("Payments total must cover invoice total.");
-    const changeAmount = paidAmount.minus(total);
+
+    const paymentTotal = dto.payments.reduce((sum, payment) => sum.plus(payment.amount), new Prisma.Decimal(0));
+    if (paymentTotal.lessThan(total)) throw new BadRequestException("Payments total must cover invoice total.");
+    const changeAmount = paymentTotal.minus(total);
 
     const invoice = await this.prisma.$transaction(async (tx) => {
       const invoiceNumber = await this.generateInvoiceNumber(tx, storeId, dto.branchId);
@@ -75,56 +81,72 @@ export class PosService {
           storeId,
           branchId: dto.branchId,
           cashierId: user.id,
-          shiftId: shift?.id,
+          shiftId: shift.id,
           customerId: dto.customerId,
           invoiceNumber,
           subtotal,
           discountTotal,
           taxTotal,
           total,
-          paidAmount,
+          paidAmount: paymentTotal,
           changeAmount,
           notes: dto.notes?.trim(),
         },
       });
 
       for (const row of calculatedItems) {
-        const stock = await tx.inventoryStock.findUnique({
-          where: { storeId_branchId_productId: { storeId, branchId: dto.branchId, productId: row.product.id } },
+        const updateResult = await tx.productVariant.updateMany({
+          where: { id: row.variant.id, stockQuantity: { gte: Number(row.quantity) } },
+          data: { stockQuantity: { decrement: Number(row.quantity) } },
         });
-        if (!stock || stock.quantity.lessThan(row.quantity)) {
-          throw new BadRequestException("Insufficient stock for one or more products.");
+        if (updateResult.count === 0) {
+          throw new BadRequestException(`Insufficient stock for ${row.variant.product.name} ${row.variant.size} ${row.variant.color}.`);
         }
-        const quantityAfter = stock.quantity.minus(row.quantity);
+        const updatedVariant = await tx.productVariant.findUniqueOrThrow({ where: { id: row.variant.id } });
+        const siblingVariants = await tx.productVariant.findMany({
+          where: { storeId, productId: row.variant.productId },
+          select: { stockQuantity: true },
+        });
+        const productStock = siblingVariants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
+        await tx.inventoryStock.upsert({
+          where: { storeId_branchId_productId: { storeId, branchId: dto.branchId, productId: row.variant.productId } },
+          update: { quantity: productStock },
+          create: { storeId, branchId: dto.branchId, productId: row.variant.productId, quantity: productStock },
+        });
         await tx.invoiceItem.create({
           data: {
             storeId,
             branchId: dto.branchId,
             invoiceId: createdInvoice.id,
-            productId: row.product.id,
-            productName: row.product.name,
-            productBarcode: row.product.barcode,
+            productId: row.variant.productId,
+            variantId: row.variant.id,
+            productName: row.variant.product.name,
+            productBarcode: row.variant.product.barcode,
+            variantSku: row.variant.sku,
+            variantBarcode: row.variant.barcode,
+            variantSize: row.variant.size,
+            variantColor: row.variant.color,
             quantity: row.quantity,
-            purchasePriceSnapshot: row.product.purchasePrice,
+            purchasePriceSnapshot: row.variant.costPrice,
             unitPrice: row.unitPrice,
             discount: row.discount,
             lineTotal: row.lineTotal,
           },
         });
-        await tx.inventoryStock.update({ where: { id: stock.id }, data: { quantity: quantityAfter } });
-        await tx.inventoryMovement.create({
+
+        await tx.activityLog.create({
           data: {
             storeId,
             branchId: dto.branchId,
-            productId: row.product.id,
             userId: user.id,
-            type: InventoryMovementType.SALE,
-            quantity: row.quantity,
-            quantityBefore: stock.quantity,
-            quantityAfter,
-            referenceType: "Invoice",
-            referenceId: createdInvoice.id,
-            reason: `Sale invoice ${invoiceNumber}`,
+            action: "stock.decreased",
+            entityType: "ProductVariant",
+            entityId: row.variant.id,
+            metadata: {
+              invoiceId: createdInvoice.id,
+              quantity: Number(row.quantity),
+              stockAfter: updatedVariant.stockQuantity,
+            },
           },
         });
       }
@@ -138,6 +160,7 @@ export class PosService {
           amount: new Prisma.Decimal(payment.amount),
         })),
       });
+
       await tx.activityLog.create({
         data: {
           storeId,
@@ -146,33 +169,10 @@ export class PosService {
           action: "sale.completed",
           entityType: "Invoice",
           entityId: createdInvoice.id,
-          metadata: { invoiceNumber, total: Number(total) },
+          metadata: { invoiceNumber, total: Number(total), shiftId: shift.id },
         },
       });
-      await tx.activityLog.create({
-        data: {
-          storeId,
-          branchId: dto.branchId,
-          userId: user.id,
-          action: "invoice.created",
-          entityType: "Invoice",
-          entityId: createdInvoice.id,
-          metadata: { invoiceNumber },
-        },
-      });
-      if (dto.customerId) {
-        await tx.activityLog.create({
-          data: {
-            storeId,
-            branchId: dto.branchId,
-            userId: user.id,
-            action: "invoice.linked_to_customer",
-            entityType: "Invoice",
-            entityId: createdInvoice.id,
-            metadata: { invoiceNumber, customerId: dto.customerId },
-          },
-        });
-      }
+
       return tx.invoice.findUniqueOrThrow({ where: { id: createdInvoice.id }, include: invoiceInclude });
     });
 
@@ -222,16 +222,35 @@ export class PosService {
     return { success: true };
   }
 
-  private async validateShift(user: AuthenticatedUser, storeId: string, branchId: string, shiftId?: string) {
-    if (!shiftId) return null;
-    const shift = await this.prisma.cashierShift.findUnique({ where: { id: shiftId } });
-    if (!shift || shift.storeId !== storeId || shift.branchId !== branchId || shift.status !== "OPEN") {
-      throw new BadRequestException("Shift is not open for this branch.");
+  async currentShift(user: AuthenticatedUser, branchId?: string) {
+    const storeId = this.requireStore(user);
+    const scopedBranchId = await this.resolveBranchId(storeId, user, branchId);
+    return this.prisma.cashierShift.findFirst({
+      where: { storeId, branchId: scopedBranchId, cashierId: user.id, status: "OPEN" },
+      orderBy: { openedAt: "desc" },
+    });
+  }
+
+  private async requireOpenShift(user: AuthenticatedUser, storeId: string, branchId: string, shiftId?: string) {
+    if (shiftId) {
+      const shift = await this.prisma.cashierShift.findUnique({ where: { id: shiftId } });
+      if (!shift || shift.storeId !== storeId || shift.branchId !== branchId || shift.status !== "OPEN") {
+        throw new BadRequestException("No open shift found.");
+      }
+      if (shift.cashierId !== user.id && !(user.roleName === "owner" || user.roleName === "manager")) {
+        throw new ForbiddenException("This shift does not belong to the current cashier.");
+      }
+      return shift;
     }
-    if (shift.cashierId !== user.id && !(user.roleName === "owner" || user.roleName === "manager")) {
-      throw new ForbiddenException("This shift does not belong to the current cashier.");
+
+    const currentShift = await this.prisma.cashierShift.findFirst({
+      where: { storeId, branchId, cashierId: user.id, status: "OPEN" },
+      orderBy: { openedAt: "desc" },
+    });
+    if (!currentShift) {
+      throw new BadRequestException("يجب فتح شيفت قبل البيع.");
     }
-    return shift;
+    return currentShift;
   }
 
   private async generateInvoiceNumber(tx: Prisma.TransactionClient, storeId: string, branchId: string) {
@@ -263,7 +282,7 @@ export class PosService {
   }
 
   private async assertCustomer(storeId: string, customerId: string) {
-    const customer = await this.prisma.customer.findFirst({ where: { id: customerId, storeId, status: "ACTIVE", deletedAt: null } });
+    const customer = await this.prisma.customer.findFirst({ where: { id: customerId, storeId, deletedAt: null } });
     if (!customer) throw new BadRequestException("Customer does not belong to this store.");
   }
 
@@ -283,6 +302,16 @@ export class PosService {
         unitPrice: Number(item.unitPrice),
         discount: Number(item.discount),
         lineTotal: Number(item.lineTotal),
+        returnedQuantity: Number(item.returnedQuantity),
+        returnableQuantity: Number(item.quantity.minus(item.returnedQuantity)),
+        variant: item.variant
+          ? {
+              ...item.variant,
+              costPrice: Number(item.variant.costPrice),
+              sellingPrice: Number(item.variant.sellingPrice),
+              discountPrice: item.variant.discountPrice === null ? null : Number(item.variant.discountPrice),
+            }
+          : null,
       })),
       payments: invoice.payments.map((payment) => ({ ...payment, amount: Number(payment.amount) })),
     };
@@ -294,7 +323,7 @@ export class PosService {
       branchId,
       userId: user.id,
       action,
-      entityType: "HeldOrder",
+      entityType: "Invoice",
       entityId,
       metadata: metadata as Prisma.InputJsonObject,
     });

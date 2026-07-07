@@ -1,18 +1,36 @@
-import type { Product } from "../types";
+import type { Product, ProductVariant } from "../types";
 import { apiRequest } from "./apiClient";
+
+export type ProductVariantPayload = {
+  size: string;
+  color: string;
+  sku?: string | null;
+  barcode?: string | null;
+  costPrice: number;
+  sellingPrice: number;
+  discountPrice?: number | null;
+  stockQuantity: number;
+  minStock: number;
+  status?: ProductVariant["status"];
+};
 
 export type ProductPayload = {
   name: string;
   categoryId?: string | null;
+  brand?: string | null;
+  gender?: Product["gender"];
+  season?: Product["season"];
   barcode?: string | null;
   sku?: string | null;
   description?: string | null;
   imageUrl?: string | null;
-  purchasePrice: number;
-  sellingPrice: number;
-  unitType: string;
-  minStock: number;
+  unitType?: string | null;
   expiryDate?: string | null;
+  status?: Product["status"];
+  purchasePrice?: number;
+  sellingPrice?: number;
+  minStock?: number;
+  variants?: ProductVariantPayload[];
 };
 
 export type ProductListParams = {

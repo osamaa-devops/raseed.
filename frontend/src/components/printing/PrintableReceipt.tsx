@@ -3,6 +3,7 @@ import type { Payment, ReceiptPayload } from "../../types";
 const paymentLabels: Record<Payment["method"], string> = {
   CASH: "نقدي",
   CARD: "بطاقة",
+  INSTAPAY: "إنستا باي",
   WALLET: "محفظة",
 };
 

@@ -4,7 +4,11 @@ import { ArrayMinSize, IsArray, IsEnum, IsNumber, IsOptional, IsString, Min, Val
 
 export class SaleItemDto {
   @IsString()
-  productId!: string;
+  variantId!: string;
+
+  @IsOptional()
+  @IsString()
+  productId?: string;
 
   @IsNumber()
   @Min(0.001)

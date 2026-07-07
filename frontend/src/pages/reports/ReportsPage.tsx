@@ -14,9 +14,10 @@ type ReportState = {
   profit: { revenue: number; estimatedCost: number; grossProfitEstimate: number } | null;
   methods: Array<{ method: string; total: number; count: number }>;
   cashiers: Array<{ cashierId: string; cashierName: string; invoicesCount: number; totalSales: number }>;
-  best: Array<{ productId: string; productName: string; quantity: number; sales: number }>;
-  worst: Array<{ productId: string; productName: string; quantity: number; sales: number }>;
-  inventory: { totalValue: number; rows: Array<{ productId: string; productName: string; quantity: number; value: number }> } | null;
+  best: Array<{ productId?: string; variantId?: string; productName: string; quantity: number; sales: number }>;
+  worst: Array<{ productId?: string; variantId?: string; productName: string; quantity: number; sales: number }>;
+  inventory: { totalValue: number; rows: Array<{ variantId: string; productName: string; variantSize: string; variantColor: string; quantity: number; purchasePrice: number; value: number }> } | null;
+  lowStock: Array<{ variantId: string; productName: string; variantSize: string; variantColor: string; stockQuantity: number; minStock: number }>;
   expenses: { total: number; rows: Array<{ category: string; total: number; count: number }> } | null;
 };
 
@@ -35,7 +36,7 @@ export function ReportsPage() {
     setError(null);
     const params = { branchId, dateFrom, dateTo };
     try {
-      const [daily, monthly, profit, methods, cashiers, best, worst, inventory, expenses] = await Promise.all([
+      const [daily, monthly, profit, methods, cashiers, best, worst, inventory, lowStock, expenses] = await Promise.all([
         reportsService.getDailySales(params),
         reportsService.getMonthlySales(params),
         reportsService.getProfit(params),
@@ -44,9 +45,10 @@ export function ReportsPage() {
         reportsService.getBestSellingProducts(params),
         reportsService.getWorstSellingProducts(params),
         reportsService.getInventoryValue(params),
+        reportsService.getLowStock(params),
         reportsService.getExpensesReport(params),
       ]);
-      setData({ daily: daily.rows, monthly: monthly.rows, profit, methods: methods.rows, cashiers: cashiers.rows, best: best.rows, worst: worst.rows, inventory, expenses });
+      setData({ daily: daily.rows, monthly: monthly.rows, profit, methods: methods.rows, cashiers: cashiers.rows, best: best.rows, worst: worst.rows, inventory, lowStock: lowStock.rows, expenses });
     } catch (reportError) {
       setError(reportError instanceof Error ? reportError.message : "تعذر تحميل التقارير");
     } finally {
@@ -91,6 +93,7 @@ export function ReportsPage() {
             <ReportTable title="أفضل المنتجات" columns={["المنتج", "الكمية", "المبيعات"]} rows={data.best.map((row) => [row.productName, row.quantity, `${row.sales} ج`])} />
             <ReportTable title="أسوأ المنتجات" columns={["المنتج", "الكمية", "المبيعات"]} rows={data.worst.map((row) => [row.productName, row.quantity, `${row.sales} ج`])} />
           </div>
+          <ReportTable title="الكمية المنخفضة" columns={["المنتج", "المقاس", "اللون", "المخزون", "الحد الأدنى"]} rows={data.lowStock.map((row) => [row.productName, row.variantSize, row.variantColor, row.stockQuantity, row.minStock])} />
           <ReportTable title="المصاريف حسب التصنيف" columns={["التصنيف", "الإجمالي", "العدد"]} rows={(data.expenses?.rows ?? []).map((row) => [row.category, `${row.total} ج`, row.count])} />
           <ReportTable title="قيمة المخزون" columns={["المنتج", "الكمية", "القيمة"]} rows={(data.inventory?.rows ?? []).slice(0, 10).map((row) => [row.productName, row.quantity, `${row.value} ج`])} />
         </div>
@@ -119,5 +122,5 @@ function ReportTable({ title, columns, rows }: { title: string; columns: string[
 }
 
 function methodLabel(method: string) {
-  return method === "CASH" ? "نقدي" : method === "CARD" ? "بطاقة" : "محفظة";
+  return method === "CASH" ? "نقدي" : method === "CARD" ? "بطاقة" : method === "INSTAPAY" ? "إنستا باي" : "محفظة";
 }

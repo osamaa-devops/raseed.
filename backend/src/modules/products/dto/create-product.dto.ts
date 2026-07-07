@@ -1,51 +1,44 @@
-import { IsDateString, IsNumber, IsOptional, IsString, MaxLength, Min } from "class-validator";
+import { Type } from "class-transformer";
+import { ArrayMinSize, IsArray, IsOptional, IsString, ValidateNested } from "class-validator";
+import { ProductCoreDto, ProductVariantDto } from "./product-variant.dto";
 
-export class CreateProductDto {
-  @IsString({ message: "Product name is required." })
-  @MaxLength(180)
-  name!: string;
-
+export class CreateProductDto extends ProductCoreDto {
   @IsOptional()
   @IsString()
-  categoryId?: string | null;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
   barcode?: string | null;
 
   @IsOptional()
   @IsString()
-  @MaxLength(64)
   sku?: string | null;
 
   @IsOptional()
   @IsString()
-  @MaxLength(800)
   description?: string | null;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
-  imageUrl?: string | null;
-
-  @IsNumber({}, { message: "Purchase price must be a number." })
-  @Min(0, { message: "Purchase price cannot be negative." })
-  purchasePrice!: number;
-
-  @IsNumber({}, { message: "Selling price must be a number." })
-  @Min(0, { message: "Selling price cannot be negative." })
-  sellingPrice!: number;
-
-  @IsString()
-  @MaxLength(40)
-  unitType!: string;
-
-  @IsNumber()
-  @Min(0, { message: "Minimum stock cannot be negative." })
-  minStock!: number;
+  unitType?: string | null;
 
   @IsOptional()
-  @IsDateString()
+  @IsString()
   expiryDate?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ProductVariantDto)
+  variants?: ProductVariantDto[];
+
+  @IsOptional()
+  purchasePrice?: number;
+
+  @IsOptional()
+  sellingPrice?: number;
+
+  @IsOptional()
+  minStock?: number;
+
+  @IsOptional()
+  stockQuantity?: number;
 }

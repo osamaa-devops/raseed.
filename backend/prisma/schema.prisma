@@ -67,6 +67,21 @@ enum CatalogStatus {
   INACTIVE
 }
 
+enum ProductGender {
+  MEN
+  WOMEN
+  UNISEX
+  KIDS
+}
+
+enum ProductSeason {
+  ALL_SEASON
+  SUMMER
+  WINTER
+  SPRING
+  AUTUMN
+}
+
 enum InventoryMovementType {
   INITIAL
   ADD_STOCK
@@ -97,6 +112,7 @@ enum InvoiceStatus {
 enum PaymentMethod {
   CASH
   CARD
+  INSTAPAY
   WALLET
 }
 
@@ -184,6 +200,7 @@ model Store {
   roles         Role[]
   categories    Category[]
   products      Product[]
+  productVariants ProductVariant[]
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
@@ -375,6 +392,9 @@ model Product {
   storeId       String
   categoryId    String?
   name          String
+  brand         String?
+  gender        ProductGender @default(UNISEX)
+  season        ProductSeason @default(ALL_SEASON)
   barcode       String?
   sku           String?
   description   String?
@@ -389,6 +409,7 @@ model Product {
   updatedAt     DateTime      @updatedAt
   store         Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  variants      ProductVariant[]
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
@@ -401,6 +422,34 @@ model Product {
   @@index([storeId])
   @@index([storeId, categoryId])
   @@index([status])
+}
+
+model ProductVariant {
+  id            String         @id @default(cuid())
+  storeId       String
+  productId     String
+  size          String
+  color         String
+  sku           String?
+  barcode       String?
+  costPrice     Decimal        @db.Decimal(10, 2)
+  sellingPrice  Decimal        @db.Decimal(10, 2)
+  discountPrice Decimal?       @db.Decimal(10, 2)
+  stockQuantity Int            @default(0)
+  minStock      Int            @default(0)
+  status        CatalogStatus  @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  invoiceItems  InvoiceItem[]
+
+  @@unique([storeId, barcode])
+  @@unique([storeId, sku])
+  @@index([storeId])
+  @@index([productId])
+  @@index([status])
+  @@index([storeId, productId])
 }
 
 model ReceiptSettings {
@@ -584,8 +633,13 @@ model InvoiceItem {
   branchId              String
   invoiceId             String
   productId             String
+  variantId             String?
   productName           String
   productBarcode        String?
+  variantSku            String?
+  variantBarcode        String?
+  variantSize           String?
+  variantColor          String?
   quantity              Decimal  @db.Decimal(14, 3)
   purchasePriceSnapshot Decimal? @db.Decimal(10, 2)
   unitPrice             Decimal  @db.Decimal(10, 2)
@@ -597,6 +651,7 @@ model InvoiceItem {
   branch                Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
   invoice               Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   product               Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant               ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   returnItems           ReturnItem[]
 
   @@index([storeId, branchId])
