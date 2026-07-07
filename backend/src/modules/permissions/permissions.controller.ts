@@ -9,7 +9,7 @@ import { PermissionsService } from "./permissions.service";
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
-  @RequirePermissions("admin.permissions.view")
+  @RequirePermissions("users.manage")
   @Get()
   list() {
     return this.permissionsService.list();

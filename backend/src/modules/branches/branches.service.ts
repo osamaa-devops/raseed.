@@ -56,7 +56,17 @@ export class BranchesService {
 
   async updateStatus(user: AuthenticatedUser, id: string, dto: UpdateBranchStatusDto) {
     const branch = await this.getScopedBranch(user, id);
-    return this.prisma.branch.update({ where: { id: branch.id }, data: { status: dto.status } });
+    const updated = await this.prisma.branch.update({ where: { id: branch.id }, data: { status: dto.status } });
+    await this.activityLogs.log({
+      storeId: updated.storeId,
+      branchId: updated.id,
+      userId: user.id,
+      action: "branch.status_changed",
+      entityType: "Branch",
+      entityId: updated.id,
+      metadata: { status: dto.status },
+    });
+    return updated;
   }
 
   private async getScopedBranch(user: AuthenticatedUser, id: string) {

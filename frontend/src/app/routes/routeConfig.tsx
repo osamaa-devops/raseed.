@@ -1,45 +1,48 @@
+import { lazy } from "react";
 import type { RouteObject } from "react-router";
 import { Navigate } from "react-router";
 import { DashboardLayout } from "../../layouts/DashboardLayout";
 import { PosLayout } from "../../layouts/PosLayout";
 import { PublicLayout } from "../../layouts/PublicLayout";
 import { SuperAdminLayout } from "../../layouts/SuperAdminLayout";
-import { ActivityLogsPage } from "../../pages/admin/ActivityLogsPage";
-import { DemoScriptPage } from "../../pages/admin/DemoScriptPage";
-import { HelpSupportPage } from "../../pages/admin/HelpSupportPage";
-import { SettingsPage } from "../../pages/admin/SettingsPage";
-import { SubscriptionBlockedPage } from "../../pages/admin/SubscriptionBlockedPage";
-import { SubscriptionBillingPage } from "../../pages/admin/SubscriptionBillingPage";
-import { UsersPermissionsPage } from "../../pages/admin/UsersPermissionsPage";
-import { OwnerDashboardPage } from "../../pages/dashboard/OwnerDashboardPage";
-import { CustomersDebtsPage } from "../../pages/finance/CustomersDebtsPage";
-import { ExpensesPage } from "../../pages/finance/ExpensesPage";
-import { AiInsightsPage } from "../../pages/insights/AiInsightsPage";
-import { NotificationsPage } from "../../pages/insights/NotificationsPage";
-import { InventoryPage } from "../../pages/inventory/InventoryPage";
-import { ImportExportPage } from "../../pages/import-export/ImportExportPage";
-import { OnboardingWizardPage } from "../../pages/onboarding/OnboardingWizardPage";
-import { ActivationPage } from "../../pages/public/ActivationPage";
-import { CategoriesPage } from "../../pages/products/CategoriesPage";
-import { ProductsPage } from "../../pages/products/ProductsPage";
-import { LandingPage } from "../../pages/public/LandingPage";
-import { LoginPage } from "../../pages/public/LoginPage";
-import { RequestDemoPage } from "../../pages/public/RequestDemoPage";
-import { ReportsPage } from "../../pages/reports/ReportsPage";
-import { ReturnsRefundsPage } from "../../pages/sales/ReturnsRefundsPage";
-import { SalesInvoicesPage } from "../../pages/sales/SalesInvoicesPage";
-import { EndOfDayClosingPage } from "../../pages/shifts/EndOfDayClosingPage";
-import { ShiftManagementPage } from "../../pages/shifts/ShiftManagementPage";
-import { PaymentsPage } from "../../pages/super-admin/PaymentsPage";
-import { PlansPage } from "../../pages/super-admin/PlansPage";
-import { StoresPage } from "../../pages/super-admin/StoresPage";
-import { SuperAdminDashboardPage } from "../../pages/super-admin/SuperAdminDashboardPage";
-import { SupportTicketsPage } from "../../pages/super-admin/SupportTicketsPage";
-import { PurchaseOrdersPage } from "../../pages/suppliers/PurchaseOrdersPage";
-import { SuppliersPage } from "../../pages/suppliers/SuppliersPage";
-import { PosPage } from "../../pages/pos/PosPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RootRoute } from "./RootRoute";
+
+const ActivityLogsPage = lazy(() => import("../../pages/admin/ActivityLogsPage").then((module) => ({ default: module.ActivityLogsPage })));
+const BranchesPage = lazy(() => import("../../pages/admin/BranchesPage").then((module) => ({ default: module.BranchesPage })));
+const DemoScriptPage = lazy(() => import("../../pages/admin/DemoScriptPage").then((module) => ({ default: module.DemoScriptPage })));
+const HelpSupportPage = lazy(() => import("../../pages/admin/HelpSupportPage").then((module) => ({ default: module.HelpSupportPage })));
+const SettingsPage = lazy(() => import("../../pages/admin/SettingsPage").then((module) => ({ default: module.SettingsPage })));
+const SubscriptionBlockedPage = lazy(() => import("../../pages/admin/SubscriptionBlockedPage").then((module) => ({ default: module.SubscriptionBlockedPage })));
+const SubscriptionBillingPage = lazy(() => import("../../pages/admin/SubscriptionBillingPage").then((module) => ({ default: module.SubscriptionBillingPage })));
+const UsersPermissionsPage = lazy(() => import("../../pages/admin/UsersPermissionsPage").then((module) => ({ default: module.UsersPermissionsPage })));
+const OwnerDashboardPage = lazy(() => import("../../pages/dashboard/OwnerDashboardPage").then((module) => ({ default: module.OwnerDashboardPage })));
+const CustomersDebtsPage = lazy(() => import("../../pages/finance/CustomersDebtsPage").then((module) => ({ default: module.CustomersDebtsPage })));
+const ExpensesPage = lazy(() => import("../../pages/finance/ExpensesPage").then((module) => ({ default: module.ExpensesPage })));
+const AiInsightsPage = lazy(() => import("../../pages/insights/AiInsightsPage").then((module) => ({ default: module.AiInsightsPage })));
+const NotificationsPage = lazy(() => import("../../pages/insights/NotificationsPage").then((module) => ({ default: module.NotificationsPage })));
+const InventoryPage = lazy(() => import("../../pages/inventory/InventoryPage").then((module) => ({ default: module.InventoryPage })));
+const ImportExportPage = lazy(() => import("../../pages/import-export/ImportExportPage").then((module) => ({ default: module.ImportExportPage })));
+const OnboardingWizardPage = lazy(() => import("../../pages/onboarding/OnboardingWizardPage").then((module) => ({ default: module.OnboardingWizardPage })));
+const ActivationPage = lazy(() => import("../../pages/public/ActivationPage").then((module) => ({ default: module.ActivationPage })));
+const CategoriesPage = lazy(() => import("../../pages/products/CategoriesPage").then((module) => ({ default: module.CategoriesPage })));
+const ProductsPage = lazy(() => import("../../pages/products/ProductsPage").then((module) => ({ default: module.ProductsPage })));
+const LandingPage = lazy(() => import("../../pages/public/LandingPage").then((module) => ({ default: module.LandingPage })));
+const LoginPage = lazy(() => import("../../pages/public/LoginPage").then((module) => ({ default: module.LoginPage })));
+const RequestDemoPage = lazy(() => import("../../pages/public/RequestDemoPage").then((module) => ({ default: module.RequestDemoPage })));
+const ReportsPage = lazy(() => import("../../pages/reports/ReportsPage").then((module) => ({ default: module.ReportsPage })));
+const ReturnsRefundsPage = lazy(() => import("../../pages/sales/ReturnsRefundsPage").then((module) => ({ default: module.ReturnsRefundsPage })));
+const SalesInvoicesPage = lazy(() => import("../../pages/sales/SalesInvoicesPage").then((module) => ({ default: module.SalesInvoicesPage })));
+const EndOfDayClosingPage = lazy(() => import("../../pages/shifts/EndOfDayClosingPage").then((module) => ({ default: module.EndOfDayClosingPage })));
+const ShiftManagementPage = lazy(() => import("../../pages/shifts/ShiftManagementPage").then((module) => ({ default: module.ShiftManagementPage })));
+const PaymentsPage = lazy(() => import("../../pages/super-admin/PaymentsPage").then((module) => ({ default: module.PaymentsPage })));
+const PlansPage = lazy(() => import("../../pages/super-admin/PlansPage").then((module) => ({ default: module.PlansPage })));
+const StoresPage = lazy(() => import("../../pages/super-admin/StoresPage").then((module) => ({ default: module.StoresPage })));
+const SuperAdminDashboardPage = lazy(() => import("../../pages/super-admin/SuperAdminDashboardPage").then((module) => ({ default: module.SuperAdminDashboardPage })));
+const SupportTicketsPage = lazy(() => import("../../pages/super-admin/SupportTicketsPage").then((module) => ({ default: module.SupportTicketsPage })));
+const PurchaseOrdersPage = lazy(() => import("../../pages/suppliers/PurchaseOrdersPage").then((module) => ({ default: module.PurchaseOrdersPage })));
+const SuppliersPage = lazy(() => import("../../pages/suppliers/SuppliersPage").then((module) => ({ default: module.SuppliersPage })));
+const PosPage = lazy(() => import("../../pages/pos/PosPage").then((module) => ({ default: module.PosPage })));
 
 export const routeConfig: RouteObject[] = [
   {
@@ -73,6 +76,7 @@ export const routeConfig: RouteObject[] = [
           { path: "/suppliers", element: <ProtectedRoute path="/suppliers"><SuppliersPage /></ProtectedRoute> },
           { path: "/purchase-orders", element: <ProtectedRoute path="/purchase-orders"><PurchaseOrdersPage /></ProtectedRoute> },
           { path: "/customers-debts", element: <ProtectedRoute path="/customers-debts"><CustomersDebtsPage /></ProtectedRoute> },
+          { path: "/branches", element: <ProtectedRoute path="/branches"><BranchesPage /></ProtectedRoute> },
           { path: "/notifications", element: <NotificationsPage /> },
           { path: "/ai-insights", element: <AiInsightsPage /> },
           { path: "/users-permissions", element: <ProtectedRoute path="/users-permissions"><UsersPermissionsPage /></ProtectedRoute> },

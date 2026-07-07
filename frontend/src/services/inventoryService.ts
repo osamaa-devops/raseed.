@@ -1,4 +1,4 @@
-import type { InventoryBatch, InventoryMovement, InventoryStock } from "../types";
+import type { InventoryBatch, InventoryMovement, InventoryStock, InventoryTransfer } from "../types";
 import { apiRequest } from "./apiClient";
 
 type ListResponse<T> = {
@@ -19,6 +19,16 @@ export type InventoryMovementsParams = {
   branchId?: string;
   productId?: string;
   type?: InventoryMovement["type"] | "";
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+};
+
+export type InventoryTransfersParams = {
+  branchId?: string;
+  productId?: string;
+  status?: InventoryTransfer["status"] | "";
   dateFrom?: string;
   dateTo?: string;
   page?: number;
@@ -53,6 +63,16 @@ export type AdjustStockPayload = {
   notes?: string;
 };
 
+export type TransferStockPayload = {
+  sourceBranchId: string;
+  destinationBranchId: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  reason?: string;
+  notes?: string;
+};
+
 function toQuery(params: Record<string, string | number | undefined>) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -72,6 +92,9 @@ export const inventoryService = {
   getInventoryMovements: (params: InventoryMovementsParams = {}) =>
     apiRequest<ListResponse<InventoryMovement>>(`/inventory/movements${toQuery(params)}`),
 
+  getInventoryTransfers: (params: InventoryTransfersParams = {}) =>
+    apiRequest<ListResponse<InventoryTransfer>>(`/inventory/transfers${toQuery(params)}`),
+
   addStock: (payload: AddStockPayload) =>
     apiRequest<InventoryStock>("/inventory/add-stock", {
       method: "POST",
@@ -86,6 +109,12 @@ export const inventoryService = {
 
   adjustStock: (payload: AdjustStockPayload) =>
     apiRequest<InventoryStock>("/inventory/adjust", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  transferStock: (payload: TransferStockPayload) =>
+    apiRequest<InventoryTransfer>("/inventory/transfer", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

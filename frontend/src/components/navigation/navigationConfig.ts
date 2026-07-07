@@ -22,6 +22,7 @@ import {
   Store,
   LifeBuoy,
   Upload,
+  GitBranch,
 } from "lucide-react";
 
 export const dashboardNavGroups = [
@@ -42,6 +43,7 @@ export const dashboardNavGroups = [
       { label: "الاستيراد والتصدير", path: "/import-export", icon: Upload },
       { label: "الموردين", path: "/suppliers", icon: Truck },
       { label: "أوامر الشراء", path: "/purchase-orders", icon: ClipboardList },
+      { label: "الفروع", path: "/branches", icon: GitBranch },
     ],
   },
   {

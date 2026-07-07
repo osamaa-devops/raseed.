@@ -536,18 +536,18 @@ export async function main() {
   const store = await prisma.store.upsert({
     where: { id: "demo-store-city-market" },
     update: {
-      name: "بوتيك المدينة",
-      ownerName: "محمد ناصر",
+      name: "القاسم",
+      ownerName: "محمود القاسم",
       phone: "01000000000",
-      email: "owner@raseed.local",
+      email: "mahmoud@local",
       status: "ACTIVE",
     },
     create: {
       id: "demo-store-city-market",
-      name: "بوتيك المدينة",
-      ownerName: "محمد ناصر",
+      name: "القاسم",
+      ownerName: "محمود القاسم",
       phone: "01000000000",
-      email: "owner@raseed.local",
+      email: "mahmoud@local",
       status: "ACTIVE",
     },
   });
@@ -577,10 +577,10 @@ export async function main() {
     await prisma.receiptSettings.update({
       where: { id: existingReceiptSettings.id },
       data: {
-        storeName: "بوتيك المدينة",
+        storeName: "القاسم",
         storePhone: store.phone,
-        storeAddress: "القاهرة",
-        receiptFooter: "شكراً لزيارتكم بوتيك المدينة",
+        storeAddress: "القاهرة - محل ملابس",
+        receiptFooter: "شكراً لزيارتكم القاسم - محل ملابس",
         paperSize: "MM_80",
       },
     });
@@ -588,10 +588,10 @@ export async function main() {
     await prisma.receiptSettings.create({
       data: {
         storeId: store.id,
-        storeName: "بوتيك المدينة",
+        storeName: "القاسم",
         storePhone: store.phone,
-        storeAddress: "القاهرة",
-        receiptFooter: "شكراً لزيارتكم بوتيك المدينة",
+        storeAddress: "القاهرة - محل ملابس",
+        receiptFooter: "شكراً لزيارتكم القاسم - محل ملابس",
         paperSize: "MM_80",
       },
     });
@@ -684,10 +684,20 @@ export async function main() {
     storeId: store.id,
     branchId: branch.id,
     roleId: roles.owner.id,
-    name: "محمد ناصر",
-    email: "owner@raseed.local",
+    name: "محمود القاسم",
+    email: "mahmoud@local",
     phone: "01000000010",
-    password: "RaseedOwner!2026",
+    password: "hello",
+  });
+
+  await findOrCreateUser({
+    storeId: store.id,
+    branchId: branch.id,
+    roleId: roles.owner.id,
+    name: "أحمد القاسم",
+    email: "owner2@local",
+    phone: "01000000011",
+    password: "hello",
   });
 
   await findOrCreateUser({
@@ -705,9 +715,19 @@ export async function main() {
     branchId: branch.id,
     roleId: roles.cashier.id,
     name: "أحمد محمود",
-    email: "cashier@raseed.local",
+    email: "ahmed@local",
     phone: "01000000030",
-    password: "RaseedCashier!2026",
+    password: "hello",
+  });
+
+  await findOrCreateUser({
+    storeId: store.id,
+    branchId: branch.id,
+    roleId: roles.cashier.id,
+    name: "محمود علي",
+    email: "cashier2@local",
+    phone: "01000000031",
+    password: "hello",
   });
 
   await findOrCreateUser({
@@ -906,6 +926,18 @@ export async function main() {
         },
       });
       savedVariants.push(savedVariant);
+      productByBarcode.set(savedVariant.barcode ?? variant.barcode, {
+        id: savedProduct.id,
+        name: savedProduct.name,
+        barcode: savedProduct.barcode,
+        variantId: savedVariant.id,
+        variantSku: savedVariant.sku,
+        variantBarcode: savedVariant.barcode,
+        variantSize: savedVariant.size,
+        variantColor: savedVariant.color,
+        purchasePrice: savedVariant.costPrice,
+        sellingPrice: savedVariant.sellingPrice,
+      });
     }
     const primaryVariant = savedVariants[0];
     if (!primaryVariant) throw new Error(`Missing seeded variant for ${product.name}`);

@@ -97,6 +97,11 @@ enum InventoryMovementType {
   TRANSFER_OUT
 }
 
+enum InventoryTransferStatus {
+  COMPLETED
+  CANCELLED
+}
+
 enum CashierShiftStatus {
   OPEN
   CLOSED
@@ -204,6 +209,7 @@ model Store {
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
+  inventoryTransfers InventoryTransfer[]
   cashierShifts CashierShift[]
   invoices Invoice[]
   invoiceItems InvoiceItem[]
@@ -245,6 +251,8 @@ model Branch {
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
+  outgoingInventoryTransfers InventoryTransfer[] @relation("InventoryTransferSourceBranch")
+  incomingInventoryTransfers InventoryTransfer[] @relation("InventoryTransferDestinationBranch")
   cashierShifts CashierShift[]
   invoices Invoice[]
   invoiceItems InvoiceItem[]
@@ -283,6 +291,7 @@ model User {
   role            Role?            @relation(fields: [roleId], references: [id], onDelete: SetNull)
   permissions     UserPermission[]
   inventoryMovements InventoryMovement[]
+  inventoryTransfers InventoryTransfer[]
   cashierShifts CashierShift[]
   invoices Invoice[]
   heldOrders HeldOrder[]
@@ -413,6 +422,7 @@ model Product {
   inventoryStocks InventoryStock[]
   inventoryMovements InventoryMovement[]
   inventoryBatches InventoryBatch[]
+  inventoryTransfers InventoryTransfer[]
   invoiceItems InvoiceItem[]
   returnItems ReturnItem[]
   purchaseOrderItems PurchaseOrderItem[]
@@ -562,6 +572,33 @@ model InventoryBatch {
   @@index([storeId, branchId])
   @@index([storeId, productId])
   @@index([expiryDate])
+}
+
+model InventoryTransfer {
+  id                  String                  @id @default(cuid())
+  storeId             String
+  sourceBranchId      String
+  destinationBranchId String
+  productId           String
+  variantId           String?
+  userId              String?
+  quantity            Decimal                 @db.Decimal(14, 3)
+  status              InventoryTransferStatus @default(COMPLETED)
+  reason              String?
+  notes               String?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  store               Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sourceBranch        Branch                  @relation("InventoryTransferSourceBranch", fields: [sourceBranchId], references: [id], onDelete: Restrict)
+  destinationBranch   Branch                  @relation("InventoryTransferDestinationBranch", fields: [destinationBranchId], references: [id], onDelete: Restrict)
+  product             Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user                User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, createdAt])
+  @@index([storeId, sourceBranchId])
+  @@index([storeId, destinationBranchId])
+  @@index([storeId, productId])
+  @@index([status])
 }
 
 model CashierShift {

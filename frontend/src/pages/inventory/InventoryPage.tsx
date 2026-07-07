@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Archive, Download, Eye, History, Layers, MinusCircle, Plus, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, Archive, Download, Eye, History, Layers, MinusCircle, Plus, Shuffle, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingSkeleton } from "../../components/feedback/LoadingSkeleton";
@@ -10,12 +10,13 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { inventoryService, type AddStockPayload, type AdjustStockPayload, type RemoveStockPayload } from "../../services/inventoryService";
+import { branchesService } from "../../services/branchesService";
+import { inventoryService, type AddStockPayload, type AdjustStockPayload, type RemoveStockPayload, type TransferStockPayload } from "../../services/inventoryService";
 import { importExportService } from "../../services/importExportService";
-import type { InventoryBatch, InventoryMovement, InventoryStock } from "../../types";
+import type { Branch, InventoryBatch, InventoryMovement, InventoryStock, InventoryTransfer } from "../../types";
 
-type Tab = "stocks" | "low" | "expiry" | "movements";
-type ModalMode = "add" | "remove" | "adjust" | null;
+type Tab = "stocks" | "low" | "expiry" | "movements" | "transfers";
+type ModalMode = "add" | "remove" | "adjust" | "transfer" | null;
 
 const movementLabels: Record<InventoryMovement["type"], string> = {
   INITIAL: "رصيد افتتاحي",
@@ -46,6 +47,7 @@ export function InventoryPage() {
   const canAdd = hasPermission("inventory.add_stock");
   const canRemove = hasPermission("inventory.remove_stock");
   const canAdjust = hasPermission("inventory.adjust");
+  const canTransfer = hasPermission("inventory.transfer");
   const canViewMovements = hasPermission("inventory.view_movements");
   const canViewAlerts = hasPermission("inventory.view_alerts");
   const canExport = hasPermission("inventory.export");
@@ -55,6 +57,8 @@ export function InventoryPage() {
   const [lowStock, setLowStock] = useState<InventoryStock[]>([]);
   const [expiryAlerts, setExpiryAlerts] = useState<InventoryBatch[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
+  const [transfers, setTransfers] = useState<InventoryTransfer[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
@@ -67,6 +71,7 @@ export function InventoryPage() {
   const [addForm, setAddForm] = useState({ quantity: 1, purchasePrice: "", expiryDate: "", batchNumber: "", reason: "", notes: "" });
   const [removeForm, setRemoveForm] = useState({ quantity: 1, type: "DAMAGE" as RemoveStockPayload["type"], reason: "", notes: "" });
   const [adjustForm, setAdjustForm] = useState({ newQuantity: 0, reason: "", notes: "" });
+  const [transferForm, setTransferForm] = useState({ sourceBranchId: branchId, destinationBranchId: "", quantity: 1, reason: "", notes: "" });
 
   const currentRows = useMemo(() => stocks.filter((stock) => !status || stock.stockStatus === status), [stocks, status]);
 
@@ -75,16 +80,20 @@ export function InventoryPage() {
     setLoading(true);
     setError(null);
     try {
-      const [stockResponse, lowResponse, expiryResponse, movementResponse] = await Promise.all([
+      const [stockResponse, lowResponse, expiryResponse, movementResponse, transferResponse, branchesResponse] = await Promise.all([
         inventoryService.getInventoryStocks({ branchId, search, limit: 100 }),
         canViewAlerts ? inventoryService.getLowStock({ branchId, limit: 100 }) : Promise.resolve({ items: [], meta: { page: 1, limit: 100, total: 0, pages: 0 } }),
         canViewAlerts ? inventoryService.getExpiryAlerts({ branchId, days: 30 }) : Promise.resolve([]),
         canViewMovements ? inventoryService.getInventoryMovements({ branchId, limit: 100 }) : Promise.resolve({ items: [], meta: { page: 1, limit: 100, total: 0, pages: 0 } }),
+        canViewMovements ? inventoryService.getInventoryTransfers({ branchId, limit: 100 }) : Promise.resolve({ items: [], meta: { page: 1, limit: 100, total: 0, pages: 0 } }),
+        branchesService.getBranches().catch(() => [] as Branch[]),
       ]);
       setStocks(stockResponse.items);
       setLowStock(lowResponse.items);
       setExpiryAlerts(expiryResponse);
       setMovements(movementResponse.items);
+      setTransfers(transferResponse.items);
+      setBranches(branchesResponse);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "تعذر تحميل بيانات المخزون");
     } finally {
@@ -102,6 +111,13 @@ export function InventoryPage() {
     setAddForm({ quantity: 1, purchasePrice: "", expiryDate: "", batchNumber: "", reason: "", notes: "" });
     setRemoveForm({ quantity: 1, type: "DAMAGE", reason: "", notes: "" });
     setAdjustForm({ newQuantity: stock.quantity, reason: "", notes: "" });
+    setTransferForm({
+      sourceBranchId: stock.branchId,
+      destinationBranchId: branches.find((branch) => branch.id !== stock.branchId && branch.status !== "INACTIVE")?.id ?? "",
+      quantity: 1,
+      reason: "",
+      notes: "",
+    });
   };
 
   const closeModal = () => {
@@ -151,6 +167,21 @@ export function InventoryPage() {
         await inventoryService.adjustStock(payload);
         setNotice("تم تعديل الرصيد وتسجيل الحركة");
       }
+      if (modalMode === "transfer") {
+        if (!transferForm.destinationBranchId || transferForm.sourceBranchId === transferForm.destinationBranchId) {
+          throw new Error("اختر فرع وجهة مختلفًا عن فرع المصدر.");
+        }
+        const payload: TransferStockPayload = {
+          sourceBranchId: transferForm.sourceBranchId,
+          destinationBranchId: transferForm.destinationBranchId,
+          productId: selectedStock.productId,
+          quantity: Number(transferForm.quantity),
+          reason: transferForm.reason || undefined,
+          notes: transferForm.notes || undefined,
+        };
+        await inventoryService.transferStock(payload);
+        setNotice("تم تحويل الكمية بين الفروع وتسجيل حركتي التحويل");
+      }
       closeModal();
       await load();
     } catch (saveError) {
@@ -179,6 +210,7 @@ export function InventoryPage() {
         {canViewAlerts && <TabButton active={tab === "low"} onClick={() => setTab("low")}>مخزون منخفض</TabButton>}
         {canViewAlerts && <TabButton active={tab === "expiry"} onClick={() => setTab("expiry")}>تنبيهات الصلاحية</TabButton>}
         {canViewMovements && <TabButton active={tab === "movements"} onClick={() => setTab("movements")}>سجل الحركات</TabButton>}
+        {canViewMovements && <TabButton active={tab === "transfers"} onClick={() => setTab("transfers")}>تحويلات الفروع</TabButton>}
       </div>
 
       {tab === "stocks" && (
@@ -193,7 +225,7 @@ export function InventoryPage() {
             </SelectInput>
             <AppButton variant="outline" onClick={load}>بحث</AppButton>
           </div>
-          {loading ? <LoadingSkeleton /> : <StockTable rows={currentRows} canAdd={canAdd} canRemove={canRemove} canAdjust={canAdjust} onAction={openModal} onMovement={setSelectedMovementFromStock(movements, setSelectedMovement)} />}
+          {loading ? <LoadingSkeleton /> : <StockTable rows={currentRows} canAdd={canAdd} canRemove={canRemove} canAdjust={canAdjust} canTransfer={canTransfer && branches.length > 1} onAction={openModal} onMovement={setSelectedMovementFromStock(movements, setSelectedMovement)} />}
         </>
       )}
 
@@ -255,16 +287,40 @@ export function InventoryPage() {
         )
       )}
 
+      {tab === "transfers" && (
+        loading ? <LoadingSkeleton /> : transfers.length === 0 ? <EmptyState icon={Shuffle} title="لا توجد تحويلات" description="أي تحويل مخزون بين الفروع سيظهر هنا." /> : (
+          <DataTable
+            columns={["التاريخ", "المنتج", "من فرع", "إلى فرع", "الكمية", "الحالة", "المستخدم", "السبب"]}
+            rows={transfers}
+            renderRow={(transfer) => (
+              <tr key={transfer.id} className="border-t border-border">
+                <td className="px-4 py-3">{formatDateTime(transfer.createdAt)}</td>
+                <td className="px-4 py-3 font-semibold">{transfer.product?.name ?? "-"}</td>
+                <td className="px-4 py-3">{transfer.sourceBranch?.name ?? "-"}</td>
+                <td className="px-4 py-3">{transfer.destinationBranch?.name ?? "-"}</td>
+                <td className="px-4 py-3">{formatNumber(transfer.quantity)}</td>
+                <td className="px-4 py-3"><StatusBadge label={transfer.status === "COMPLETED" ? "مكتمل" : "ملغي"} tone={transfer.status === "COMPLETED" ? "success" : "muted"} /></td>
+                <td className="px-4 py-3">{transfer.user?.name ?? "-"}</td>
+                <td className="px-4 py-3">{transfer.reason ?? "-"}</td>
+              </tr>
+            )}
+          />
+        )
+      )}
+
       <InventoryActionModal
         mode={modalMode}
         stock={selectedStock}
         addForm={addForm}
         removeForm={removeForm}
         adjustForm={adjustForm}
+        transferForm={transferForm}
+        branches={branches}
         saving={saving}
         onAddChange={setAddForm}
         onRemoveChange={setRemoveForm}
         onAdjustChange={setAdjustForm}
+        onTransferChange={setTransferForm}
         onClose={closeModal}
         onSave={saveInventoryAction}
       />
@@ -273,11 +329,12 @@ export function InventoryPage() {
   );
 }
 
-function StockTable({ rows, canAdd, canRemove, canAdjust, onAction, onMovement }: {
+function StockTable({ rows, canAdd, canRemove, canAdjust, canTransfer, onAction, onMovement }: {
   rows: InventoryStock[];
   canAdd: boolean;
   canRemove: boolean;
   canAdjust: boolean;
+  canTransfer: boolean;
   onAction: (mode: ModalMode, stock: InventoryStock) => void;
   onMovement: (stock: InventoryStock) => void;
 }) {
@@ -303,6 +360,7 @@ function StockTable({ rows, canAdd, canRemove, canAdjust, onAction, onMovement }
                 {canAdd && <AppButton variant="outline" icon={Plus} onClick={() => onAction("add", stock)}>إضافة</AppButton>}
                 {canRemove && <AppButton variant="ghost" icon={MinusCircle} onClick={() => onAction("remove", stock)}>خصم</AppButton>}
                 {canAdjust && <AppButton variant="ghost" icon={SlidersHorizontal} onClick={() => onAction("adjust", stock)}>تعديل</AppButton>}
+                {canTransfer && <AppButton variant="ghost" icon={Shuffle} onClick={() => onAction("transfer", stock)}>تحويل</AppButton>}
                 <AppButton variant="ghost" icon={History} onClick={() => onMovement(stock)}>حركة</AppButton>
               </div>
             </td>
@@ -319,15 +377,18 @@ function InventoryActionModal(props: {
   addForm: { quantity: number; purchasePrice: string; expiryDate: string; batchNumber: string; reason: string; notes: string };
   removeForm: { quantity: number; type: RemoveStockPayload["type"]; reason: string; notes: string };
   adjustForm: { newQuantity: number; reason: string; notes: string };
+  transferForm: { sourceBranchId: string; destinationBranchId: string; quantity: number; reason: string; notes: string };
+  branches: Branch[];
   saving: boolean;
   onAddChange: (form: { quantity: number; purchasePrice: string; expiryDate: string; batchNumber: string; reason: string; notes: string }) => void;
   onRemoveChange: (form: { quantity: number; type: RemoveStockPayload["type"]; reason: string; notes: string }) => void;
   onAdjustChange: (form: { newQuantity: number; reason: string; notes: string }) => void;
+  onTransferChange: (form: { sourceBranchId: string; destinationBranchId: string; quantity: number; reason: string; notes: string }) => void;
   onClose: () => void;
   onSave: () => void;
 }) {
   const { mode, stock } = props;
-  const title = mode === "add" ? "إضافة كمية" : mode === "remove" ? "خصم تالف أو منتهي" : "تعديل يدوي";
+  const title = mode === "add" ? "إضافة كمية" : mode === "remove" ? "خصم تالف أو منتهي" : mode === "transfer" ? "تحويل بين الفروع" : "تعديل يدوي";
   return (
     <Modal open={Boolean(mode && stock)} title={`${title}${stock ? ` - ${stock.product.name}` : ""}`} onClose={props.onClose}>
       {mode === "add" && (
@@ -359,6 +420,20 @@ function InventoryActionModal(props: {
           <TextInput label="الرصيد الجديد" type="number" min="0" step="0.001" value={props.adjustForm.newQuantity} onChange={(event) => props.onAdjustChange({ ...props.adjustForm, newQuantity: Number(event.target.value) })} />
           <TextInput label="السبب" required value={props.adjustForm.reason} onChange={(event) => props.onAdjustChange({ ...props.adjustForm, reason: event.target.value })} />
           <TextInput label="ملاحظات" value={props.adjustForm.notes} onChange={(event) => props.onAdjustChange({ ...props.adjustForm, notes: event.target.value })} />
+        </div>
+      )}
+      {mode === "transfer" && (
+        <div className="grid gap-3">
+          <SelectInput label="فرع المصدر" value={props.transferForm.sourceBranchId} onChange={(event) => props.onTransferChange({ ...props.transferForm, sourceBranchId: event.target.value })}>
+            {props.branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+          </SelectInput>
+          <SelectInput label="فرع الوجهة" value={props.transferForm.destinationBranchId} onChange={(event) => props.onTransferChange({ ...props.transferForm, destinationBranchId: event.target.value })}>
+            <option value="">اختر فرع الوجهة</option>
+            {props.branches.filter((branch) => branch.id !== props.transferForm.sourceBranchId && branch.status !== "INACTIVE").map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+          </SelectInput>
+          <TextInput label="الكمية" type="number" min="0.001" step="0.001" value={props.transferForm.quantity} onChange={(event) => props.onTransferChange({ ...props.transferForm, quantity: Number(event.target.value) })} />
+          <TextInput label="السبب" value={props.transferForm.reason} onChange={(event) => props.onTransferChange({ ...props.transferForm, reason: event.target.value })} />
+          <TextInput label="ملاحظات" value={props.transferForm.notes} onChange={(event) => props.onTransferChange({ ...props.transferForm, notes: event.target.value })} />
         </div>
       )}
       <div className="mt-4 flex justify-end gap-2">

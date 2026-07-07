@@ -11,7 +11,7 @@ import { RolesService } from "./roles.service";
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
-  @RequirePermissions("admin.roles.view")
+  @RequirePermissions("users.manage")
   @Get()
   list(@CurrentUser() user: AuthenticatedUser) {
     return this.rolesService.list(user);

@@ -5,9 +5,11 @@ import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { ActivityLogsService } from "../activity-logs/activity-logs.service";
 import { AddStockDto } from "./dto/add-stock.dto";
 import { AdjustStockDto } from "./dto/adjust-stock.dto";
+import { CreateInventoryTransferDto } from "./dto/create-inventory-transfer.dto";
 import { ExpiryAlertsQueryDto } from "./dto/expiry-alerts-query.dto";
 import { GetInventoryMovementsQueryDto } from "./dto/get-inventory-movements-query.dto";
 import { GetInventoryStocksQueryDto } from "./dto/get-inventory-stocks-query.dto";
+import { GetInventoryTransfersQueryDto } from "./dto/get-inventory-transfers-query.dto";
 import { RemoveStockDto } from "./dto/remove-stock.dto";
 
 const stockInclude = {
@@ -18,6 +20,13 @@ const stockInclude = {
 const movementInclude = {
   product: { include: { category: true } },
   branch: true,
+  user: { select: { id: true, name: true, email: true } },
+} as const;
+
+const transferInclude = {
+  product: { include: { category: true } },
+  sourceBranch: true,
+  destinationBranch: true,
   user: { select: { id: true, name: true, email: true } },
 } as const;
 
@@ -273,6 +282,146 @@ export class InventoryService {
     }));
   }
 
+  async getTransfers(user: AuthenticatedUser, query: GetInventoryTransfersQueryDto) {
+    const storeId = this.requireStore(user);
+    if (query.branchId) await this.assertBranch(storeId, query.branchId);
+    if (query.productId) await this.getScopedProduct(storeId, query.productId);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const where: Prisma.InventoryTransferWhereInput = {
+      storeId,
+      productId: query.productId,
+      status: query.status,
+      OR: query.branchId ? [{ sourceBranchId: query.branchId }, { destinationBranchId: query.branchId }] : undefined,
+      createdAt: query.dateFrom || query.dateTo
+        ? {
+            gte: query.dateFrom ? new Date(query.dateFrom) : undefined,
+            lte: query.dateTo ? new Date(query.dateTo) : undefined,
+          }
+        : undefined,
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.inventoryTransfer.findMany({
+        where,
+        include: transferInclude,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.inventoryTransfer.count({ where }),
+    ]);
+
+    return { items: items.map((transfer) => this.serializeTransfer(transfer)), meta: { page, limit, total, pages: Math.ceil(total / limit) } };
+  }
+
+  async transferStock(user: AuthenticatedUser, dto: CreateInventoryTransferDto) {
+    const storeId = this.requireStore(user);
+    if (dto.sourceBranchId === dto.destinationBranchId) {
+      throw new BadRequestException("Source and destination branches must be different.");
+    }
+    await this.assertBranch(storeId, dto.sourceBranchId);
+    await this.assertBranch(storeId, dto.destinationBranchId);
+    await this.getScopedProduct(storeId, dto.productId);
+    if (dto.variantId) await this.assertVariant(storeId, dto.productId, dto.variantId);
+    const quantity = new Prisma.Decimal(dto.quantity);
+
+    const transfer = await this.prisma.$transaction(async (tx) => {
+      const sourceStock = await tx.inventoryStock.findUnique({
+        where: { storeId_branchId_productId: { storeId, branchId: dto.sourceBranchId, productId: dto.productId } },
+      });
+      if (!sourceStock) throw new NotFoundException("Source branch stock not found.");
+      if (sourceStock.quantity.lessThan(quantity)) {
+        throw new BadRequestException("Insufficient stock quantity in source branch.");
+      }
+
+      const destinationStock = await tx.inventoryStock.upsert({
+        where: { storeId_branchId_productId: { storeId, branchId: dto.destinationBranchId, productId: dto.productId } },
+        update: {},
+        create: { storeId, branchId: dto.destinationBranchId, productId: dto.productId, quantity: 0 },
+      });
+
+      const createdTransfer = await tx.inventoryTransfer.create({
+        data: {
+          storeId,
+          sourceBranchId: dto.sourceBranchId,
+          destinationBranchId: dto.destinationBranchId,
+          productId: dto.productId,
+          variantId: this.cleanOptional(dto.variantId),
+          userId: user.id,
+          quantity,
+          status: "COMPLETED",
+          reason: this.cleanOptional(dto.reason),
+          notes: this.cleanOptional(dto.notes),
+        },
+      });
+
+      const sourceBefore = sourceStock.quantity;
+      const sourceAfter = sourceBefore.minus(quantity);
+      const destinationBefore = destinationStock.quantity;
+      const destinationAfter = destinationBefore.plus(quantity);
+
+      await tx.inventoryStock.update({ where: { id: sourceStock.id }, data: { quantity: sourceAfter } });
+      await tx.inventoryStock.update({ where: { id: destinationStock.id }, data: { quantity: destinationAfter } });
+
+      await tx.inventoryMovement.create({
+        data: {
+          storeId,
+          branchId: dto.sourceBranchId,
+          productId: dto.productId,
+          userId: user.id,
+          type: InventoryMovementType.TRANSFER_OUT,
+          quantity,
+          quantityBefore: sourceBefore,
+          quantityAfter: sourceAfter,
+          reason: this.cleanOptional(dto.reason) ?? "Stock transfer out",
+          referenceType: "InventoryTransfer",
+          referenceId: createdTransfer.id,
+          notes: this.cleanOptional(dto.notes),
+        },
+      });
+
+      await tx.inventoryMovement.create({
+        data: {
+          storeId,
+          branchId: dto.destinationBranchId,
+          productId: dto.productId,
+          userId: user.id,
+          type: InventoryMovementType.TRANSFER_IN,
+          quantity,
+          quantityBefore: destinationBefore,
+          quantityAfter: destinationAfter,
+          reason: this.cleanOptional(dto.reason) ?? "Stock transfer in",
+          referenceType: "InventoryTransfer",
+          referenceId: createdTransfer.id,
+          notes: this.cleanOptional(dto.notes),
+        },
+      });
+
+      return tx.inventoryTransfer.findUniqueOrThrow({
+        where: { id: createdTransfer.id },
+        include: transferInclude,
+      });
+    });
+
+    await this.activityLogs.log({
+      storeId,
+      branchId: dto.sourceBranchId,
+      userId: user.id,
+      action: "inventory.stock_transferred",
+      entityType: "InventoryTransfer",
+      entityId: transfer.id,
+      metadata: {
+        productId: dto.productId,
+        sourceBranchId: dto.sourceBranchId,
+        destinationBranchId: dto.destinationBranchId,
+        quantity: dto.quantity,
+      },
+    });
+
+    return this.serializeTransfer(transfer);
+  }
+
   private requireStore(user: AuthenticatedUser) {
     if (user.isSuperAdmin || !user.storeId) {
       throw new ForbiddenException("Inventory operations require a store user context.");
@@ -306,6 +455,12 @@ export class InventoryService {
     return product;
   }
 
+  private async assertVariant(storeId: string, productId: string, variantId: string) {
+    const variant = await this.prisma.productVariant.findFirst({ where: { id: variantId, storeId, productId } });
+    if (!variant) throw new BadRequestException("Variant does not belong to this product.");
+    return variant;
+  }
+
   private async serializeStock(stock: Prisma.InventoryStockGetPayload<{ include: typeof stockInclude }>) {
     const lastMovement = await this.prisma.inventoryMovement.findFirst({
       where: { storeId: stock.storeId, branchId: stock.branchId, productId: stock.productId },
@@ -330,6 +485,13 @@ export class InventoryService {
       quantity: Number(movement.quantity),
       quantityBefore: Number(movement.quantityBefore),
       quantityAfter: Number(movement.quantityAfter),
+    };
+  }
+
+  private serializeTransfer(transfer: Prisma.InventoryTransferGetPayload<{ include: typeof transferInclude }>) {
+    return {
+      ...transfer,
+      quantity: Number(transfer.quantity),
     };
   }
 

@@ -149,9 +149,11 @@ Seeded development users:
 | Role | Email | Password |
 | --- | --- | --- |
 | Super Admin | `admin@raseed.local` | `RaseedAdmin!2026` |
-| Owner | `owner@raseed.local` | `RaseedOwner!2026` |
+| Owner | `mahmoud@local` | `hello` |
+| Owner 2 | `owner2@local` | `hello` |
 | Manager | `manager@raseed.local` | `RaseedManager!2026` |
-| Cashier | `cashier@raseed.local` | `RaseedCashier!2026` |
+| Cashier | `ahmed@local` | `hello` |
+| Cashier 2 | `cashier2@local` | `hello` |
 | Inventory | `inventory@raseed.local` | `RaseedInventory!2026` |
 
 These are local development credentials only. After the first real setup wizard, the owner account you create becomes the production login.
@@ -459,7 +461,7 @@ Supplier and purchase-order permissions:
 - `suppliers.view`, `suppliers.create`, `suppliers.update`, `suppliers.delete`, `suppliers.pay`, `suppliers.adjust`
 - `purchase_orders.view`, `purchase_orders.create`, `purchase_orders.update`, `purchase_orders.cancel`, `purchase_orders.receive`
 
-Manual test path: login as `owner@raseed.local`, open Suppliers, create or adjust a supplier, open Purchase Orders, create a draft order, send it, receive part of it, and confirm Inventory movements show `PURCHASE` and the supplier balance increases for unpaid received stock.
+Manual test path: login as `mahmoud@local`, open Suppliers, create or adjust a supplier, open Purchase Orders, create a draft order, send it, receive part of it, and confirm Inventory movements show `PURCHASE` and the supplier balance increases for unpaid received stock.
 
 ## POS And Invoices
 

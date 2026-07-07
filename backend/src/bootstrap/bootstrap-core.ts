@@ -21,6 +21,7 @@ export const corePermissions = [
   "inventory.remove_stock",
   "inventory.view_movements",
   "inventory.view_alerts",
+  "inventory.transfer",
   "sales.view",
   "invoices.view",
   "invoices.print",
@@ -94,7 +95,7 @@ export const corePermissions = [
 ];
 
 export const rolePermissions: Record<string, string[]> = {
-  super_admin: corePermissions.filter((permission) => permission.startsWith("admin.")),
+  super_admin: [...corePermissions],
   owner: corePermissions.filter((permission) => !permission.startsWith("admin.")).concat(["subscription.view", "subscription.request_upgrade"]),
   manager: [
     "dashboard.view",
@@ -114,6 +115,7 @@ export const rolePermissions: Record<string, string[]> = {
     "inventory.remove_stock",
     "inventory.view_movements",
     "inventory.view_alerts",
+    "inventory.transfer",
     "sales.view",
     "invoices.view",
     "invoices.print",
@@ -185,6 +187,7 @@ export const rolePermissions: Record<string, string[]> = {
     "inventory.remove_stock",
     "inventory.view_movements",
     "inventory.view_alerts",
+    "inventory.transfer",
     "printing.barcodes",
   ],
 };

@@ -1,9 +1,11 @@
 import type { ActivityLog, RaseedNotification, User } from "../../types";
 
 export const demoUsers: User[] = [
-  { id: "u1", storeId: "store_city_market", branchId: "branch_main", name: "محمد ناصر", role: "owner", phone: "01001234563", status: "active" },
-  { id: "u2", storeId: "store_city_market", branchId: "branch_main", name: "أحمد محمود", role: "cashier", phone: "01001234560", status: "active" },
-  { id: "u3", storeId: "store_city_market", branchId: "branch_1", name: "سارة خالد", role: "inventory", phone: "01001234562", status: "active" },
+  { id: "u1", storeId: "store_city_market", branchId: "branch_main", roleId: "owner", name: "محمود القاسم", phone: "01001234563", status: "ACTIVE" },
+  { id: "u2", storeId: "store_city_market", branchId: "branch_main", roleId: "owner", name: "أحمد القاسم", phone: "01001234564", status: "ACTIVE" },
+  { id: "u3", storeId: "store_city_market", branchId: "branch_main", roleId: "cashier", name: "أحمد محمود", phone: "01001234560", status: "ACTIVE" },
+  { id: "u4", storeId: "store_city_market", branchId: "branch_main", roleId: "cashier", name: "محمود علي", phone: "01001234561", status: "ACTIVE" },
+  { id: "u5", storeId: "store_city_market", branchId: "branch_1", roleId: "inventory", name: "سارة خالد", phone: "01001234562", status: "ACTIVE" },
 ];
 
 export const demoNotifications: RaseedNotification[] = [
@@ -12,6 +14,6 @@ export const demoNotifications: RaseedNotification[] = [
 ];
 
 export const demoActivityLogs: ActivityLog[] = [
-  { id: "a1", storeId: "store_city_market", userName: "أحمد", action: "إضافة منتج", entity: "products", createdAt: "10:32" },
-  { id: "a2", storeId: "store_city_market", userName: "سارة", action: "تعديل مخزون", entity: "inventory", createdAt: "09:15" },
+  { id: "a1", storeId: "store_city_market", user: { id: "u2", name: "أحمد" }, action: "إضافة منتج", entityType: "products", createdAt: "2026-07-08T10:32:00.000Z" },
+  { id: "a2", storeId: "store_city_market", user: { id: "u3", name: "سارة" }, action: "تعديل مخزون", entityType: "inventory", createdAt: "2026-07-08T09:15:00.000Z" },
 ];

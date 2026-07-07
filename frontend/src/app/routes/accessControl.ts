@@ -20,6 +20,7 @@ const routeRules: Record<string, AccessRule> = {
   "/suppliers": { anyPermissions: ["suppliers.view"] },
   "/purchase-orders": { anyPermissions: ["purchase_orders.view"] },
   "/customers-debts": { anyPermissions: ["customers.view", "debts.view"] },
+  "/branches": { anyPermissions: ["settings.manage"] },
   "/users-permissions": { anyPermissions: ["users.manage"] },
   "/activity-logs": { anyPermissions: ["activity_logs.view"] },
   "/subscription-billing": { anyPermissions: ["subscription.view"] },

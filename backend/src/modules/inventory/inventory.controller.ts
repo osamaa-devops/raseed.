@@ -6,9 +6,11 @@ import { PermissionsGuard } from "../../common/guards/permissions.guard";
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { AddStockDto } from "./dto/add-stock.dto";
 import { AdjustStockDto } from "./dto/adjust-stock.dto";
+import { CreateInventoryTransferDto } from "./dto/create-inventory-transfer.dto";
 import { ExpiryAlertsQueryDto } from "./dto/expiry-alerts-query.dto";
 import { GetInventoryMovementsQueryDto } from "./dto/get-inventory-movements-query.dto";
 import { GetInventoryStocksQueryDto } from "./dto/get-inventory-stocks-query.dto";
+import { GetInventoryTransfersQueryDto } from "./dto/get-inventory-transfers-query.dto";
 import { RemoveStockDto } from "./dto/remove-stock.dto";
 import { InventoryService } from "./inventory.service";
 
@@ -35,6 +37,12 @@ export class InventoryController {
     return this.inventoryService.getMovements(user, query);
   }
 
+  @RequirePermissions("inventory.view_movements")
+  @Get("transfers")
+  transfers(@CurrentUser() user: AuthenticatedUser, @Query() query: GetInventoryTransfersQueryDto) {
+    return this.inventoryService.getTransfers(user, query);
+  }
+
   @RequirePermissions("inventory.add_stock")
   @Post("add-stock")
   addStock(@CurrentUser() user: AuthenticatedUser, @Body() dto: AddStockDto) {
@@ -51,6 +59,12 @@ export class InventoryController {
   @Post("adjust")
   adjust(@CurrentUser() user: AuthenticatedUser, @Body() dto: AdjustStockDto) {
     return this.inventoryService.adjustStock(user, dto);
+  }
+
+  @RequirePermissions("inventory.transfer")
+  @Post("transfer")
+  transfer(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateInventoryTransferDto) {
+    return this.inventoryService.transferStock(user, dto);
   }
 
   @RequirePermissions("inventory.view_alerts")

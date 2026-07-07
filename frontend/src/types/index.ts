@@ -22,20 +22,71 @@ export type Branch = {
   id: Id;
   storeId: Id;
   name: string;
+  code?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  status?: "ACTIVE" | "INACTIVE";
+  isMain?: boolean;
   isDefault?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
-export type UserRole = "owner" | "manager" | "cashier" | "inventory" | "superadmin";
+export type UserStatus = "ACTIVE" | "INACTIVE" | "INVITED" | "DISABLED";
 
 export type User = {
   id: Id;
-  storeId: Id;
-  branchId?: Id;
+  storeId?: Id | null;
+  branchId?: Id | null;
+  roleId?: Id | null;
   name: string;
-  role: UserRole;
-  phone?: string;
-  email?: string;
-  status: "active" | "invited" | "disabled";
+  phone?: string | null;
+  email?: string | null;
+  status: UserStatus;
+  lastLoginAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type Permission = {
+  id: Id;
+  key: string;
+  label: string;
+  description?: string | null;
+  createdAt?: string;
+};
+
+export type Role = {
+  id: Id;
+  storeId?: Id | null;
+  name: string;
+  description?: string | null;
+  isSystem: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  permissions?: Array<{ id: Id; roleId: Id; permissionId: Id; permission: Permission }>;
+};
+
+export type ActivityLog = {
+  id: Id;
+  storeId?: Id | null;
+  branchId?: Id | null;
+  userId?: Id | null;
+  action: string;
+  entityType?: string | null;
+  entity?: string | null;
+  entityId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  ipAddress?: string | null;
+  createdAt: string;
+  user?: { id: Id; name: string; email?: string | null; phone?: string | null } | null;
+  branch?: Pick<Branch, "id" | "name"> | null;
+  store?: Pick<Store, "id" | "name"> | null;
+};
+
+export type ListResponse<T> = {
+  items: T[];
+  meta: { page: number; limit: number; total: number; pages: number };
 };
 
 export type Product = {
@@ -122,6 +173,28 @@ export type InventoryMovement = {
   reason?: string | null;
   notes?: string | null;
   createdAt: string;
+};
+
+export type InventoryTransferStatus = "COMPLETED" | "CANCELLED";
+
+export type InventoryTransfer = {
+  id: Id;
+  storeId: Id;
+  sourceBranchId: Id;
+  destinationBranchId: Id;
+  productId: Id;
+  variantId?: Id | null;
+  userId?: Id | null;
+  quantity: number;
+  status: InventoryTransferStatus;
+  reason?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  product?: Product;
+  sourceBranch?: Branch;
+  destinationBranch?: Branch;
+  user?: { id: Id; name: string; email?: string | null } | null;
 };
 
 export type InventoryStock = {
@@ -771,15 +844,6 @@ export type RaseedNotification = {
   body: string;
   type: "success" | "warning" | "danger" | "info";
   read: boolean;
-  createdAt: string;
-};
-
-export type ActivityLog = {
-  id: Id;
-  storeId: Id;
-  userName: string;
-  action: string;
-  entity?: string;
   createdAt: string;
 };
 
