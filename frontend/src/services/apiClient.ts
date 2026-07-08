@@ -152,7 +152,15 @@ async function readJsonBody(response: Response) {
 function extractErrorMessage(body: unknown) {
   if (!body || typeof body !== "object") return null;
   const error = body as { message?: unknown; error?: { message?: unknown } };
-  const nestedMessage = typeof error.error?.message === "string" ? error.error.message : null;
+  const nestedMessage = normalizeErrorMessage(error.error?.message);
   if (nestedMessage) return nestedMessage;
-  return typeof error.message === "string" ? error.message : null;
+  return normalizeErrorMessage(error.message);
+}
+
+function normalizeErrorMessage(message: unknown) {
+  if (typeof message === "string") return message;
+  if (Array.isArray(message)) {
+    return message.filter((item): item is string => typeof item === "string").join(", ") || null;
+  }
+  return null;
 }

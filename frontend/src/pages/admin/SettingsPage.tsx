@@ -10,27 +10,63 @@ import { settingsService } from "../../services/settingsService";
 import { systemService } from "../../services/systemService";
 import type { BackupStatus, BarcodeLabelSettings, BarcodeLabelSize, LicenseStatus, ReceiptPaperSize, ReceiptSettings } from "../../types";
 
+type SettingsTab = "receipt" | "barcodes" | "system" | "hardware" | "theme";
+type HardwareSettings = {
+  receiptPrinterName: string;
+  barcodePrinterName: string;
+  scannerMode: "keyboard" | "serial";
+  autoFocusBarcode: boolean;
+  autoPrintReceipt: boolean;
+  openCashDrawerAfterSale: boolean;
+  receiptCopies: number;
+};
+
+const HARDWARE_SETTINGS_KEY = "raseed-hardware-settings";
+const defaultHardwareSettings: HardwareSettings = {
+  receiptPrinterName: "",
+  barcodePrinterName: "",
+  scannerMode: "keyboard",
+  autoFocusBarcode: true,
+  autoPrintReceipt: false,
+  openCashDrawerAfterSale: false,
+  receiptCopies: 1,
+};
+
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { hasPermission } = useAuth();
   const canUpdateReceipt = hasPermission("settings.receipt.update");
+  const canViewReceipt = hasPermission("settings.receipt.view") || canUpdateReceipt;
+  const canManageBarcodes = hasPermission("printing.barcodes");
   const canManageSystem = hasPermission("backup.manage") || hasPermission("license.manage");
   const [receipt, setReceipt] = useState<ReceiptSettings | null>(null);
   const [barcode, setBarcode] = useState<BarcodeLabelSettings | null>(null);
   const [license, setLicense] = useState<LicenseStatus | null>(null);
   const [backup, setBackup] = useState<BackupStatus | null>(null);
+  const [hardware, setHardware] = useState<HardwareSettings>(defaultHardwareSettings);
   const [licenseKey, setLicenseKey] = useState("");
   const [backupPath, setBackupPath] = useState("");
-  const [tab, setTab] = useState<"receipt" | "barcodes" | "system" | "hardware" | "theme">("receipt");
+  const [tab, setTab] = useState<SettingsTab>("receipt");
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const availableTabs: SettingsTab[] = [
+    ...(canViewReceipt ? ["receipt" as const] : []),
+    ...(canManageBarcodes ? ["barcodes" as const] : []),
+    ...(canManageSystem ? ["system" as const] : []),
+    "hardware",
+    "theme",
+  ];
 
   const load = async () => {
+    setLoading(true);
     setError(null);
     try {
       const [receiptSettings, barcodeSettings] = await Promise.all([
-        settingsService.getReceiptSettings(),
-        settingsService.getBarcodeLabelSettings(),
+        canViewReceipt ? settingsService.getReceiptSettings() : Promise.resolve(null),
+        canManageBarcodes ? settingsService.getBarcodeLabelSettings() : Promise.resolve(null),
       ]);
       setReceipt(receiptSettings);
       setBarcode(barcodeSettings);
@@ -47,37 +83,82 @@ export function SettingsPage() {
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "تعذر تحميل الإعدادات");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     void load();
-  }, [canManageSystem]);
+  }, [canManageSystem, canManageBarcodes, canViewReceipt]);
+
+  useEffect(() => {
+    if (!availableTabs.includes(tab)) {
+      setTab(availableTabs[0] ?? "theme");
+    }
+  }, [availableTabs, tab]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(HARDWARE_SETTINGS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Partial<HardwareSettings>;
+      setHardware({ ...defaultHardwareSettings, ...parsed });
+    } catch {
+      setHardware(defaultHardwareSettings);
+    }
+  }, []);
 
   const saveReceipt = async () => {
     if (!receipt) return;
-    setReceipt(await settingsService.updateReceiptSettings(receipt));
-    setNotice("تم حفظ إعدادات الإيصال");
+    setSaving("receipt");
+    setError(null);
+    try {
+      setReceipt(await settingsService.updateReceiptSettings(receipt));
+      setNotice("تم حفظ إعدادات الإيصال");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر حفظ إعدادات الإيصال");
+    } finally {
+      setSaving(null);
+    }
   };
 
   const saveBarcode = async () => {
     if (!barcode) return;
-    setBarcode(await settingsService.updateBarcodeLabelSettings(barcode));
-    setNotice("تم حفظ إعدادات ملصقات الباركود");
+    setSaving("barcodes");
+    setError(null);
+    try {
+      setBarcode(await settingsService.updateBarcodeLabelSettings(barcode));
+      setNotice("تم حفظ إعدادات ملصقات الباركود");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "تعذر حفظ إعدادات ملصقات الباركود");
+    } finally {
+      setSaving(null);
+    }
   };
 
   const saveBackupDir = async () => {
     if (!backup) return;
-    const next = await systemService.updateBackupSettings(backup.backupDir);
-    setBackup(next);
-    setNotice("تم حفظ مجلد النسخ الاحتياطي");
+    setSaving("backup-dir");
+    try {
+      const next = await systemService.updateBackupSettings(backup.backupDir);
+      setBackup(next);
+      setNotice("تم حفظ مجلد النسخ الاحتياطي");
+    } finally {
+      setSaving(null);
+    }
   };
 
   const createBackup = async () => {
-    const result = await systemService.createBackup();
-    setNotice(`تم إنشاء نسخة احتياطية: ${result.outputPath}`);
-    const next = await systemService.getBackupStatus();
-    setBackup(next);
+    setSaving("backup-create");
+    try {
+      const result = await systemService.createBackup();
+      setNotice(`تم إنشاء نسخة احتياطية: ${result.outputPath}`);
+      const next = await systemService.getBackupStatus();
+      setBackup(next);
+    } finally {
+      setSaving(null);
+    }
   };
 
   const restoreBackup = async () => {
@@ -85,15 +166,25 @@ export function SettingsPage() {
       setError("اختر ملف النسخة الاحتياطية أولًا");
       return;
     }
-    await systemService.restoreBackup(backupPath.trim());
-    setNotice("تمت استعادة النسخة الاحتياطية");
+    setSaving("backup-restore");
+    try {
+      await systemService.restoreBackup(backupPath.trim());
+      setNotice("تمت استعادة النسخة الاحتياطية");
+    } finally {
+      setSaving(null);
+    }
   };
 
   const activateLicense = async () => {
     if (!licenseKey.trim()) return;
-    const result = await systemService.activateLicense(licenseKey.trim());
-    setNotice(result.activated ? "تم تفعيل الترخيص" : "تعذر التفعيل");
-    setLicense(await systemService.getLicenseStatus());
+    setSaving("license");
+    try {
+      const result = await systemService.activateLicense(licenseKey.trim());
+      setNotice(result.activated ? "تم تفعيل الترخيص" : "تعذر التفعيل");
+      setLicense(await systemService.getLicenseStatus());
+    } finally {
+      setSaving(null);
+    }
   };
 
   const chooseBackupDir = async () => {
@@ -107,20 +198,31 @@ export function SettingsPage() {
     if (file) setBackupPath(file);
   };
 
+  const revealBackupFolder = async () => {
+    if (!backup?.lastBackupPath || !window.raseedDesktop?.showItemInFolder) return;
+    await window.raseedDesktop.showItemInFolder(backup.lastBackupPath);
+  };
+
+  const saveHardware = () => {
+    window.localStorage.setItem(HARDWARE_SETTINGS_KEY, JSON.stringify(hardware));
+    setNotice("تم حفظ إعدادات الأجهزة على هذا الجهاز");
+  };
+
   return (
     <div>
       <PageHeader title="الإعدادات" description="إعدادات الإيصال والباركود والنسخ الاحتياطي والترخيص." />
       {notice && <p className="mb-4 rounded-lg bg-success/10 p-3 text-sm font-semibold text-success">{notice}</p>}
       {error && <p className="mb-4 rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
       <div className="mb-4 flex flex-wrap gap-2">
-        <Tab active={tab === "receipt"} onClick={() => setTab("receipt")} icon={Printer} label="إعدادات الإيصال" />
-        <Tab active={tab === "barcodes"} onClick={() => setTab("barcodes")} icon={Barcode} label="ملصقات الباركود" />
+        {canViewReceipt && <Tab active={tab === "receipt"} onClick={() => setTab("receipt")} icon={Printer} label="إعدادات الإيصال" />}
+        {canManageBarcodes && <Tab active={tab === "barcodes"} onClick={() => setTab("barcodes")} icon={Barcode} label="ملصقات الباركود" />}
         {canManageSystem && <Tab active={tab === "system"} onClick={() => setTab("system")} icon={Shield} label="الترخيص والنسخ" />}
         <Tab active={tab === "hardware"} onClick={() => setTab("hardware")} icon={Monitor} label="الأجهزة" />
         <Tab active={tab === "theme"} onClick={() => setTab("theme")} icon={Settings} label="المظهر" />
       </div>
+      {loading && <AppCard>جار تحميل الإعدادات...</AppCard>}
 
-      {tab === "receipt" && receipt && (
+      {!loading && tab === "receipt" && receipt && (
         <AppCard>
           <h2 className="mb-4 flex items-center gap-2 font-bold"><Printer size={18} /> إعدادات الإيصال</h2>
           <div className="grid gap-3 md:grid-cols-2">
@@ -145,12 +247,12 @@ export function SettingsPage() {
             <Check label="بيانات العميل" checked={receipt.showCustomerInfo} onChange={(showCustomerInfo) => setReceipt({ ...receipt, showCustomerInfo })} />
           </div>
           <div className="mt-4 flex justify-end">
-            <AppButton onClick={saveReceipt} disabled={!canUpdateReceipt}>حفظ إعدادات الإيصال</AppButton>
+            <AppButton onClick={saveReceipt} disabled={!canUpdateReceipt || saving === "receipt"}>{saving === "receipt" ? "جار الحفظ..." : "حفظ إعدادات الإيصال"}</AppButton>
           </div>
         </AppCard>
       )}
 
-      {tab === "barcodes" && barcode && (
+      {!loading && tab === "barcodes" && barcode && (
         <AppCard>
           <h2 className="mb-4 flex items-center gap-2 font-bold"><Barcode size={18} /> إعدادات ملصقات الباركود</h2>
           <div className="grid gap-3 md:grid-cols-2">
@@ -161,6 +263,11 @@ export function SettingsPage() {
               <option value="CUSTOM">مخصص</option>
             </SelectInput>
             <TextInput label="عدد الأعمدة" type="number" value={barcode.columns} onChange={(event) => setBarcode({ ...barcode, columns: Number(event.target.value) })} />
+            <TextInput label="عدد الصفوف" type="number" value={barcode.rows ?? ""} onChange={(event) => setBarcode({ ...barcode, rows: event.target.value ? Number(event.target.value) : null })} />
+            <TextInput label="الهامش العلوي" type="number" value={barcode.marginTop ?? ""} onChange={(event) => setBarcode({ ...barcode, marginTop: event.target.value ? Number(event.target.value) : null })} />
+            <TextInput label="الهامش الأيمن" type="number" value={barcode.marginRight ?? ""} onChange={(event) => setBarcode({ ...barcode, marginRight: event.target.value ? Number(event.target.value) : null })} />
+            <TextInput label="الهامش السفلي" type="number" value={barcode.marginBottom ?? ""} onChange={(event) => setBarcode({ ...barcode, marginBottom: event.target.value ? Number(event.target.value) : null })} />
+            <TextInput label="الهامش الأيسر" type="number" value={barcode.marginLeft ?? ""} onChange={(event) => setBarcode({ ...barcode, marginLeft: event.target.value ? Number(event.target.value) : null })} />
           </div>
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
             <Check label="اسم المنتج" checked={barcode.showProductName} onChange={(showProductName) => setBarcode({ ...barcode, showProductName })} />
@@ -168,12 +275,12 @@ export function SettingsPage() {
             <Check label="رقم الباركود" checked={barcode.showBarcodeText} onChange={(showBarcodeText) => setBarcode({ ...barcode, showBarcodeText })} />
           </div>
           <div className="mt-4 flex justify-end">
-            <AppButton onClick={saveBarcode}>حفظ إعدادات الملصقات</AppButton>
+            <AppButton onClick={saveBarcode} disabled={saving === "barcodes"}>{saving === "barcodes" ? "جار الحفظ..." : "حفظ إعدادات الملصقات"}</AppButton>
           </div>
         </AppCard>
       )}
 
-      {tab === "system" && canManageSystem && (
+      {!loading && tab === "system" && canManageSystem && (
         <div className="grid gap-4 lg:grid-cols-2">
           <AppCard>
             <h2 className="mb-4 flex items-center gap-2 font-bold"><Shield size={18} /> حالة الترخيص</h2>
@@ -184,7 +291,7 @@ export function SettingsPage() {
                 <p><span className="font-semibold">الحالة:</span> {license.valid ? "مفعل" : "غير مفعل"}</p>
                 <TextInput label="مفتاح التفعيل" placeholder="RASEED-XXXX-XXXX-XXXX-XXXX" value={licenseKey} onChange={(event) => setLicenseKey(event.target.value)} />
                 <div className="flex gap-3">
-                  <AppButton onClick={activateLicense}>تفعيل الترخيص</AppButton>
+                  <AppButton onClick={activateLicense} disabled={saving === "license"}>{saving === "license" ? "جار التفعيل..." : "تفعيل الترخيص"}</AppButton>
                 </div>
               </div>
             )}
@@ -197,14 +304,15 @@ export function SettingsPage() {
                 <TextInput label="مجلد النسخ الاحتياطي" value={backup.backupDir} onChange={(event) => setBackup({ ...backup, backupDir: event.target.value })} />
                 <div className="flex flex-wrap gap-2">
                   <AppButton variant="outline" onClick={chooseBackupDir}>اختيار مجلد</AppButton>
-                  <AppButton onClick={saveBackupDir}>حفظ المجلد</AppButton>
+                  <AppButton onClick={saveBackupDir} disabled={saving === "backup-dir"}>{saving === "backup-dir" ? "جار الحفظ..." : "حفظ المجلد"}</AppButton>
                 </div>
                 <p><span className="font-semibold">آخر نسخة:</span> {backup.lastBackupAt ? new Date(backup.lastBackupAt).toLocaleString("ar-EG") : "لا توجد نسخة بعد"}</p>
                 <p className="break-all"><span className="font-semibold">المسار الأخير:</span> {backup.lastBackupPath ?? "غير متاح"}</p>
                 <div className="flex flex-wrap gap-2">
-                  <AppButton onClick={createBackup}>إنشاء نسخة الآن</AppButton>
+                  <AppButton onClick={createBackup} disabled={saving === "backup-create"}>{saving === "backup-create" ? "جار الإنشاء..." : "إنشاء نسخة الآن"}</AppButton>
                   <AppButton variant="outline" onClick={chooseBackupFile}>اختيار ملف للاستعادة</AppButton>
-                  <AppButton variant="danger" onClick={restoreBackup} disabled={!backupPath.trim()}>استعادة النسخة</AppButton>
+                  <AppButton variant="outline" onClick={revealBackupFolder} disabled={!backup.lastBackupPath || !window.raseedDesktop?.showItemInFolder}>فتح آخر نسخة</AppButton>
+                  <AppButton variant="danger" onClick={restoreBackup} disabled={!backupPath.trim() || saving === "backup-restore"}>{saving === "backup-restore" ? "جار الاستعادة..." : "استعادة النسخة"}</AppButton>
                 </div>
                 <TextInput label="مسار ملف النسخة" value={backupPath} onChange={(event) => setBackupPath(event.target.value)} />
               </div>
@@ -213,22 +321,33 @@ export function SettingsPage() {
         </div>
       )}
 
-      {tab === "hardware" && (
+      {!loading && tab === "hardware" && (
         <AppCard>
           <h2 className="mb-4 flex items-center gap-2 font-bold"><Monitor size={18} /> الأجهزة</h2>
           <div className="grid gap-3 md:grid-cols-2">
-            {["طابعة الإيصالات", "قارئ الباركود", "درج النقدية", "طابعة الباركود", "الميزان"].map((item) => (
-              <div key={item} className="rounded-lg border border-border p-3">
-                <p className="font-bold">{item}</p>
-                <p className="text-sm text-muted-foreground">غير مفعّل في نسخة الويب الحالية.</p>
-              </div>
-            ))}
+            <TextInput label="اسم طابعة الإيصالات" value={hardware.receiptPrinterName} onChange={(event) => setHardware({ ...hardware, receiptPrinterName: event.target.value })} />
+            <TextInput label="اسم طابعة الباركود" value={hardware.barcodePrinterName} onChange={(event) => setHardware({ ...hardware, barcodePrinterName: event.target.value })} />
+            <SelectInput label="وضع قارئ الباركود" value={hardware.scannerMode} onChange={(event) => setHardware({ ...hardware, scannerMode: event.target.value as HardwareSettings["scannerMode"] })}>
+              <option value="keyboard">Keyboard wedge</option>
+              <option value="serial">Serial / COM</option>
+            </SelectInput>
+            <TextInput label="عدد نسخ الإيصال" type="number" value={hardware.receiptCopies} onChange={(event) => setHardware({ ...hardware, receiptCopies: Math.max(1, Number(event.target.value) || 1) })} />
           </div>
-          <p className="mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">الطباعة الصامتة وإعدادات الأجهزة المتقدمة ستتوفر في نسخة سطح المكتب.</p>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <Check label="تركيز تلقائي على حقل الباركود" checked={hardware.autoFocusBarcode} onChange={(autoFocusBarcode) => setHardware({ ...hardware, autoFocusBarcode })} />
+            <Check label="طباعة الإيصال تلقائيًا بعد البيع" checked={hardware.autoPrintReceipt} onChange={(autoPrintReceipt) => setHardware({ ...hardware, autoPrintReceipt })} />
+            <Check label="فتح درج الكاش بعد البيع" checked={hardware.openCashDrawerAfterSale} onChange={(openCashDrawerAfterSale) => setHardware({ ...hardware, openCashDrawerAfterSale })} />
+          </div>
+          <p className="mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+            هذه الإعدادات تحفظ محليًا على الجهاز الحالي. اختيار الملفات والمجلدات وعرضها يتفعل أكثر داخل نسخة سطح المكتب.
+          </p>
+          <div className="mt-4 flex justify-end">
+            <AppButton onClick={saveHardware}>حفظ إعدادات الأجهزة</AppButton>
+          </div>
         </AppCard>
       )}
 
-      {tab === "theme" && (
+      {!loading && tab === "theme" && (
         <AppCard>
           <h2 className="mb-4 flex items-center gap-2 font-bold"><Settings size={18} /> المظهر</h2>
           <div className="grid gap-3 md:grid-cols-3">
@@ -249,6 +368,10 @@ export function SettingsPage() {
             ))}
           </div>
         </AppCard>
+      )}
+
+      {!loading && ((tab === "receipt" && !receipt) || (tab === "barcodes" && !barcode)) && (
+        <AppCard>هذا القسم غير متاح بصلاحيات الحساب الحالي.</AppCard>
       )}
     </div>
   );

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "node scripts/dev-web.cjs",
     "local:check": "node scripts/local-check.cjs",
+    "demo:check-users": "node scripts/check-demo-users.cjs",
     "local:setup": "node scripts/local-setup.cjs",
     "dev:frontend": "npm --prefix frontend run dev",
     "frontend:dev": "npm --prefix frontend run dev",

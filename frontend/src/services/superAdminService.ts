@@ -38,6 +38,10 @@ export type CreateAdminStoreRequest = {
   ownerUserEmail?: string;
   ownerUserPhone: string;
   ownerPassword: string;
+  cashierUserName?: string;
+  cashierUserEmail?: string;
+  cashierUserPhone?: string;
+  cashierPassword?: string;
   mainBranchName: string;
   mainBranchAddress?: string;
 };

@@ -49,6 +49,22 @@ export class CreateAdminStoreDto {
   @IsNotEmpty()
   ownerPassword!: string;
 
+  @IsOptional()
+  @IsString()
+  cashierUserName?: string;
+
+  @IsOptional()
+  @Matches(/^[^\s@]+@[^\s@]+$/)
+  cashierUserEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  cashierUserPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  cashierPassword?: string;
+
   @IsString()
   @IsNotEmpty()
   mainBranchName!: string;

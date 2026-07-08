@@ -22,11 +22,9 @@ export function LoginPage() {
   const submit = async () => {
     setError(null);
     try {
-      const response = await login(identity, password);
+      const response = await login(identity.trim(), password.trim());
       if (response.role?.name === "super_admin") {
         navigate("/super-admin");
-      } else if (canAccessPath(response, "/pos") && !canAccessPath(response, "/reports") && !canAccessPath(response, "/products")) {
-        navigate("/pos");
       } else {
         navigate("/dashboard");
       }
@@ -44,19 +42,23 @@ export function LoginPage() {
           <p className="mt-1 text-sm text-muted-foreground">مرحبًا بك في رصيد</p>
         </div>
         <AppCard className="space-y-4">
-          <TextInput label="رقم الهاتف أو البريد" placeholder="mahmoud@local" value={identity} onChange={(event) => setIdentity(event.target.value)} />
+          <TextInput label="رقم الهاتف أو البريد" placeholder="owner@raseed.local" value={identity} onChange={(event) => setIdentity(event.target.value)} />
           <TextInput label="كلمة المرور" type="password" placeholder="********" value={password} onChange={(event) => setPassword(event.target.value)} />
           {needsSetup && (
             <p className="rounded-lg bg-warning/10 p-3 text-sm font-semibold text-warning">يبدو أن هذه أول مرة تشغّل فيها النظام. أكمل الإعداد الأولي قبل تسجيل الدخول.</p>
           )}
           {error && <p className="rounded-lg bg-danger/10 p-3 text-sm font-semibold text-danger">{error}</p>}
           <AppButton className="w-full" onClick={submit} disabled={isLoading}>{isLoading ? "جار تسجيل الدخول..." : "تسجيل الدخول"}</AppButton>
+          <Link to="/" className="block">
+            <AppButton variant="outline" className="w-full">الرجوع للصفحة الرئيسية</AppButton>
+          </Link>
           {needsSetup && <AppButton variant="outline" className="w-full" onClick={() => navigate("/onboarding")}>بدء الإعداد</AppButton>}
           {import.meta.env.DEV && (
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-6 text-muted-foreground">
               <p className="font-semibold text-foreground">حسابات محلية للاختبار</p>
-              <p>المالك: <span className="font-semibold">mahmoud@local</span> / <span className="font-semibold">hello2026</span></p>
-              <p>الكاشير: <span className="font-semibold">ahmed@local</span> / <span className="font-semibold">hello2026</span></p>
+              <p>السوبر أدمن: <span className="font-semibold">admin@raseed.local</span> / <span className="font-semibold">RaseedAdmin!2026</span></p>
+              <p>المالك: <span className="font-semibold">owner@raseed.local</span> / <span className="font-semibold">hello2026</span></p>
+              <p>الكاشير: <span className="font-semibold">cashier@raseed.local</span> / <span className="font-semibold">hello2026</span></p>
             </div>
           )}
           <Link to="/contact" className="block text-center text-sm font-semibold text-primary">تواصل مع الدعم</Link>

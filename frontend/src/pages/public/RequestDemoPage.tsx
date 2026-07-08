@@ -9,8 +9,8 @@ import { demoRequestsService } from "../../services/demoRequestsService";
 export function RequestDemoPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    storeName: "القاسم",
-    ownerName: "محمود القاسم",
+    storeName: "",
+    ownerName: "",
     phone: "",
     email: "",
     businessType: "محل ملابس",
@@ -26,12 +26,12 @@ export function RequestDemoPage() {
     setSuccess(null);
     try {
       await demoRequestsService.create({
-        storeName: form.storeName,
-        ownerName: form.ownerName,
-        phone: form.phone,
-        email: form.email || undefined,
+        storeName: form.storeName.trim(),
+        ownerName: form.ownerName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim() || undefined,
         businessType: form.businessType,
-        notes: form.notes || undefined,
+        notes: form.notes.trim() || undefined,
       });
       setSuccess("تم حفظ طلب التواصل. سيظهر في لوحة المنصة لمتابعته.");
     } catch (submitError) {

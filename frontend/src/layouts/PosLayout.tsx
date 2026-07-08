@@ -1,6 +1,6 @@
-import { Outlet } from "react-router";
+import { Link, Outlet } from "react-router";
 import { useNavigate } from "react-router";
-import { Clock, Keyboard, ScanLine, Store, User } from "lucide-react";
+import { Clock, Home, Keyboard, LogOut, ScanLine, Store, User } from "lucide-react";
 import { useAuth } from "../app/providers/AuthProvider";
 import { ConnectionPill } from "../components/status/ConnectionPill";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
@@ -10,6 +10,9 @@ export function PosLayout() {
   const { auth, logout } = useAuth();
   const navigate = useNavigate();
   const { isOnline } = useNetworkStatus();
+  const handleExitPos = () => {
+    navigate("/dashboard");
+  };
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -34,7 +37,14 @@ export function PosLayout() {
             <span className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 lg:inline-flex"><ScanLine size={15} /> قارئ الباركود جاهز</span>
             <span className="hidden items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 lg:inline-flex"><Keyboard size={15} /> Enter لإضافة أسرع</span>
             <ThemeToggle />
-            <button type="button" onClick={() => void handleLogout()} className="rounded-xl px-3 py-2 text-danger hover:bg-danger/10">خروج</button>
+            <button type="button" onClick={handleExitPos} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 font-semibold text-foreground hover:bg-muted">
+              <Home size={16} />
+              الداشبورد
+            </button>
+            <button type="button" onClick={() => void handleLogout()} className="inline-flex items-center gap-1.5 rounded-xl bg-danger px-3 py-2 font-semibold text-white hover:bg-danger/90">
+              <LogOut size={16} />
+              تسجيل الخروج
+            </button>
           </div>
         </div>
       </header>

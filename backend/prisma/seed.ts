@@ -4,6 +4,14 @@ import { rolePermissions, seedCoreReferenceData } from "../src/bootstrap/bootstr
 
 const prisma = new PrismaClient();
 
+const DEMO_STORE_ID = "demo-store-raseed-clothing";
+const DEMO_SUBSCRIPTION_ID = "demo-subscription-raseed-clothing";
+const DEMO_ADMIN_EMAIL = "admin@raseed.local";
+const DEMO_OWNER_EMAIL = "owner@raseed.local";
+const DEMO_CASHIER_EMAIL = "cashier@raseed.local";
+const DEMO_OWNER_PASSWORD = "hello2026";
+const DEMO_CASHIER_PASSWORD = "hello2026";
+
 const demoCategories = [
   { name: "تيشيرتات", color: "#0f766e", icon: "shirt" },
   { name: "بناطيل", color: "#1d4ed8", icon: "stretch-horizontal" },
@@ -533,21 +541,29 @@ export async function main() {
     return;
   }
 
+  await prisma.store.deleteMany({ where: { id: { not: DEMO_STORE_ID } } });
+  await prisma.user.deleteMany({
+    where: {
+      storeId: null,
+      email: { not: DEMO_ADMIN_EMAIL },
+    },
+  });
+
   const store = await prisma.store.upsert({
-    where: { id: "demo-store-city-market" },
+    where: { id: DEMO_STORE_ID },
     update: {
-      name: "القاسم",
-      ownerName: "محمود القاسم",
+      name: "محل رصيد التجريبي",
+      ownerName: "مالك الديمو",
       phone: "01000000000",
-      email: "mahmoud@local",
+      email: DEMO_OWNER_EMAIL,
       status: "ACTIVE",
     },
     create: {
-      id: "demo-store-city-market",
-      name: "القاسم",
-      ownerName: "محمود القاسم",
+      id: DEMO_STORE_ID,
+      name: "محل رصيد التجريبي",
+      ownerName: "مالك الديمو",
       phone: "01000000000",
-      email: "mahmoud@local",
+      email: DEMO_OWNER_EMAIL,
       status: "ACTIVE",
     },
   });
@@ -577,10 +593,10 @@ export async function main() {
     await prisma.receiptSettings.update({
       where: { id: existingReceiptSettings.id },
       data: {
-        storeName: "القاسم",
+        storeName: "محل رصيد التجريبي",
         storePhone: store.phone,
         storeAddress: "القاهرة - محل ملابس",
-        receiptFooter: "شكراً لزيارتكم القاسم - محل ملابس",
+        receiptFooter: "شكراً لزيارتكم محل رصيد التجريبي",
         paperSize: "MM_80",
       },
     });
@@ -588,10 +604,10 @@ export async function main() {
     await prisma.receiptSettings.create({
       data: {
         storeId: store.id,
-        storeName: "القاسم",
+        storeName: "محل رصيد التجريبي",
         storePhone: store.phone,
         storeAddress: "القاهرة - محل ملابس",
-        receiptFooter: "شكراً لزيارتكم القاسم - محل ملابس",
+        receiptFooter: "شكراً لزيارتكم محل رصيد التجريبي",
         paperSize: "MM_80",
       },
     });
@@ -617,7 +633,7 @@ export async function main() {
   });
 
   await prisma.subscription.upsert({
-    where: { id: "demo-subscription-city-market" },
+    where: { id: DEMO_SUBSCRIPTION_ID },
     update: {
       status: "ACTIVE",
       planId: proPlan.id,
@@ -629,7 +645,7 @@ export async function main() {
       notes: "Seeded active Pro subscription",
     },
     create: {
-      id: "demo-subscription-city-market",
+      id: DEMO_SUBSCRIPTION_ID,
       storeId: store.id,
       planId: proPlan.id,
       status: "ACTIVE",
@@ -642,7 +658,7 @@ export async function main() {
     },
   });
 
-  const demoSubscription = await prisma.subscription.findUniqueOrThrow({ where: { id: "demo-subscription-city-market" } });
+  const demoSubscription = await prisma.subscription.findUniqueOrThrow({ where: { id: DEMO_SUBSCRIPTION_ID } });
   const existingPayment = await prisma.subscriptionPayment.findFirst({
     where: { subscriptionId: demoSubscription.id, reference: "SEED-PRO-2026-07" },
   });
@@ -665,7 +681,7 @@ export async function main() {
   await syncRolePermissions(superAdminRole.id, rolePermissions.super_admin);
 
   const roles: Record<string, { id: string }> = { super_admin: superAdminRole };
-  for (const name of ["owner", "manager", "cashier", "inventory"]) {
+  for (const name of ["owner", "cashier"]) {
     const role = await findOrCreateRole(name, store.id);
     await syncRolePermissions(role.id, rolePermissions[name]);
     roles[name] = role;
@@ -675,7 +691,7 @@ export async function main() {
     storeId: null,
     roleId: roles.super_admin.id,
     name: "أدمن رصيد",
-    email: "admin@raseed.local",
+    email: DEMO_ADMIN_EMAIL,
     phone: "01000000999",
     password: "RaseedAdmin!2026",
   });
@@ -684,60 +700,20 @@ export async function main() {
     storeId: store.id,
     branchId: branch.id,
     roleId: roles.owner.id,
-    name: "محمود القاسم",
-    email: "mahmoud@local",
+    name: "مالك الديمو",
+    email: DEMO_OWNER_EMAIL,
     phone: "01000000010",
-    password: "hello2026",
-  });
-
-  await findOrCreateUser({
-    storeId: store.id,
-    branchId: branch.id,
-    roleId: roles.owner.id,
-    name: "أحمد القاسم",
-    email: "owner2@local",
-    phone: "01000000011",
-    password: "hello2026",
-  });
-
-  await findOrCreateUser({
-    storeId: store.id,
-    branchId: branch.id,
-    roleId: roles.manager.id,
-    name: "سارة خالد",
-    email: "manager@raseed.local",
-    phone: "01000000020",
-    password: "RaseedManager!2026",
+    password: DEMO_OWNER_PASSWORD,
   });
 
   const cashierUser = await findOrCreateUser({
     storeId: store.id,
     branchId: branch.id,
     roleId: roles.cashier.id,
-    name: "أحمد محمود",
-    email: "ahmed@local",
+    name: "كاشير الديمو",
+    email: DEMO_CASHIER_EMAIL,
     phone: "01000000030",
-    password: "hello2026",
-  });
-
-  await findOrCreateUser({
-    storeId: store.id,
-    branchId: branch.id,
-    roleId: roles.cashier.id,
-    name: "محمود علي",
-    email: "cashier2@local",
-    phone: "01000000031",
-    password: "hello2026",
-  });
-
-  await findOrCreateUser({
-    storeId: store.id,
-    branchId: branch.id,
-    roleId: roles.inventory.id,
-    name: "محمود سامي",
-    email: "inventory@raseed.local",
-    phone: "01000000040",
-    password: "RaseedInventory!2026",
+    password: DEMO_CASHIER_PASSWORD,
   });
 
   const customerByPhone = new Map<string, { id: string }>();
@@ -1019,6 +995,12 @@ export async function main() {
   }
 
   await resetDemoOperationalData(store.id, branch.id);
+  await prisma.user.deleteMany({
+    where: {
+      storeId: store.id,
+      email: { notIn: [DEMO_OWNER_EMAIL, DEMO_CASHIER_EMAIL] },
+    },
+  });
   await seedDemoOperationalData({
     storeId: store.id,
     branchId: branch.id,

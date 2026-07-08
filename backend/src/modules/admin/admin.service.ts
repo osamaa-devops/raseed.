@@ -4,6 +4,7 @@ import * as bcrypt from "bcryptjs";
 import { PrismaService } from "../../prisma/prisma.service";
 import type { AuthenticatedUser } from "../../common/utils/auth.types";
 import { ActivityLogsService } from "../activity-logs/activity-logs.service";
+import { rolePermissions } from "../../bootstrap/bootstrap-core";
 import { SubscriptionService } from "../subscription/subscription.service";
 import { AdminPaymentsQueryDto } from "./dto/admin-payments-query.dto";
 import { AdminStoresQueryDto } from "./dto/admin-stores-query.dto";
@@ -193,7 +194,8 @@ export class AdminService {
         },
       });
 
-      const ownerRole = await this.ensureOwnerRole(tx, store.id);
+      const ownerRole = await this.ensureStoreRole(tx, store.id, "owner");
+      const cashierRole = await this.ensureStoreRole(tx, store.id, "cashier");
       const ownerUser = await tx.user.create({
         data: {
           storeId: store.id,
@@ -206,6 +208,20 @@ export class AdminService {
           status: "ACTIVE",
         },
       });
+      const cashierUser = dto.cashierUserName && dto.cashierUserPhone && dto.cashierPassword
+        ? await tx.user.create({
+            data: {
+              storeId: store.id,
+              branchId: branch.id,
+              roleId: cashierRole.id,
+              name: dto.cashierUserName.trim(),
+              email: dto.cashierUserEmail?.trim().toLowerCase(),
+              phone: dto.cashierUserPhone.trim(),
+              passwordHash: await bcrypt.hash(dto.cashierPassword, 12),
+              status: "ACTIVE",
+            },
+          })
+        : null;
 
       const subscription = await tx.subscription.create({
         data: {
@@ -230,11 +246,11 @@ export class AdminService {
           action: "admin.store_created",
           entityType: "Store",
           entityId: store.id,
-          metadata: { planId: plan.id, billingCycle: dto.billingCycle, ownerUserId: ownerUser.id },
+          metadata: { planId: plan.id, billingCycle: dto.billingCycle, ownerUserId: ownerUser.id, cashierUserId: cashierUser?.id ?? null },
         },
       });
 
-      return { store, branch, ownerUser, subscription: this.serializeSubscription(subscription) };
+      return { store, branch, ownerUser, cashierUser, subscription: this.serializeSubscription(subscription) };
     });
   }
 
@@ -538,74 +554,14 @@ export class AdminService {
     return plan;
   }
 
-  private async ensureOwnerRole(tx: Prisma.TransactionClient, storeId: string) {
-    let role = await tx.role.findFirst({ where: { storeId, name: "owner" } });
+  private async ensureStoreRole(tx: Prisma.TransactionClient, storeId: string, roleName: keyof typeof rolePermissions) {
+    let role = await tx.role.findFirst({ where: { storeId, name: roleName } });
     if (!role) {
       role = await tx.role.create({
-        data: { storeId, name: "owner", isSystem: true, description: "Default store owner role" },
+        data: { storeId, name: roleName, isSystem: true, description: `Default store ${roleName} role` },
       });
     }
-    const permissionKeys = [
-      "dashboard.view",
-      "pos.access",
-      "pos.sell",
-      "pos.hold_order",
-      "pos.view_recent_invoices",
-      "products.view",
-      "products.create",
-      "products.update",
-      "products.delete",
-      "categories.view",
-      "categories.create",
-      "categories.update",
-      "categories.delete",
-      "inventory.view",
-      "inventory.adjust",
-      "inventory.add_stock",
-      "inventory.remove_stock",
-      "inventory.view_movements",
-      "inventory.view_alerts",
-      "sales.view",
-      "invoices.view",
-      "invoices.print",
-      "invoices.refund",
-      "shifts.open",
-      "shifts.close",
-      "shifts.view",
-      "returns.view",
-      "returns.create",
-      "expenses.view",
-      "expenses.create",
-      "expenses.update",
-      "expenses.delete",
-      "reports.view",
-      "closing.view",
-      "closing.create",
-      "customers.view",
-      "customers.create",
-      "customers.update",
-      "customers.delete",
-      "debts.view",
-      "debts.add",
-      "debts.pay",
-      "debts.adjust",
-      "suppliers.view",
-      "suppliers.create",
-      "suppliers.update",
-      "suppliers.delete",
-      "suppliers.pay",
-      "suppliers.adjust",
-      "purchase_orders.view",
-      "purchase_orders.create",
-      "purchase_orders.update",
-      "purchase_orders.cancel",
-      "purchase_orders.receive",
-      "users.manage",
-      "settings.manage",
-      "activity_logs.view",
-      "subscription.view",
-      "subscription.request_upgrade",
-    ];
+    const permissionKeys = rolePermissions[roleName] ?? [];
     for (const key of permissionKeys) {
       const permission = await tx.permission.findUnique({ where: { key } });
       if (!permission) continue;

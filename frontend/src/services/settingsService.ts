@@ -8,9 +8,73 @@ export const settingsService = {
   getReceiptSettings: (branchId?: string) =>
     apiRequest<ReceiptSettings>(`/settings/receipt${branchId ? `?branchId=${encodeURIComponent(branchId)}` : ""}`),
   updateReceiptSettings: (payload: ReceiptSettingsPayload) =>
-    apiRequest<ReceiptSettings>("/settings/receipt", { method: "PATCH", body: JSON.stringify(payload) }),
+    apiRequest<ReceiptSettings>("/settings/receipt", { method: "PATCH", body: JSON.stringify(serializeReceiptSettingsPayload(payload)) }),
   getBarcodeLabelSettings: () =>
     apiRequest<BarcodeLabelSettings>("/settings/barcode-labels"),
   updateBarcodeLabelSettings: (payload: BarcodeLabelSettingsPayload) =>
-    apiRequest<BarcodeLabelSettings>("/settings/barcode-labels", { method: "PATCH", body: JSON.stringify(payload) }),
+    apiRequest<BarcodeLabelSettings>("/settings/barcode-labels", { method: "PATCH", body: JSON.stringify(serializeBarcodeSettingsPayload(payload)) }),
 };
+
+function serializeReceiptSettingsPayload(payload: ReceiptSettingsPayload) {
+  const {
+    branchId,
+    storeName,
+    storePhone,
+    storeAddress,
+    logoUrl,
+    receiptHeader,
+    receiptFooter,
+    showLogo,
+    showTaxNumber,
+    taxNumber,
+    showCashierName,
+    showBranchName,
+    showCustomerInfo,
+    paperSize,
+  } = payload;
+
+  return {
+    branchId,
+    storeName,
+    storePhone,
+    storeAddress,
+    logoUrl,
+    receiptHeader,
+    receiptFooter,
+    showLogo,
+    showTaxNumber,
+    taxNumber,
+    showCashierName,
+    showBranchName,
+    showCustomerInfo,
+    paperSize,
+  };
+}
+
+function serializeBarcodeSettingsPayload(payload: BarcodeLabelSettingsPayload) {
+  const {
+    labelSize,
+    showProductName,
+    showPrice,
+    showBarcodeText,
+    columns,
+    rows,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+  } = payload;
+
+  return {
+    labelSize,
+    showProductName,
+    showPrice,
+    showBarcodeText,
+    columns,
+    rows,
+    marginTop,
+    marginRight,
+    marginBottom,
+    marginLeft,
+  };
+}

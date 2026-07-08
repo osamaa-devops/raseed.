@@ -1,4 +1,4 @@
-import { Eye, Plus, RefreshCcw } from "lucide-react";
+import { Edit, Eye, Plus, RefreshCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Modal } from "../../components/feedback/Modal";
 import { SelectInput, TextInput } from "../../components/forms/FormControls";
@@ -13,7 +13,9 @@ import type { AdminStoreDetails, AdminStoreListItem, BillingCycle, StoreStatus, 
 
 const emptyForm = {
   name: "", ownerName: "", phone: "", email: "", planId: "", billingCycle: "MONTHLY" as BillingCycle, trialDays: 14,
-  ownerUserName: "", ownerUserEmail: "", ownerUserPhone: "", ownerPassword: "", mainBranchName: "الفرع الرئيسي", mainBranchAddress: "",
+  ownerUserName: "", ownerUserEmail: "", ownerUserPhone: "", ownerPassword: "",
+  cashierUserName: "", cashierUserEmail: "", cashierUserPhone: "", cashierPassword: "",
+  mainBranchName: "الفرع الرئيسي", mainBranchAddress: "",
 };
 
 export function StoresPage() {
@@ -22,7 +24,9 @@ export function StoresPage() {
   const [selected, setSelected] = useState<AdminStoreDetails | null>(null);
   const [filters, setFilters] = useState({ search: "", status: "" as StoreStatus | "", planId: "", subscriptionStatus: "" as SubscriptionStatus | "" });
   const [form, setForm] = useState(emptyForm);
+  const [editForm, setEditForm] = useState({ name: "", ownerName: "", phone: "", email: "" });
   const [openCreate, setOpenCreate] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +56,18 @@ export function StoresPage() {
     setSelected(await superAdminService.getStore(id));
   };
 
+  const openEditStore = async (id: string) => {
+    const store = await superAdminService.getStore(id);
+    setSelected(store);
+    setEditForm({
+      name: store.name,
+      ownerName: store.ownerName ?? "",
+      phone: store.phone ?? "",
+      email: store.email ?? "",
+    });
+    setOpenEdit(true);
+  };
+
   const createStore = async () => {
     try {
       await superAdminService.createStore({
@@ -59,6 +75,10 @@ export function StoresPage() {
         email: form.email || undefined,
         trialDays: form.billingCycle === "TRIAL" ? Number(form.trialDays) || 14 : undefined,
         ownerUserEmail: form.ownerUserEmail || undefined,
+        cashierUserName: form.cashierUserName || undefined,
+        cashierUserEmail: form.cashierUserEmail || undefined,
+        cashierUserPhone: form.cashierUserPhone || undefined,
+        cashierPassword: form.cashierPassword || undefined,
         mainBranchAddress: form.mainBranchAddress || undefined,
       });
       setOpenCreate(false);
@@ -73,6 +93,24 @@ export function StoresPage() {
     await superAdminService.updateStoreStatus(store.id, status);
     await load();
     if (selected?.id === store.id) setSelected(await superAdminService.getStore(store.id));
+  };
+
+  const updateSelectedStore = async () => {
+    if (!selected) return;
+    try {
+      await superAdminService.updateStore(selected.id, {
+        name: editForm.name.trim(),
+        ownerName: editForm.ownerName.trim(),
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || null,
+      });
+      const updated = await superAdminService.getStore(selected.id);
+      setSelected(updated);
+      setOpenEdit(false);
+      await load();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "تعذر تعديل بيانات المحل");
+    }
   };
 
   return (
@@ -111,6 +149,7 @@ export function StoresPage() {
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   <AppButton variant="outline" icon={Eye} onClick={() => void openDetails(store.id)}>عرض</AppButton>
+                  <AppButton variant="outline" icon={Edit} onClick={() => void openEditStore(store.id)}>تعديل</AppButton>
                   {store.status !== "SUSPENDED" ? <AppButton variant="ghost" onClick={() => void changeStatus(store, "SUSPENDED")}>إيقاف</AppButton> : <AppButton variant="ghost" icon={RefreshCcw} onClick={() => void changeStatus(store, "ACTIVE")}>تفعيل</AppButton>}
                 </div>
               </td>
@@ -134,6 +173,10 @@ export function StoresPage() {
           <TextInput label="بريد المالك" value={form.ownerUserEmail} onChange={(event) => setForm((current) => ({ ...current, ownerUserEmail: event.target.value }))} />
           <TextInput label="هاتف المالك" value={form.ownerUserPhone} onChange={(event) => setForm((current) => ({ ...current, ownerUserPhone: event.target.value }))} />
           <TextInput label="كلمة المرور" type="password" value={form.ownerPassword} onChange={(event) => setForm((current) => ({ ...current, ownerPassword: event.target.value }))} />
+          <TextInput label="اسم الكاشير" value={form.cashierUserName} onChange={(event) => setForm((current) => ({ ...current, cashierUserName: event.target.value }))} />
+          <TextInput label="بريد الكاشير" value={form.cashierUserEmail} onChange={(event) => setForm((current) => ({ ...current, cashierUserEmail: event.target.value }))} />
+          <TextInput label="هاتف الكاشير" value={form.cashierUserPhone} onChange={(event) => setForm((current) => ({ ...current, cashierUserPhone: event.target.value }))} />
+          <TextInput label="كلمة مرور الكاشير" type="password" value={form.cashierPassword} onChange={(event) => setForm((current) => ({ ...current, cashierPassword: event.target.value }))} />
           <TextInput label="اسم الفرع الرئيسي" value={form.mainBranchName} onChange={(event) => setForm((current) => ({ ...current, mainBranchName: event.target.value }))} />
           <TextInput label="عنوان الفرع" value={form.mainBranchAddress} onChange={(event) => setForm((current) => ({ ...current, mainBranchAddress: event.target.value }))} />
         </div>
@@ -164,6 +207,19 @@ export function StoresPage() {
             </AppCard>
           </div>
         )}
+      </Modal>
+
+      <Modal open={openEdit} title="تعديل بيانات المحل" onClose={() => setOpenEdit(false)}>
+        <div className="grid gap-3 md:grid-cols-2">
+          <TextInput label="اسم المتجر" value={editForm.name} onChange={(event) => setEditForm((current) => ({ ...current, name: event.target.value }))} />
+          <TextInput label="اسم المالك" value={editForm.ownerName} onChange={(event) => setEditForm((current) => ({ ...current, ownerName: event.target.value }))} />
+          <TextInput label="هاتف المتجر" value={editForm.phone} onChange={(event) => setEditForm((current) => ({ ...current, phone: event.target.value }))} />
+          <TextInput label="بريد المتجر" value={editForm.email} onChange={(event) => setEditForm((current) => ({ ...current, email: event.target.value }))} />
+        </div>
+        <div className="mt-4 flex gap-2">
+          <AppButton onClick={updateSelectedStore} disabled={!editForm.name.trim()}>حفظ التعديل</AppButton>
+          <AppButton variant="outline" onClick={() => setOpenEdit(false)}>إلغاء</AppButton>
+        </div>
       </Modal>
     </div>
   );

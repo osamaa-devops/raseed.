@@ -47,7 +47,8 @@ export const routeConfig: RouteObject[] = [
   {
     element: <PublicLayout />,
     children: [
-      { path: "/", element: <RootRoute /> },
+      { path: "/", element: <LandingPage /> },
+      { path: "/start", element: <RootRoute /> },
       { path: "/landing", element: <LandingPage /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/activate", element: <ActivationPage /> },

@@ -149,12 +149,8 @@ Seeded development users:
 | Role | Email | Password |
 | --- | --- | --- |
 | Super Admin | `admin@raseed.local` | `RaseedAdmin!2026` |
-| Owner | `mahmoud@local` | `hello2026` |
-| Owner 2 | `owner2@local` | `hello2026` |
-| Manager | `manager@raseed.local` | `RaseedManager!2026` |
-| Cashier | `ahmed@local` | `hello2026` |
-| Cashier 2 | `cashier2@local` | `hello2026` |
-| Inventory | `inventory@raseed.local` | `RaseedInventory!2026` |
+| Owner | `owner@raseed.local` | `hello2026` |
+| Cashier | `cashier@raseed.local` | `hello2026` |
 
 These are local development credentials only. After the first real setup wizard, the owner account you create becomes the production login.
 
