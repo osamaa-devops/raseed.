@@ -1,8 +1,9 @@
 const { spawn } = require("node:child_process");
+const { randomBytes } = require("node:crypto");
 const { promises: fs } = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, safeStorage, shell } = require("electron");
 
 const root = path.resolve(__dirname, "..");
 const isWin = process.platform === "win32";
@@ -14,6 +15,7 @@ let backendRestartCount = 0;
 let shuttingDown = false;
 let mainWindow = null;
 let backendOutputBuffer = "";
+let desktopRuntime = null;
 
 async function writeLog(message) {
   await fs.mkdir(logsDir, { recursive: true });
@@ -119,6 +121,101 @@ function backendCommand() {
   };
 }
 
+function createSecret(bytes = 48) {
+  return randomBytes(bytes).toString("base64url");
+}
+
+function encryptRuntimeValue(value) {
+  if (safeStorage.isEncryptionAvailable()) {
+    return { encrypted: true, value: safeStorage.encryptString(value).toString("base64") };
+  }
+  if (app.isPackaged) {
+    throw new Error("Windows secure storage is unavailable. Raseed will not store production secrets in plain text.");
+  }
+  // Development environments may not expose an OS keychain. Packaged Windows builds do.
+  return { encrypted: false, value };
+}
+
+function decryptRuntimeValue(value) {
+  if (!value || typeof value !== "object" || typeof value.value !== "string") return null;
+  if (!value.encrypted) return value.value;
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("Windows secure storage is unavailable. Raseed cannot read its local runtime secrets.");
+  }
+  return safeStorage.decryptString(Buffer.from(value.value, "base64"));
+}
+
+async function loadDesktopRuntime() {
+  const configPath = path.join(app.getPath("userData"), "desktop-runtime.json");
+  const stagedDatabasePath = path.join(app.getPath("userData"), "database-connection.txt");
+  let stored = null;
+  try {
+    stored = JSON.parse(await fs.readFile(configPath, "utf8"));
+  } catch {
+    stored = null;
+  }
+
+  let stagedDatabaseUrl = null;
+  try {
+    stagedDatabaseUrl = (await fs.readFile(stagedDatabasePath, "utf8")).trim() || null;
+  } catch {
+    stagedDatabaseUrl = null;
+  }
+  const databaseUrl = decryptRuntimeValue(stored?.databaseUrl)
+    || stagedDatabaseUrl
+    || process.env.DATABASE_URL
+    || (!app.isPackaged ? "postgresql://raseed:raseed_password@127.0.0.1:5432/raseed_dev?schema=public" : null);
+  if (!databaseUrl) {
+    throw new Error("Raseed needs its local database connection. Run Initialize-Raseed.ps1, then launch Raseed again.");
+  }
+  const jwtSecret = decryptRuntimeValue(stored?.jwtSecret) || process.env.JWT_SECRET || createSecret();
+  const licenseSecret = decryptRuntimeValue(stored?.licenseSecret) || process.env.LICENSE_SECRET || createSecret();
+  // The packaged frontend targets this loopback port. Keep both sides fixed together.
+  const port = 4000;
+
+  const next = {
+    version: 1,
+    port,
+    databaseUrl: encryptRuntimeValue(databaseUrl),
+    jwtSecret: encryptRuntimeValue(jwtSecret),
+    licenseSecret: encryptRuntimeValue(licenseSecret),
+  };
+  await fs.mkdir(path.dirname(configPath), { recursive: true });
+  await fs.writeFile(configPath, JSON.stringify(next, null, 2), { encoding: "utf8", mode: 0o600 });
+  if (stagedDatabaseUrl) {
+    await fs.rm(stagedDatabasePath, { force: true });
+  }
+
+  return { databaseUrl, jwtSecret, licenseSecret, port };
+}
+
+async function runMigrations(runtime) {
+  if (!app.isPackaged) return;
+  const prismaCli = path.join(root, "node_modules", "prisma", "build", "index.js");
+  await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [prismaCli, "migrate", "deploy", "--schema", path.join(root, "backend", "prisma", "schema.prisma")], {
+      cwd: root,
+      windowsHide: true,
+      shell: false,
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: "1",
+        NODE_ENV: "production",
+        DATABASE_URL: runtime.databaseUrl,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let output = "";
+    child.stdout.on("data", (chunk) => { output += chunk.toString(); });
+    child.stderr.on("data", (chunk) => { output += chunk.toString(); });
+    child.once("error", reject);
+    child.once("exit", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Database migration failed (exit ${code ?? "unknown"}).\n${output.slice(-4000)}`));
+    });
+  });
+}
+
 async function startBackend() {
   const { command, args } = backendCommand();
   backendOutputBuffer = "";
@@ -132,6 +229,15 @@ async function startBackend() {
       NODE_ENV: app.isPackaged ? "production" : "development",
       RASEED_DESKTOP: "true",
       ELECTRON_RUN_AS_NODE: "1",
+      PORT: String(desktopRuntime.port),
+      RASEED_BIND_HOST: "127.0.0.1",
+      DATABASE_URL: desktopRuntime.databaseUrl,
+      JWT_SECRET: desktopRuntime.jwtSecret,
+      LICENSE_SECRET: desktopRuntime.licenseSecret,
+      FRONTEND_URL: "file://",
+      FRONTEND_ORIGIN: "file://",
+      AUTH_COOKIE_SECURE: "false",
+      AUTH_COOKIE_SAME_SITE: "lax",
       RASEED_DATA_DIR: process.env.RASEED_DATA_DIR ?? (app.isPackaged ? app.getPath("userData") : path.join(root, "runtime")),
       RASEED_LOGS_DIR: logsDir,
       RASEED_BACKUP_DIR: path.join(logsDir, "backups"),
@@ -174,7 +280,7 @@ async function startBackend() {
     await showFatalScreen(formatBackendFailure(error.stack || error.message, backendOutputBuffer));
   });
 
-  await waitFor("http://localhost:4000/api/health");
+  await waitFor(`http://127.0.0.1:${desktopRuntime.port}/api/health`);
   backendRestartCount = 0;
 }
 
@@ -236,7 +342,6 @@ function createWindow() {
 }
 
 async function bootstrapApp() {
-  app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
   const dataDir = app.isPackaged ? app.getPath("userData") : path.join(root, "runtime");
   logsDir = path.join(dataDir, "logs");
   process.env.RASEED_DATA_DIR = dataDir;
@@ -246,7 +351,13 @@ async function bootstrapApp() {
   process.env.RASEED_RUNTIME_CONFIG_PATH = path.join(dataDir, "runtime-config.json");
   await writeLog("app.bootstrap");
   try {
+    desktopRuntime = await loadDesktopRuntime();
+    await runMigrations(desktopRuntime);
     await startBackend();
+    if (app.isPackaged && process.platform === "win32") {
+      app.setLoginItemSettings({ openAtLogin: true, path: process.execPath, args: [] });
+      await writeLog("app.auto_start.enabled");
+    }
     mainWindow = createWindow();
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
@@ -259,6 +370,10 @@ async function bootstrapApp() {
   }
 }
 
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
 app.whenReady().then(() => {
   ipcMain.handle("raseed:choose-directory", async () => {
     const result = await dialog.showOpenDialog({
@@ -282,6 +397,14 @@ app.whenReady().then(() => {
 
   void bootstrapApp();
 });
+
+app.on("second-instance", () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+}
 
 app.on("before-quit", () => {
   shuttingDown = true;

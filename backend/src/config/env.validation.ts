@@ -21,6 +21,7 @@ export function validateEnv(config: EnvShape) {
     THROTTLE_LIMIT: config.THROTTLE_LIMIT ?? "120",
     LOG_LEVEL: config.LOG_LEVEL ?? (config.NODE_ENV === "production" ? "log,warn,error" : "log,debug,warn,error"),
     HEALTHCHECK_TOKEN: config.HEALTHCHECK_TOKEN,
+    LICENSE_SECRET: config.LICENSE_SECRET,
   };
 
   const errors: string[] = [];
@@ -37,6 +38,10 @@ export function validateEnv(config: EnvShape) {
     errors.push("JWT_SECRET is required.");
   } else if (env.NODE_ENV === "production" && env.JWT_SECRET.length < 32) {
     errors.push("JWT_SECRET must be at least 32 characters in production.");
+  }
+
+  if (env.NODE_ENV === "production" && (!env.LICENSE_SECRET || env.LICENSE_SECRET.length < 32)) {
+    errors.push("LICENSE_SECRET must be at least 32 characters in production.");
   }
 
   if (!env.FRONTEND_URL) {

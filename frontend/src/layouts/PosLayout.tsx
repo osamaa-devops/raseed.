@@ -5,6 +5,7 @@ import { useAuth } from "../app/providers/AuthProvider";
 import { ConnectionPill } from "../components/status/ConnectionPill";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { RaseedLogo } from "../components/brand/RaseedLogo";
 
 export function PosLayout() {
   const { auth, logout } = useAuth();
@@ -23,11 +24,7 @@ export function PosLayout() {
       <header className="border-b border-border bg-topbar/95 backdrop-blur">
         <div className="flex min-h-20 flex-wrap items-center gap-4 px-4 py-3 md:px-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20">ر</span>
-            <div>
-              <p className="font-bold">رصيد POS</p>
-              <p className="text-xs text-muted-foreground">واجهة بيع سريعة وواضحة للاستخدام اليومي داخل المحل</p>
-            </div>
+            <RaseedLogo subtitle="POS سريع للاستخدام اليومي داخل المحل" markClassName="h-11 w-11 rounded-2xl" />
           </div>
           <div className="mr-auto flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5"><Store size={15} /> {auth?.store?.name ?? "رصيد"} / {auth?.branch?.name ?? "بدون فرع"}</span>

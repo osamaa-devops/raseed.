@@ -5,7 +5,7 @@ import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
 import { TextInput } from "../../components/forms/FormControls";
 import { bootstrapService } from "../../services/bootstrapService";
-import { canAccessPath } from "../../app/routes/accessControl";
+import { RaseedLogo } from "../../components/brand/RaseedLogo";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-xl font-bold text-white">ر</div>
+          <RaseedLogo mode="mark" className="mb-3 justify-center" markClassName="h-14 w-14 rounded-2xl" />
           <h1 className="text-xl font-bold">تسجيل الدخول</h1>
           <p className="mt-1 text-sm text-muted-foreground">مرحبًا بك في رصيد</p>
         </div>

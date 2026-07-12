@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0-rc.1",
   "description": "Raseed offline-ready desktop POS for clothing shops.",
-  "author": "OpenAI Codex",
+  "author": "Raseed",
   "main": "desktop/main.cjs",
   "scripts": {
     "dev": "node scripts/dev-web.cjs",
@@ -21,6 +21,7 @@
     "db:studio": "npm --prefix backend run prisma:studio",
     "desktop:dev": "node scripts/dev-desktop.cjs",
     "desktop:build": "node scripts/build-desktop.cjs",
+    "release:checksum": "node scripts/create-release-checksum.cjs",
     "desktop:package": "electron-builder"
   },
   "workspaces": [
@@ -29,13 +30,13 @@
   ],
   "dependencies": {
     "@nestjs/cli": "11.0.23",
-    "@nestjs/common": "^10.4.15",
+    "@nestjs/common": "^11.1.28",
     "@nestjs/config": "^4.0.4",
-    "@nestjs/core": "^11.1.27",
+    "@nestjs/core": "^11.1.28",
     "@nestjs/jwt": "^11.0.2",
-    "@nestjs/platform-express": "^11.1.27",
+    "@nestjs/platform-express": "^11.1.28",
     "@nestjs/schematics": "11.1.0",
-    "@nestjs/testing": "^11.1.27",
+    "@nestjs/testing": "^11.1.28",
     "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.1.0",
     "bcryptjs": "^3.0.3",
@@ -74,6 +75,16 @@
     "asarUnpack": [
       "**/node_modules/.prisma/**",
       "**/node_modules/@prisma/engines/**"
+    ],
+    "extraResources": [
+      {
+        "from": "scripts/windows",
+        "to": "support"
+      },
+      {
+        "from": "docs/WINDOWS_INSTALLATION.md",
+        "to": "support/WINDOWS_INSTALLATION.md"
+      }
     ],
     "asar": true,
     "win": {

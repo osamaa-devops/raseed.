@@ -6,6 +6,7 @@ import { ConnectionPill } from "../status/ConnectionPill";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import { dashboardNavGroups } from "./navigationConfig";
 import { useNetworkStatus } from "../../hooks/useNetworkStatus";
+import { RaseedLogo } from "../brand/RaseedLogo";
 
 export function Topbar() {
   const { auth, logout } = useAuth();
@@ -29,7 +30,7 @@ export function Topbar() {
     <header className="fixed left-0 right-0 top-0 z-20 border-b border-border bg-topbar/95 backdrop-blur md:right-20 xl:right-72">
       <div className="flex min-h-20 flex-wrap items-center gap-3 px-4 py-3 md:px-6">
         <div className="flex items-center gap-3 text-sm">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary md:hidden">ر</span>
+          <RaseedLogo mode="mark" markClassName="h-10 w-10 rounded-2xl md:hidden" />
           <div className="flex items-center gap-2">
             <Store size={16} className="text-muted-foreground" />
               <div>

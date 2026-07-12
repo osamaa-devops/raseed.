@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 import { useAuth } from "../app/providers/AuthProvider";
 import { SuperAdminSidebar } from "../components/navigation/SuperAdminSidebar";
 import { ThemeToggle } from "../components/theme/ThemeToggle";
+import { RaseedLogo } from "../components/brand/RaseedLogo";
 
 export function SuperAdminLayout() {
   const { auth, logout } = useAuth();
@@ -18,6 +19,7 @@ export function SuperAdminLayout() {
       <header className="fixed left-0 right-64 top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-topbar px-6">
         <ShieldCheck size={18} className="text-primary" />
         <span className="font-bold">لوحة تحكم منصة رصيد</span>
+        <RaseedLogo mode="mark" markClassName="h-8 w-8 rounded-lg" />
         <div className="mr-auto flex items-center gap-3">
           <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">سوبر أدمن</span>
           <span className="text-sm text-muted-foreground">{auth?.user.name}</span>

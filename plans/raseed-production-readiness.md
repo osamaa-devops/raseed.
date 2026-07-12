@@ -1,129 +1,266 @@
-# خطة الجاهزية للاستخدام الفعلي — Raseed Production Readiness
+# خطة تحويل Raseed إلى منتج قابل للبيع
 
-## ما اتعمل لحد دلوقتي ✅
-- كل الصفحات الـ 25+ (Landing, Auth, Dashboard, POS, Products, Inventory, Sales, Reports, ...)
-- RBAC كامل — كل دور يشوف اللي بيخصه بس
-- Toast notifications بعد كل إجراء
-- Confirm dialogs قبل الحذف
-- Dark mode / Light mode مع persistence
-- Mobile sidebar responsive
-- POS keyboard shortcuts (F2, F12, Esc)
-- Dynamic invoice counter
-- Search في الجداول
+آخر تدقيق فعلي: 2026-07-13
 
----
+## الحكم التنفيذي
 
-## اللي ناقص للاستخدام الفعلي
+Raseed حاليًا **Release Candidate جيد وديمو قوي، لكنه غير جاهز للبيع أو التثبيت الذاتي على جهاز عميل نظيف**. الوظائف التجارية الأساسية موجودة بدرجة جيدة، لكن حزمة Windows الحالية لا تهيئ بيئة التشغيل كاملة، والاختبارات التشغيلية والحماية التجارية والتوقيع والتحديث ما زالت ناقصة.
 
-### 🔴 أولوية عالية جدًا (لازم قبل أي عميل)
+قرار الإطلاق الحالي: **NO-GO للبيع العام**، و**GO مشروط لتجربة Pilot تحت إشراف المطور** بعد إغلاق بنود P0 أدناه.
 
-#### 1. POS — إضافة عميل للفاتورة
-- حاليًا الفاتورة "بدون عميل" دايمًا
-- محتاج: search box للعملاء في شاشة POS
-- لما تختار عميل: اسمه يظهر على الفاتورة والإيصال
-- لو عنده دين: يظهر alert تحت اسمه
+## ما تم تنفيذه بعد التدقيق
 
-#### 2. POS — خصم على الفاتورة الكلية
-- حاليًا في خصم على كل item بس لكن مش بيتحسب
-- محتاج: حقل "خصم على الفاتورة" (نسبة % أو مبلغ ثابت)
-- يأثر على الإجمالي في real-time
+- فصل إعدادات تشغيل Electron عن إعدادات النسخ الاحتياطي، وتوليد `JWT_SECRET` و`LICENSE_SECRET` محليًا لأول تشغيل بدل شحن قيم ثابتة.
+- تخزين أسرار تشغيل desktop بتشفير النظام عند توفر Windows secure storage، واستيراد اتصال قاعدة البيانات مرة واحدة ثم حذف ملف الاستيراد النصي.
+- تشغيل Prisma migrations قبل بدء backend في نسخة desktop المعبأة.
+- ربط desktop API بالـ loopback `127.0.0.1` وإجبار backend desktop على الاستماع محليًا فقط، مع single-instance lock.
+- إضافة إعداد Windows PostgreSQL ودليل تثبيت يدخلان ضمن release resources.
+- فرض فحص الترخيص في backend للمستخدمين غير Super Admin، لا في توجيه الواجهة فقط.
+- جعل health check public حتى يمكن لنسخة Electron التحقق منه فعليًا.
+- توحيد NestJS على الإصدار 11 وإزالة نتائج High/Critical من `npm audit`؛ الواجهة الآن بلا نتائج audit.
+- بوابة build Windows تمنع إصدارًا تجاريًا غير موقع افتراضيًا، وتنتج `SHA256SUMS.txt` مع الـ installer؛ البناء الداخلي غير الموقّع يتطلب opt-in صريحًا.
+- إعداد Windows يضبط PostgreSQL كخدمة Automatic مع restart after failure، ونسخة Raseed المعبأة تسجل نفسها لتفتح تلقائيًا عند تسجيل دخول مستخدم ويندوز.
 
-#### 3. إضافة عميل من POS مباشرة
-- زرار "عميل جديد" في شاشة الكاشير يفتح mini modal
-- اسم + هاتف بس، مش form كامل
+## ما تم التحقق منه
 
-#### 4. POS — طريقة دفع مختلطة (Mixed Payment)
-- حاليًا كاش أو كارت أو محفظة — مش المختلط
-- محتاج: تحديد مبلغ كاش + مبلغ كارت في نفس الوقت
+- واجهات POS والمنتجات والمخزون والفواتير والمرتجعات والمصاريف والعملاء والموردين والتقارير والشيفتات موجودة.
+- RBAC وعزل المتجر والفرع موجودان في الـ backend.
+- البيع يتحقق من المخزون داخل transaction، والواجهة تمنع تجاوز الكمية والخصومات والدفع الناقص.
+- إنشاء عميل سريع والدفع المختلط واشتراط الشيفت موجودة.
+- إعداد أول متجر وOwner موجود كـ onboarding داخل النظام بعد جاهزية قاعدة البيانات.
+- النسخ الاحتياطي المشفر والاستعادة والتفعيل المرتبط بالجهاز موجودة كنسخة أولى.
+- شعار Raseed موحد في الواجهات الأساسية والـ favicon.
+- `frontend typecheck` و`backend build` ناجحان.
+- اختبارات الواجهة: 3 ملفات، 8 اختبارات، كلها ناجحة.
+- اختبارات الـ backend: 5 suites و23 اختبارًا موجودة، لكنها تخطيت بالكامل لأن قاعدة `raseed_test` غير متاحة وقت التدقيق.
+- نسخة Windows الحالية: `release/RaseedSetup.exe`، إصدار `1.0.0-rc.1`، وحجم مجلد release نحو 665MB.
+- dependency audit وقت التدقيق: 2 High و4 Moderate في workspace الرئيسي، وHigh في frontend؛ أبرزها `multer` و`react-router`، وتحتاج تحديثًا واختبار regression قبل الإصدار.
 
-#### 5. Stock validation في POS
-- لو المنتج مخزونه 0: يظهر disabled مع badge "نفد"
-- لو الكمية في السلة أكبر من المخزون: warning قبل إتمام البيع
+## إجابة سؤال الفلاشة بوضوح
 
-#### 6. Barcode generation للمنتجات
-- زرار "توليد باركود" في صفحة إضافة منتج
-- يولد EAN-13 تلقائي لو المنتج مالوش باركود
+### هل يكفي نقل `release` إلى جهاز عليه PostgreSQL؟
 
----
+**لا، النسخة الحالية لا تضمن التشغيل.** حتى لو PostgreSQL مثبت ويعمل، التطبيق يحتاج حاليًا إلى الآتي يدويًا:
 
-### 🟡 أولوية متوسطة (مهمة للعمل اليومي)
+1. PostgreSQL Server وخدماته وأدوات CLI على `PATH`: `createdb`, `pg_dump`, `psql`.
+2. مستخدم PostgreSQL باسم `raseed` وكلمة مرور متفق عليها وصلاحية إنشاء قاعدة، أو قاعدة ومستخدم يتم تحديدهما في إعداد آمن.
+3. قاعدة `raseed_dev` أو آلية إنشاء تلقائي موثوقة.
+4. قيم production لـ `DATABASE_URL`, `JWT_SECRET`, `LICENSE_SECRET`, `FRONTEND_URL` وخصائص cookie.
+5. تشغيل Prisma migrations قبل تشغيل الـ backend.
+6. اختبار طابعة الإيصالات وتعريفها ومقاس 58/80mm، وتعريف قارئ/طابعة الباركود إن وجدا.
 
-#### 7. Shift — ربط POS بالشيفت
-- حاليًا ممكن تبيع من غير ما تفتح شيفت
-- لازم: لو مفيش شيفت مفتوح، الـ POS يطلب فتح شيفت الأول
+### لماذا الـ installer الحالي سيفشل على جهاز نظيف؟
 
-#### 8. Shift — حساب الكاش المتوقع صح
-- حاليًا الأرقام ثابتة (hardcoded)
-- لازم: تجمع الـ cash sales من أول ما فتح الشيفت
+- Electron يشغل الـ backend بـ `NODE_ENV=production` لكنه لا يولد أو يمرر `DATABASE_URL` و`JWT_SECRET`.
+- ملفات `.env.production.example` تدخل الحزمة، أما `.env.production` الحقيقية فلا تدخلها، وهذا صحيح أمنيًا لكن لا توجد آلية بديلة لإنشاء config آمن.
+- migrations موجودة داخل `app.asar` لكن لا يوجد مسار يشغل `prisma migrate deploy` عند أول تشغيل أو بعد التحديث.
+- الكود يحاول إنشاء قاعدة مفقودة فقط، ولا ينشئ مستخدم PostgreSQL ولا يضمن وجود `createdb` على `PATH`.
+- واجهة Electron تفتح من `file://` بينما إعداد CORS/الـ API والـ cookies يحتاج اختبارًا صريحًا في وضع packaged.
 
-#### 9. Products — Edit Modal
-- زرار Edit موجود لكن مش بيفتح حاجة
-- محتاج نفس الـ Add modal لكن مع القيم الموجودة
+### شكل الفلاشة الصحيح بعد إغلاق P0
 
-#### 10. إضافة منتج للـ POS لما تمسح باركود مش موجود
-- لو الباركود مش في الـ system: رسالة "المنتج مش موجود — إضافة جديد؟"
+يجب أن تحتوي فلاشة التسليم على:
 
-#### 11. Receipt — تصميم احترافي للطباعة
-- CSS `@media print` يخفي كل حاجة غير الفاتورة
-- حجم ورقة receipt (58mm أو 80mm)
-- لوجو المحل في الأعلى
+- `RaseedSetup.exe` موقع رقميًا.
+- `SHA256SUMS.txt` للتحقق من سلامة الملف.
+- مثبت PostgreSQL الرسمي أو رابط/نسخة معتمدة حسب الترخيص، أو اختيار أفضل: تضمين PostgreSQL portable/service بشكل مُدار داخل المثبت.
+- `Install-Raseed.ps1` أو bootstrap installer بصلاحيات Admin يثبت الخدمة، ينشئ user/database، يولد الأسرار، يشغل migrations، ثم يجري health check.
+- دليل عميل PDF قصير: التثبيت، الطابعة، النسخ الاحتياطي، الاستعادة، والدعم.
+- ملف إصدار `RELEASE-NOTES.txt` ورقم build واضح.
 
-#### 12. Daily closing — ربط بالبيانات الفعلية
-- حاليًا الأرقام hardcoded
-- لازم تتحسب من الفواتير اللي اتعملت النهارده
+لا يجب وضع source code أو `.env` أو كلمات مرور أو قاعدة بيانات عميل على الفلاشة.
 
-#### 13. Low stock — طلب شراء تلقائي
-- زرار "طلب شراء" في تنبيهات المخزون يفتح Purchase Order مع المنتج جاهز
+## P0 — موانع البيع والإطلاق
 
-#### 14. Customers — debt payment يحدث الرصيد
-- حاليًا بيعمل toast بس، مش بيحدث الـ debt value فعليًا
+### P0.1 مثبت Windows ذاتي التهيئة
 
----
+- [ ] إنشاء Setup bootstrap موحد يكتشف PostgreSQL ويثبت/يهيئ المطلوب.
+- [ ] توليد password قاعدة البيانات و`JWT_SECRET` و`LICENSE_SECRET` عشوائيًا لكل جهاز.
+- [ ] حفظ الأسرار باستخدام Windows Credential Manager أو DPAPI، وليس ملفًا نصيًا بجانب التطبيق.
+- [ ] إنشاء database/user بأقل صلاحيات لازمة.
+- [ ] تشغيل `prisma migrate deploy` قبل بدء الخدمة، مع lock ومنع تشغيل نسختين معًا.
+- [ ] تقديم شاشة خطأ عربية فيها سبب قابل للتنفيذ ورقم دعم، من دون كشف secrets.
+- [ ] دعم uninstall من دون حذف بيانات العميل افتراضيًا.
 
-### 🟢 أولوية منخفضة (UX enhancements)
+معيار القبول: جهاز Windows 10/11 نظيف يتم تثبيته وتشغيله وإنشاء أول متجر خلال 10 دقائق من دون Terminal أو تعديل ملفات.
 
-#### 15. Dashboard — فلتر الفترة الزمنية
-- حاليًا الـ KPIs ثابتة "اليوم"
-- محتاج: toggle اليوم / الأسبوع / الشهر يغير الأرقام
+### P0.2 إصلاح تشغيل Electron production
 
-#### 16. Reports — Export PDF فعلي
-- زرار Export موجود لكن مش شغال
-- استخدام `window.print()` مع print CSS
+- [ ] وضع runtime config واضح خارج `app.asar` داخل `%ProgramData%/Raseed` أو `%AppData%/Raseed` حسب قرار multi-user.
+- [ ] تثبيت API URL على `http://127.0.0.1:4000/api` في desktop build بدل الاعتماد على `/api` مع `file://`.
+- [ ] ضبط `AUTH_COOKIE_SECURE=false` فقط للـ loopback desktop HTTP أو تشغيل loopback HTTPS بشهادة محلية.
+- [ ] إزالة `disable-features=OutOfBlinkCors` بعد ضبط CORS الصحيح.
+- [ ] جعل المنفذ قابلًا للاختيار أو اكتشاف التعارض، مع منع اتصال أجهزة الشبكة افتراضيًا.
+- [ ] إضافة single-instance lock وإنهاء backend child بشكل موثوق.
 
-#### 17. Settings — Receipt Preview
-- في صفحة الإعدادات، تصميم الإيصال بيعرض preview live
+معيار القبول: login/refresh/logout يعمل بعد إغلاق التطبيق وفتحه، ولا توجد أخطاء CORS أو cookies في packaged app.
 
-#### 18. Notifications — Mark as read يشتغل فعليًا
-- حاليًا الـ unread badge ثابت
-- محتاج state management لـ read/unread
+### P0.3 migrations وترقية الإصدارات
 
-#### 19. Users — إضافة موظف تشتغل فعليًا
-- Modal إضافة موظف موجود لكن بيعمل toast بس
-- محتاج تضاف للـ USERS array
+- [ ] نسخ احتياطي تلقائي قبل كل migration.
+- [ ] تشغيل migrations مرة واحدة مع سجل version ونتيجة واضحة.
+- [ ] اختبار ترقية قاعدة حقيقية من RC1 إلى الإصدار التالي.
+- [ ] منع تشغيل إصدار أقدم على schema أحدث.
+- [ ] خطة rollback موثقة ومجربة.
 
-#### 20. AI Insights — ربط بالبيانات الفعلية
-- حاليًا hardcoded text
-- يحسب المنتجات قليلة المخزون، المبيعات الأقل، إلخ من الـ data الموجودة
+معيار القبول: ترقية نسخة تحتوي 10,000 فاتورة من دون فقد أو ازدواج بيانات.
 
----
+### P0.4 اختبار دورة البيع الواقعية
+
+- [ ] فتح شيفت -> بيع نقدي -> طباعة -> خصم مخزون -> تقفيل.
+- [ ] بيع مختلط وبيع آجل وعميل جديد سريع.
+- [ ] خصم صنف/فاتورة وحدود المخزون والتزامن بين كاشيرين.
+- [ ] مرتجع كامل وجزئي مع restock وrefund.
+- [ ] انقطاع التطبيق/الكهرباء أثناء الحفظ ثم التحقق من atomicity.
+- [ ] اختبار طابعة 58mm و80mm وقارئ barcode فعلي.
+
+معيار القبول: لا يمكن إنشاء فاتورة ناقصة أو خصم مخزون مرتين، وأرقام الشيفت تطابق الفواتير والمدفوعات.
+
+### P0.5 النسخ الاحتياطي والاستعادة
+
+- [ ] تعديل backup ليكون قابلًا للاستعادة على جهاز بديل بمفتاح recovery منفصل؛ حاليًا مرتبط ببصمة نفس الجهاز، وهذا يمنع التعافي عند تلفه.
+- [ ] عدم استخدام default `LICENSE_SECRET` تحت أي ظرف production.
+- [ ] كتابة backup ذريًا ثم التحقق منه قبل اعتباره ناجحًا.
+- [ ] retention يومي/أسبوعي، ونسخة على USB أو cloud اختياريًا.
+- [ ] زر Restore يتطلب تأكيدًا وbackup تلقائيًا للحالة الحالية.
+- [ ] تمرين restore شهري على قاعدة منفصلة.
+
+معيار القبول: استعادة آخر backup على جهاز جديد موثقًا خلال 30 دقيقة.
+
+### P0.6 اختبارات بوابة الإصدار
+
+- [ ] تجهيز `raseed_test` وتشغيل 23 اختبار backend بدل تخطيها.
+- [ ] إضافة E2E packaged smoke test لأول تشغيل والتفعيل والـ onboarding والبيع.
+- [ ] إضافة اختبارات POS totals/rounding/concurrency/returns/closing.
+- [ ] منع build release إذا تم تخطي أي suite حرجة.
+- [ ] إضافة CI على Windows للبناء والاختبار وإخراج checksum.
+
+معيار القبول: pipeline أخضر بالكامل، ولا توجد اختبارات skipped حرجة.
+
+## P1 — مطلوب قبل البيع التجاري الواسع
+
+### P1.1 حماية الملكية والترخيص
+
+الحالة الحالية لا تمنع النسخ الاحترافي: `app.asar` قابل للفك، وخوارزمية توليد المفتاح والـ secret الافتراضي داخل التطبيق، والتحقق الأساسي في توجيه الواجهة لا في كل API محمي.
+
+- [ ] لا تشحن سرًا قادرًا على إصدار تراخيص داخل التطبيق؛ استخدم توقيع asymmetric: المفتاح الخاص عندك فقط، والمفتاح العام داخل التطبيق.
+- [ ] license payload موقع يحتوي customer/device/product/expiry/features/version، والتحقق offline بالمفتاح العام.
+- [ ] إضافة LicenseGuard في الـ backend على العمليات التجارية، مع grace period محدود.
+- [ ] لوحة إصدار وإلغاء ونقل تراخيص وسجل activations.
+- [ ] آلية نقل جهاز قانونية عبر recovery code أو deactivation.
+- [ ] code signing certificate لـ EXE/MSI وتوقيع كل إصدار.
+- [ ] obfuscation اختياري بعد القياس، مع إدراك أنه يؤخر النسخ ولا يمنعه.
+- [ ] اتفاقية ترخيص EULA، عقد بيع/اشتراك، سياسة دعم وخصوصية وملكية فكرية باسم المالك الحقيقي.
+- [ ] تغيير `author: OpenAI Codex` إلى اسم الشركة/المالك وإضافة copyright وبيانات المنتج.
+
+قاعدة مهمة: لا يوجد برنامج desktop غير قابل للنسخ 100%. الحماية الصحيحة مزيج من توقيع تراخيص، خدمة ودعم وتحديثات، عقود، وعدم شحن مفاتيح خاصة.
+
+### P1.2 التوقيع والتحديث والإصدارات
+
+- [ ] Semantic versioning وقناة stable/beta.
+- [ ] توقيع Windows لتقليل SmartScreen warnings.
+- [ ] auto-update موقّع مع rollback، أو updater يدوي موثق في أول إصدار.
+- [ ] release notes وchecksum وSBOM.
+- [ ] الاحتفاظ بآخر نسختين installer قابلتين للاسترجاع.
+- [ ] فصل release artifacts عن source repo وعدم تسليم `win-unpacked` للعميل.
+
+### P1.3 تقليل الحزمة وسطح الهجوم
+
+- [ ] عدم تضمين `node_modules/**` بالكامل؛ حزم production dependencies فقط.
+- [ ] استبعاد Jest, TypeScript, Nest CLI, Electron builder, docs/tests/source maps من installer.
+- [ ] مراجعة native Prisma binaries الخاصة بـ Windows x64 فقط.
+- [ ] توحيد package manager وحذف lockfile المكرر بعد التأكد؛ حاليًا يوجد root وfrontend lock مختلفان.
+- [ ] تحديث `multer`/Nest platform لمعالجة مشكلات DoS في upload، ثم اختبار import/upload والإلغاء أثناء الرفع.
+- [ ] تحديث `react-router` إلى إصدار مصحح، ثم اختبار redirects والحماية والمسارات كلها.
+- [ ] معالجة نتائج `file-type` و`uuid` المتوسطة أو توثيق عدم قابلية الاستغلال إن تعذر التحديث.
+- [ ] تشغيل dependency audit في CI ومنع High/Critical غير المصرح بها.
+
+معيار القبول: installer أصغر بوضوح، ومحتواه معروف عبر manifest/SBOM ولا يحتوي أدوات تطوير.
+
+### P1.4 الأمان التشغيلي
+
+- [ ] bind للـ backend على `127.0.0.1` افتراضيًا، وFirewall rule فقط إذا تم تفعيل LAN عمدًا.
+- [ ] تشفير أسرار التشغيل محليًا وتقييد ACL لمجلد البيانات.
+- [ ] حماية login وactivation وpublic demo endpoints بمعدلات منفصلة.
+- [ ] مراجعة upload/import ضد zip bombs وCSV formula injection والملفات الضخمة.
+- [ ] audit log لا يمكن للمستخدم العادي حذفه، مع rotation للسجلات.
+- [ ] CSP مناسبة بدل تعطيلها بالكامل.
+- [ ] threat model مختصر: سرقة جهاز، موظف خبيث، ransomware، تعديل installer، فقد قاعدة البيانات.
+
+### P1.5 المحاسبة ودقة البيانات
+
+- [ ] تحديد سياسة rounding والعملة والضرائب والخصومات وتطبيق Decimal موحدًا.
+- [ ] منع تعديل فاتورة بعد اعتمادها؛ التصحيح بمرتجع/إشعار واضح.
+- [ ] أرقام فواتير غير متكررة لكل فرع مع اختبار concurrency.
+- [ ] reconciliation يومي: cash/card/wallet/Instapay مقابل الشيفت.
+- [ ] تصدير محاسبي وPDF حقيقي إذا كان ضمن وعد البيع.
+- [ ] مراجعة متطلبات الفاتورة والضرائب في السوق الذي سيباع فيه المنتج قبل التسويق.
+
+## P2 — UX وجودة المنتج
+
+- [ ] جلسات اختبار مع 3 كاشيرين فعليين، وقياس زمن أول فاتورة والأخطاء.
+- [ ] توحيد loading/empty/error/retry في كل الصفحات.
+- [ ] منع فقد النماذج عند الرجوع أو انقطاع الشبكة المحلية.
+- [ ] تحسين الجداول للشاشات 1366x768؛ الحد الأدنى الحالي لنافذة POS هو 1200x800 وقد لا يلائم أجهزة قديمة.
+- [ ] full keyboard flow للـ POS وfocus واضح ودعم scanner سريع.
+- [ ] tooltips وaccessible labels للأزرار الأيقونية.
+- [ ] حالات offline/backend restarting مفهومة بدل شاشة بيضاء.
+- [ ] طباعة receipt من Electron بطابعة محددة ومن دون dialog اختياريًا.
+- [ ] حذف/دمج الخدمات القديمة التي ترمي `integration is planned` بعد إثبات عدم استخدامها.
+- [ ] إزالة `frontend/src/app/GeneratedApp.backup.tsx` من شجرة العمل بعد التأكد أنه غير مستخدم؛ هو ignored حاليًا وليس جزءًا من المنتج.
+
+## قرار الوثائق والتنظيف
+
+### ملفات يجب الاحتفاظ بها
+
+- `README.md`: بوابة المشروع للمطور، وليس زائدًا.
+- `docs/LOCAL_SETUP.md`, `ENVIRONMENT.md`, `SECURITY.md`, `BACKUP.md`: مراجع تشغيل متخصصة.
+- `docs/SHOP_DEPLOYMENT_CHECKLIST.md`: يتحول إلى checklist فني للتثبيت التجريبي.
+- هذه الخطة: المصدر الوحيد لحالة الجاهزية الحالية.
+
+### ملفات مرشحة للدمج ثم الحذف
+
+- `docs/PROJECT_AUDIT_REPORT.md` و`docs/PROJECT_STATUS_REPORT_2026-07-08.md`: snapshots قديمة وطويلة.
+- `docs/REAL_PROJECT_EXECUTION_PLAN.md`, `docs/ROADMAP.md`, `docs/TODO.md`: تتداخل مع هذه الخطة.
+- `docs/PRODUCTION_CHECKLIST.md` و`docs/RELEASE_CHECKLIST.md`: يدمجان في checklist واحدة قابلة للتنفيذ.
+- `plans/raseed-improvements.md` وملف خطة الـ attachment القديم: يراجع أي بند غير منقول ثم يحذفان.
+
+لم يتم حذف هذه الملفات أثناء التدقيق لأن بعضها قد يحتوي قرارات تاريخية غير منقولة بعد. الحذف الآمن يكون في commit مستقل بعد diff وموافقة على القائمة النهائية. ملفات README داخل `node_modules` ليست وثائق مشروع ولا تُحذف منفردة؛ `node_modules` أصلًا لا يُسلّم ولا يُرفع إلى Git.
 
 ## ترتيب التنفيذ المقترح
 
-### Phase 1 — POS كامل (يكفي لعميل يشغل كاشير)
-1. Stock validation (منع البيع لما المخزون ينتهي)
-2. خصم على الفاتورة الكلية
-3. Mixed payment
-4. ربط عميل بالفاتورة
-5. Edit product modal
+### Sprint 1 — Installer يعمل على جهاز نظيف
 
-### Phase 2 — ربط البيانات (يكفي للتقارير الحقيقية)
-6. Shift ← POS integration
-7. Daily closing ← real data
-8. Notifications ← read state
-9. Customer debt ← real update
+1. runtime config + secrets + API/cookie fixes.
+2. PostgreSQL bootstrap + migrations + first-run health screen.
+3. Windows clean-VM test وتوثيق محتويات فلاشة التسليم.
 
-### Phase 3 — Polish للبيع للعملاء
-10. Print CSS احترافي
-11. Dashboard period filter
-12. AI Insights ← real data
-13. Reports Export PDF
+### Sprint 2 — عدم فقد المال أو البيانات
+
+1. backend test database وتشغيل كل suites.
+2. سيناريوهات البيع/الشيفت/المرتجع/concurrency والطباعة.
+3. backup قابل للاستعادة على جهاز بديل وتمرين disaster recovery.
+
+### Sprint 3 — قابل للبيع والحماية
+
+1. asymmetric licensing وLicenseGuard.
+2. code signing وrelease pipeline وchecksum/SBOM.
+3. production-only packaging وتقليل الحجم وإدارة التحديث.
+
+### Sprint 4 — Pilot حقيقي
+
+1. تركيب عند محل واحد ببيانات غير حساسة أول أسبوع.
+2. مراقبة logs والنسخ الاحتياطي والتقفيل اليومي والطباعة.
+3. إصلاح نتائج الاستخدام ثم إصدار `1.0.0` stable.
+
+## تعريف Done للإصدار 1.0
+
+- تثبيت نظيف وتحديث وإزالة موثقة على Windows 10/11.
+- كل الاختبارات الحرجة تعمل وتنجح بلا skip.
+- بيع وشيفت ومرتجع وطباعة وتزامن مجربة فعليًا.
+- backup يُستعاد على جهاز آخر.
+- installer موقّع وله checksum ولا يحتوي secrets أو dev tools.
+- الترخيص موقّع asymmetric ومفروض من backend.
+- لا توجد كلمات مرور demo أو secrets افتراضية في production.
+- وثائق عميل ودعم واتفاقية ترخيص موجودة.
+- Pilot ناجح لمدة تشغيل متفق عليها قبل البيع العام.

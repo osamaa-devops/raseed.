@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "/api" : "http://localhost:4000/api");
+const isElectronFileApp = typeof window !== "undefined" && window.location.protocol === "file:";
+const API_URL = import.meta.env.VITE_API_URL ?? (isElectronFileApp ? "http://127.0.0.1:4000/api" : import.meta.env.PROD ? "/api" : "http://localhost:4000/api");
 export const SUBSCRIPTION_BLOCKED_MESSAGE_KEY = "raseed-subscription-blocked-message";
 
 type RequestOptions = RequestInit & {

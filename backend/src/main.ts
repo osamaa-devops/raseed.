@@ -16,6 +16,7 @@ async function bootstrap() {
 
   const configuredOrigins = config.getOrThrow<string>("FRONTEND_URL");
   const baseOrigins = configuredOrigins.split(",").map((origin) => origin.trim()).filter(Boolean);
+  if (process.env.RASEED_DESKTOP === "true") baseOrigins.push("null");
   const allowedOrigins = process.env.NODE_ENV === "production"
     ? baseOrigins
     : Array.from(new Set([...baseOrigins, "http://localhost:5173", "http://127.0.0.1:5173"]));
@@ -29,7 +30,7 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
@@ -49,8 +50,13 @@ async function bootstrap() {
   app.useGlobalFilters(app.get(AllExceptionsFilter));
 
     const port = config.get<number>("PORT", 4000);
-    await app.listen(port);
-    logger.log(`API listening on port ${port} in ${config.get<string>("NODE_ENV", "development")} mode`, "Bootstrap");
+    const host = process.env.RASEED_BIND_HOST || undefined;
+    if (host) {
+      await app.listen(port, host);
+    } else {
+      await app.listen(port);
+    }
+    logger.log(`API listening on ${host ?? "all interfaces"}:${port} in ${config.get<string>("NODE_ENV", "development")} mode`, "Bootstrap");
   } catch (error) {
     const message = formatBootstrapError(error);
     // eslint-disable-next-line no-console

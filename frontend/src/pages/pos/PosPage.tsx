@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CreditCard, Keyboard, Minus, Pause, Plus, Printer, RotateCcw, ScanLine, Search, Trash2, Wallet } from "lucide-react";
+import { CreditCard, Keyboard, Minus, Pause, Plus, Printer, RotateCcw, ScanLine, Search, Trash2, UserPlus, Wallet } from "lucide-react";
 import { useAuth } from "../../app/providers/AuthProvider";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Modal } from "../../components/feedback/Modal";
@@ -31,6 +31,7 @@ export function PosPage() {
   const canReturn = hasPermission("returns.create") || hasPermission("invoices.refund");
   const canPrintReceipts = hasPermission("printing.receipts") || hasPermission("invoices.print");
   const canViewCustomers = hasPermission("customers.view");
+  const canCreateCustomers = hasPermission("customers.create");
   const searchRef = useRef<HTMLInputElement>(null);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -38,6 +39,9 @@ export function PosPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerQuery, setCustomerQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [quickCustomer, setQuickCustomer] = useState({ name: "", phone: "" });
+  const [savingCustomer, setSavingCustomer] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [query, setQuery] = useState("");
   const [shift, setShift] = useState<CashierShift | null>(null);
@@ -55,9 +59,12 @@ export function PosPage() {
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + priceFor(item) * item.quantity, 0), [cart]);
   const itemDiscount = useMemo(() => cart.reduce((sum, item) => sum + item.discount, 0), [cart]);
-  const total = Math.max(0, subtotal - itemDiscount - invoiceDiscount);
+  const maxInvoiceDiscount = Math.max(0, subtotal - itemDiscount);
+  const effectiveInvoiceDiscount = clampMoney(invoiceDiscount, 0, maxInvoiceDiscount);
+  const total = Math.max(0, subtotal - itemDiscount - effectiveInvoiceDiscount);
   const paid = paymentMethod === "CASH" ? Number(amountPaid || total) : paymentMethod === "MIXED" ? sumMixed(mixedPayments) : Number(amountPaid || total);
   const change = Math.max(0, paid - total);
+  const remainingPayment = Math.max(0, total - paid);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const load = async () => {
@@ -143,7 +150,13 @@ export function PosPage() {
     }
     setCart((items) => {
       const existing = items.find((row) => row.variant.id === item.variant.id);
-      if (existing) return items.map((row) => row.variant.id === item.variant.id ? { ...row, quantity: row.quantity + 1 } : row);
+      if (existing) {
+        if (existing.quantity >= item.variant.stockQuantity) {
+          setError(`المتاح من ${item.displayName} هو ${item.variant.stockQuantity.toLocaleString("ar-EG")} فقط.`);
+          return items;
+        }
+        return items.map((row) => row.variant.id === item.variant.id ? { ...row, quantity: row.quantity + 1 } : row);
+      }
       return [...items, { product: item.product, variant: item.variant, quantity: 1, discount: 0 }];
     });
   };
@@ -172,19 +185,37 @@ export function PosPage() {
       setError("يجب فتح شيفت قبل إتمام البيع.");
       return;
     }
-    setSaving(true);
+    const stockIssue = cart.find((item) => item.quantity > item.variant.stockQuantity);
+    if (stockIssue) {
+      setError(`الكمية المطلوبة من ${stockIssue.product.name} أكبر من المتاح (${stockIssue.variant.stockQuantity.toLocaleString("ar-EG")}).`);
+      return;
+    }
+    const discountIssue = cart.find((item) => item.discount > priceFor(item) * item.quantity);
+    if (discountIssue) {
+      setError(`خصم الصنف ${discountIssue.product.name} أكبر من قيمة السطر.`);
+      return;
+    }
+    if (invoiceDiscount > maxInvoiceDiscount) {
+      setError(`خصم الفاتورة لا يمكن أن يتجاوز ${formatMoney(maxInvoiceDiscount)}.`);
+      return;
+    }
+    const paymentRows = paymentMethod === "MIXED"
+      ? buildMixedPayments(mixedPayments)
+      : [{ method: paymentMethod, amount: paid }];
+    if (!Number.isFinite(paid) || paymentRows.length === 0 || paid < total) {
+      setError(`المدفوع أقل من الإجمالي. المتبقي ${formatMoney(remainingPayment)}.`);
+      return;
+    }
     setError(null);
+    setSaving(true);
     try {
-      const paymentRows = paymentMethod === "MIXED"
-        ? buildMixedPayments(mixedPayments)
-        : [{ method: paymentMethod, amount: paid }];
       const created = await posService.createSale({
         branchId,
         shiftId: shift.id,
         customerId: selectedCustomer?.id,
         items: cart.map((item) => ({ variantId: item.variant.id, productId: item.product.id, quantity: item.quantity, unitPrice: priceFor(item), discount: item.discount })),
         payments: paymentRows,
-        invoiceDiscount,
+        invoiceDiscount: effectiveInvoiceDiscount,
       });
       setInvoice(created);
       setReceiptPayload(await receiptService.getInvoiceReceipt(created.id));
@@ -200,6 +231,50 @@ export function PosPage() {
       setError(saleError instanceof Error ? saleError.message : "تعذر إتمام البيع");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const incrementCartItem = (target: CartItem) => {
+    setCart((items) => items.map((row) => {
+      if (row.variant.id !== target.variant.id) return row;
+      if (row.quantity >= row.variant.stockQuantity) {
+        setError(`وصلت للكمية المتاحة من ${row.product.name}: ${row.variant.stockQuantity.toLocaleString("ar-EG")}.`);
+        return row;
+      }
+      return { ...row, quantity: row.quantity + 1 };
+    }));
+  };
+
+  const decrementCartItem = (target: CartItem) => {
+    setCart((items) => items.map((row) => row.variant.id === target.variant.id ? { ...row, quantity: Math.max(1, row.quantity - 1) } : row));
+  };
+
+  const updateItemDiscount = (target: CartItem, discount: number) => {
+    const maxDiscount = priceFor(target) * target.quantity;
+    setCart((items) => items.map((row) => row.variant.id === target.variant.id ? { ...row, discount: clampMoney(discount, 0, maxDiscount) } : row));
+  };
+
+  const createQuickCustomer = async () => {
+    const name = quickCustomer.name.trim();
+    const phone = quickCustomer.phone.trim();
+    if (!name || !phone) {
+      setError("اسم العميل ورقم الهاتف مطلوبان.");
+      return;
+    }
+    setSavingCustomer(true);
+    setError(null);
+    try {
+      const created = await customersService.createCustomer({ name, phone });
+      setSelectedCustomer(created);
+      setCustomerQuery(created.name);
+      setCustomers((items) => [created, ...items.filter((customer) => customer.id !== created.id)].slice(0, 8));
+      setQuickCustomer({ name: "", phone: "" });
+      setCustomerModalOpen(false);
+      setNotice("تم إضافة العميل وربطه بالفاتورة");
+    } catch (customerError) {
+      setError(customerError instanceof Error ? customerError.message : "تعذر إضافة العميل");
+    } finally {
+      setSavingCustomer(false);
     }
   };
 
@@ -369,11 +444,12 @@ export function PosPage() {
                 <button type="button" className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-danger" onClick={() => setCart((items) => items.filter((row) => row.variant.id !== item.variant.id))}><Trash2 size={16} /></button>
               </div>
               <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-                <AppButton variant="outline" icon={Minus} className="min-h-12 min-w-12 px-0" onClick={() => setCart((items) => items.map((row) => row.variant.id === item.variant.id ? { ...row, quantity: Math.max(1, row.quantity - 1) } : row))}>-</AppButton>
+                <AppButton variant="outline" icon={Minus} className="min-h-12 min-w-12 px-0" onClick={() => decrementCartItem(item)}>-</AppButton>
                 <span className="text-center text-lg font-bold">{item.quantity}</span>
-                <AppButton variant="outline" icon={Plus} className="min-h-12 min-w-12 px-0" onClick={() => setCart((items) => items.map((row) => row.variant.id === item.variant.id ? { ...row, quantity: row.quantity + 1 } : row))}>+</AppButton>
+                <AppButton variant="outline" icon={Plus} className="min-h-12 min-w-12 px-0" disabled={item.quantity >= item.variant.stockQuantity} onClick={() => incrementCartItem(item)}>+</AppButton>
               </div>
-              <TextInput className="mt-2" label="خصم الصنف" type="number" value={item.discount} onChange={(event) => setCart((items) => items.map((row) => row.variant.id === item.variant.id ? { ...row, discount: Number(event.target.value) } : row))} />
+              <p className="mt-1 text-xs text-muted-foreground">المتاح: {item.variant.stockQuantity.toLocaleString("ar-EG")}</p>
+              <TextInput className="mt-2" label="خصم الصنف" type="number" min="0" max={priceFor(item) * item.quantity} value={item.discount} onChange={(event) => updateItemDiscount(item, Number(event.target.value))} />
               <p className="mt-2 text-left text-lg font-extrabold">{formatMoney(priceFor(item) * item.quantity - item.discount)}</p>
             </div>
           ))}
@@ -386,12 +462,12 @@ export function PosPage() {
             <div className="mt-3 grid gap-2 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">المجموع قبل الخصم</span><span className="font-semibold">{formatMoney(subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">خصومات الأصناف</span><span className="font-semibold">{formatMoney(itemDiscount)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">خصم الفاتورة</span><span className="font-semibold">{formatMoney(invoiceDiscount)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">خصم الفاتورة</span><span className="font-semibold">{formatMoney(effectiveInvoiceDiscount)}</span></div>
               <div className="flex justify-between text-success"><span>الباقي للعميل</span><span className="font-bold">{formatMoney(change)}</span></div>
             </div>
           </div>
 
-          <TextInput className="mt-3" label="خصم الفاتورة" type="number" value={invoiceDiscount} onChange={(event) => setInvoiceDiscount(Number(event.target.value))} />
+          <TextInput className="mt-3" label="خصم الفاتورة" type="number" min="0" max={maxInvoiceDiscount} value={invoiceDiscount} onChange={(event) => setInvoiceDiscount(clampMoney(Number(event.target.value), 0, maxInvoiceDiscount))} />
           <div className="mt-3" id="payment-methods">
             <span className="mb-2 block text-sm font-semibold text-foreground">طريقة الدفع</span>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -407,9 +483,11 @@ export function PosPage() {
             <div className="mt-3 grid gap-2 rounded-2xl border border-border p-3">
               <p className="text-sm font-semibold">قسّم المبلغ</p>
               {(["CASH", "CARD", "INSTAPAY", "WALLET"] as const).map((method) => (
-                <TextInput key={method} label={paymentLabel(method)} type="number" value={mixedPayments[method]} onChange={(event) => setMixedPayments((current) => ({ ...current, [method]: Number(event.target.value) }))} />
+                <TextInput key={method} label={paymentLabel(method)} type="number" min="0" value={mixedPayments[method]} onChange={(event) => setMixedPayments((current) => ({ ...current, [method]: Math.max(0, Number(event.target.value) || 0) }))} />
               ))}
-              <p className="text-xs text-muted-foreground">المجموع الحالي: {formatMoney(sumMixed(mixedPayments))}</p>
+              <p className={`text-xs ${remainingPayment > 0 ? "text-warning" : "text-muted-foreground"}`}>
+                المجموع الحالي: {formatMoney(sumMixed(mixedPayments))} {remainingPayment > 0 ? `• المتبقي ${formatMoney(remainingPayment)}` : ""}
+              </p>
             </div>
           ) : (
             <TextInput className="mt-3" label="المبلغ المدفوع" type="number" value={amountPaid} onChange={(event) => setAmountPaid(event.target.value)} />
@@ -417,7 +495,10 @@ export function PosPage() {
 
           {canViewCustomers && (
             <div className="mt-3 rounded-2xl border border-border p-3">
-              <TextInput label="عميل اختياري" placeholder="بحث بالاسم أو الهاتف" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} />
+              <div className="flex items-end gap-2">
+                <TextInput className="flex-1" label="عميل اختياري" placeholder="بحث بالاسم أو الهاتف" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} />
+                {canCreateCustomers && <AppButton variant="outline" icon={UserPlus} onClick={() => setCustomerModalOpen(true)}>عميل جديد</AppButton>}
+              </div>
               {selectedCustomer ? (
                 <div className="mt-2 flex items-center justify-between rounded-xl bg-muted p-2 text-sm">
                   <span>{selectedCustomer.name} - {selectedCustomer.phone}</span>
@@ -466,6 +547,16 @@ export function PosPage() {
           </div>
         )}
       </Modal>
+      <Modal open={customerModalOpen} title="عميل جديد سريع" onClose={() => setCustomerModalOpen(false)}>
+        <div className="grid gap-3">
+          <TextInput label="اسم العميل" value={quickCustomer.name} onChange={(event) => setQuickCustomer((current) => ({ ...current, name: event.target.value }))} />
+          <TextInput label="رقم الهاتف" value={quickCustomer.phone} onChange={(event) => setQuickCustomer((current) => ({ ...current, phone: event.target.value }))} />
+          <div className="flex justify-end gap-2 pt-2">
+            <AppButton variant="outline" onClick={() => setCustomerModalOpen(false)}>إلغاء</AppButton>
+            <AppButton icon={UserPlus} onClick={() => void createQuickCustomer()} disabled={savingCustomer}>{savingCustomer ? "جار الإضافة..." : "إضافة وربط"}</AppButton>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -501,6 +592,11 @@ function buildMixedPayments(mixed: MixedPayments) {
   return (["CASH", "CARD", "INSTAPAY", "WALLET"] as const)
     .map((method) => ({ method, amount: mixed[method] }))
     .filter((payment) => payment.amount > 0);
+}
+
+function clampMoney(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
 }
 
 function formatMoney(value: number) {

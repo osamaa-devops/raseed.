@@ -243,7 +243,7 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
   }
 
   private generateLicenseKey(fingerprint: string) {
-    const secret = process.env.LICENSE_SECRET ?? "raseed-local-license-secret";
+    const secret = this.licenseSecret();
     const hash = createHash("sha256").update(`${secret}|${fingerprint}`).digest("hex").toUpperCase();
     return `RASEED-${hash.slice(0, 4)}-${hash.slice(4, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}`;
   }
@@ -254,14 +254,23 @@ export class SystemService implements OnModuleInit, OnModuleDestroy {
 
   private backupKey() {
     return createHash("sha256")
-      .update(`backup|${process.env.LICENSE_SECRET ?? "raseed-local-license-secret"}|${this.machineFingerprint()}`)
+      .update(`backup|${this.licenseSecret()}|${this.machineFingerprint()}`)
       .digest();
   }
 
   private encryptionKey(fingerprint: string) {
     return createHash("sha256")
-      .update(`license-file|${fingerprint}|${process.env.LICENSE_SECRET ?? "raseed-local-license-secret"}`)
+      .update(`license-file|${fingerprint}|${this.licenseSecret()}`)
       .digest();
+  }
+
+  private licenseSecret() {
+    const secret = process.env.LICENSE_SECRET?.trim();
+    if (secret) return secret;
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("LICENSE_SECRET is required in production.");
+    }
+    return "raseed-development-license-secret";
   }
 
   private async createPlainDump() {

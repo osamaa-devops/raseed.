@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { BarChart3, CheckCircle, Package, Receipt, ScanBarcode, ShieldCheck, Store, Users } from "lucide-react";
 import { AppButton } from "../../components/ui/AppButton";
 import { AppCard } from "../../components/ui/AppCard";
+import { RaseedLogo } from "../../components/brand/RaseedLogo";
 
 const benefits = [
   { icon: ScanBarcode, title: "بيع أسرع بالباركود" },
@@ -18,8 +19,7 @@ export function LandingPage() {
       <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary font-bold text-white">ر</span>
-          <span className="text-lg font-bold">رصيد</span>
+            <RaseedLogo markClassName="h-9 w-9 rounded-lg" />
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/login"><AppButton variant="ghost">تسجيل الدخول</AppButton></Link>

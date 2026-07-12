@@ -94,6 +94,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new ForbiddenException("انتهى اشتراك المتجر أو تم إيقافه. برجاء التواصل مع الدعم.");
     }
   }
+
 }
 
 function isAllowedWhenSubscriptionBlocked(path: string) {
