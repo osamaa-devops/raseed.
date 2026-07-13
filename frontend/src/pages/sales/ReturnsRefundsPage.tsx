@@ -10,7 +10,8 @@ import { PageHeader } from "../../components/ui/PageHeader";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { invoicesService } from "../../services/invoicesService";
 import { returnsService } from "../../services/returnsService";
-import type { Invoice, Payment, Return } from "../../types";
+import { shiftsService } from "../../services/shiftsService";
+import type { CashierShift, Invoice, Payment, Return } from "../../types";
 
 const paymentLabels: Record<Payment["method"], string> = {
   CASH: "نقدي",
@@ -37,6 +38,7 @@ export function ReturnsRefundsPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [shift, setShift] = useState<CashierShift | null>(null);
 
   const selectedItems = useMemo(() => {
     if (!invoice?.items) return [];
@@ -58,6 +60,7 @@ export function ReturnsRefundsPage() {
 
   useEffect(() => {
     void loadReturns();
+    if (branchId) void shiftsService.getCurrentShift(branchId).then(setShift).catch(() => setShift(null));
     if (initialInvoiceNumber) void searchInvoice();
   }, [branchId]);
 
@@ -67,6 +70,8 @@ export function ReturnsRefundsPage() {
     try {
       const found = await invoicesService.getInvoiceByNumber(invoiceNumber.trim());
       setInvoice(found);
+      const originalMethods = Array.from(new Set((found.payments ?? []).filter((payment) => payment.amount > 0).map((payment) => payment.method)));
+      if (originalMethods.length === 1) setRefundMethod(originalMethods[0]);
       const nextLines: ReturnLineState = {};
       found.items?.forEach((item) => {
         nextLines[item.id] = { quantity: 0, restocked: true };
@@ -80,6 +85,10 @@ export function ReturnsRefundsPage() {
 
   const submitReturn = async () => {
     if (!invoice || !branchId) return;
+    if (!shift) {
+      setError("افتح شيفت الكاشير أولًا قبل تنفيذ المرتجع.");
+      return;
+    }
     if (selectedItems.length === 0) {
       setError("اختر صنفًا واحدًا على الأقل للمرتجع.");
       return;
@@ -93,6 +102,7 @@ export function ReturnsRefundsPage() {
     try {
       const created = await returnsService.createReturn({
         branchId,
+        shiftId: shift.id,
         invoiceId: invoice.id,
         reason,
         refundMethod,
@@ -134,6 +144,9 @@ export function ReturnsRefundsPage() {
             </div>
             <StatusBadge label={invoice.status === "PAID" ? "مدفوعة" : invoice.status === "PARTIALLY_REFUNDED" ? "مرتجع جزئي" : "مرتجعة"} tone={invoice.status === "REFUNDED" ? "warning" : "success"} />
           </div>
+          {Array.from(new Set((invoice.payments ?? []).filter((payment) => payment.amount > 0).map((payment) => payment.method))).length > 1 && (
+            <p className="mb-4 rounded-lg bg-warning/10 p-3 text-sm font-semibold text-warning">الفاتورة مدفوعة بأكثر من طريقة؛ تنفيذ المرتجع يحتاج حساب Owner أو Manager.</p>
+          )}
           <DataTable
             columns={["الصنف", "المباع", "المرتجع", "المتاح", "سعر الوحدة", "كمية المرتجع", "إعادة للمخزون"]}
             rows={invoice.items ?? []}

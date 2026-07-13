@@ -64,7 +64,9 @@ export class InvoicesService {
     const storeId = this.requireStore(user);
     const invoice = await this.prisma.invoice.findFirst({ where: { storeId, invoiceNumber }, include: invoiceInclude });
     if (!invoice) throw new NotFoundException("Invoice not found.");
-    if (!this.canViewAll(user) && invoice.cashierId !== user.id) throw new ForbiddenException("Cannot view this invoice.");
+    if (!this.canViewAll(user) && invoice.cashierId !== user.id && !this.canReturnAtBranch(user, invoice.branchId)) {
+      throw new ForbiddenException("Cannot view this invoice.");
+    }
     return this.serialize(invoice);
   }
 
@@ -139,6 +141,10 @@ export class InvoicesService {
 
   private canViewAll(user: AuthenticatedUser) {
     return user.roleName === "owner" || user.roleName === "manager" || user.permissions.includes("users.manage");
+  }
+
+  private canReturnAtBranch(user: AuthenticatedUser, branchId: string) {
+    return user.permissions.includes("returns.create") && (!user.branchId || user.branchId === branchId);
   }
 
   private serialize(invoice: Prisma.InvoiceGetPayload<{ include: typeof invoiceInclude }>) {

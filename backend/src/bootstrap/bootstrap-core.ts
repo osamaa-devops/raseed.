@@ -177,25 +177,15 @@ export const rolePermissions: Record<string, string[]> = {
     "pos.hold_order",
     "pos.view_recent_invoices",
     "categories.view",
-    "inventory.view",
-    "inventory.view_alerts",
     "sales.view",
     "invoices.view",
     "invoices.print",
     "printing.receipts",
-    "printing.barcodes",
     "shifts.open",
     "shifts.close",
     "shifts.view",
     "returns.view",
     "returns.create",
-    "reports.view",
-    "closing.view",
-    "closing.create",
-    "settings.receipt.view",
-    "settings.receipt.update",
-    "backup.manage",
-    "license.manage",
   ],
   inventory: [
     "products.view",
@@ -347,4 +337,29 @@ export async function seedCoreReferenceData(prisma: PrismaClient) {
       status: "ACTIVE",
     },
   });
+}
+
+export async function syncSystemRolePermissions(prisma: PrismaClient) {
+  const roles = await prisma.role.findMany({
+    where: { isSystem: true, name: { in: Object.keys(rolePermissions) } },
+    select: { id: true, name: true },
+  });
+
+  for (const role of roles) {
+    const desiredKeys = rolePermissions[role.name] ?? [];
+    const permissions = await prisma.permission.findMany({ where: { key: { in: desiredKeys } }, select: { id: true } });
+    const desiredIds = permissions.map((permission) => permission.id);
+    await prisma.$transaction([
+      prisma.rolePermission.deleteMany({
+        where: {
+          roleId: role.id,
+          ...(desiredIds.length ? { permissionId: { notIn: desiredIds } } : {}),
+        },
+      }),
+      prisma.rolePermission.createMany({
+        data: desiredIds.map((permissionId) => ({ roleId: role.id, permissionId })),
+        skipDuplicates: true,
+      }),
+    ]);
+  }
 }

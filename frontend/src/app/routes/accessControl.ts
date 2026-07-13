@@ -6,6 +6,7 @@ type AccessRule = {
 };
 
 const routeRules: Record<string, AccessRule> = {
+  "/dashboard": { anyPermissions: ["dashboard.view"] },
   "/pos": { anyPermissions: ["pos.access"] },
   "/shifts": { anyPermissions: ["shifts.view"] },
   "/closing": { anyPermissions: ["closing.view"] },

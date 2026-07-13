@@ -60,17 +60,22 @@ export const ownerPermissions = [
 ];
 
 export const cashierPermissions = [
-  "products.view",
+  "dashboard.view",
   "categories.view",
-  "inventory.view",
   "pos.access",
+  "pos.catalog.view",
   "pos.sell",
+  "pos.hold_order",
   "pos.view_recent_invoices",
+  "sales.view",
   "invoices.view",
+  "invoices.print",
   "printing.receipts",
   "shifts.open",
   "shifts.close",
   "shifts.view",
+  "returns.view",
+  "returns.create",
 ];
 
 export type TestStoreContext = {

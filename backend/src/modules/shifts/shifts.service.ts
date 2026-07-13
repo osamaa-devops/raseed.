@@ -58,10 +58,14 @@ export class ShiftsService {
       throw new ForbiddenException("Only the cashier or a manager can close this shift.");
     }
     const cashPayments = await this.prisma.payment.aggregate({
-      where: { storeId, branchId: shift.branchId, method: "CASH", invoice: { shiftId: shift.id } },
+      where: { storeId, branchId: shift.branchId, method: "CASH", amount: { gt: 0 }, invoice: { shiftId: shift.id } },
       _sum: { amount: true },
     });
-    const expectedCash = shift.openingCash.plus(cashPayments._sum.amount ?? 0);
+    const cashReturns = await this.prisma.return.aggregate({
+      where: { storeId, branchId: shift.branchId, shiftId: shift.id, refundMethod: "CASH", status: "COMPLETED" },
+      _sum: { refundTotal: true },
+    });
+    const expectedCash = shift.openingCash.plus(cashPayments._sum.amount ?? 0).minus(cashReturns._sum.refundTotal ?? 0);
     const actualCash = new Prisma.Decimal(dto.actualCash);
     const difference = actualCash.minus(expectedCash);
     const updated = await this.prisma.cashierShift.update({
@@ -77,7 +81,12 @@ export class ShiftsService {
       },
       include: shiftInclude,
     });
-    await this.log(user, shift.branchId, "shift.closed", shift.id, { actualCash: dto.actualCash, expectedCash: Number(expectedCash), difference: Number(difference) });
+    await this.log(user, shift.branchId, "shift.closed", shift.id, {
+      actualCash: dto.actualCash,
+      expectedCash: Number(expectedCash),
+      cashReturns: Number(cashReturns._sum.refundTotal ?? 0),
+      difference: Number(difference),
+    });
     return this.serializeShift(updated);
   }
 

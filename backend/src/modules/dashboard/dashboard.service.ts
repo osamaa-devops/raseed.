@@ -16,14 +16,18 @@ export class DashboardService {
 
   async overview(user: AuthenticatedUser, query: DashboardOverviewQueryDto) {
     const storeId = this.requireStore(user);
-    if (query.branchId) await this.assertBranch(storeId, query.branchId);
+    const isCashier = user.roleName === "cashier";
+    const branchId = isCashier ? user.branchId : query.branchId;
+    if (isCashier && !branchId) throw new BadRequestException("Cashier dashboard requires an assigned branch.");
+    if (branchId) await this.assertBranch(storeId, branchId);
     const date = query.date ? new Date(query.date) : new Date();
     const range = dayRange(date);
     const previousRange = dayRange(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1));
-    const branchWhere = query.branchId ? { branchId: query.branchId } : {};
-    const invoiceWhere: Prisma.InvoiceWhereInput = { storeId, ...branchWhere, status: { in: salesStatuses }, createdAt: range };
-    const previousInvoiceWhere: Prisma.InvoiceWhereInput = { storeId, ...branchWhere, status: { in: salesStatuses }, createdAt: previousRange };
-    const returnWhere: Prisma.ReturnWhereInput = { storeId, ...branchWhere, status: "COMPLETED", createdAt: range };
+    const branchWhere = branchId ? { branchId } : {};
+    const cashierWhere = isCashier ? { cashierId: user.id } : {};
+    const invoiceWhere: Prisma.InvoiceWhereInput = { storeId, ...branchWhere, ...cashierWhere, status: { in: salesStatuses }, createdAt: range };
+    const previousInvoiceWhere: Prisma.InvoiceWhereInput = { storeId, ...branchWhere, ...cashierWhere, status: { in: salesStatuses }, createdAt: previousRange };
+    const returnWhere: Prisma.ReturnWhereInput = { storeId, ...branchWhere, ...cashierWhere, status: "COMPLETED", createdAt: range };
     const expenseWhere: Prisma.ExpenseWhereInput = { storeId, ...branchWhere, deletedAt: null, expenseDate: range };
 
     const [sales, previousSales, returns, expenses, invoicesCount, previousInvoicesCount, payments, topProducts, recentInvoices, cashierPerformance, lowStockCount, expiryAlertsCount, customerDebt] =
@@ -31,28 +35,28 @@ export class DashboardService {
         this.sumInvoices(invoiceWhere),
         this.sumInvoices(previousInvoiceWhere),
         this.sumReturns(returnWhere),
-        this.sumExpenses(expenseWhere),
+        isCashier ? Promise.resolve(0) : this.sumExpenses(expenseWhere),
         this.prisma.invoice.count({ where: invoiceWhere }),
         this.prisma.invoice.count({ where: previousInvoiceWhere }),
-        this.paymentTotals(storeId, query.branchId, range),
-        this.topSellingProducts(storeId, query.branchId, range, 5),
-        this.recentInvoices(storeId, query.branchId),
-        this.cashierPerformance(storeId, query.branchId, range),
-        this.lowStockCount(storeId, query.branchId),
-        this.expiryAlertsCount(storeId, query.branchId),
-        this.customerDebt(storeId),
+        this.paymentTotals(storeId, branchId ?? undefined, range, isCashier ? user.id : undefined),
+        this.topSellingProducts(storeId, branchId ?? undefined, range, 5, isCashier ? user.id : undefined),
+        this.recentInvoices(storeId, branchId ?? undefined, isCashier ? user.id : undefined),
+        this.cashierPerformance(storeId, branchId ?? undefined, range, isCashier ? user.id : undefined),
+        isCashier ? Promise.resolve(0) : this.lowStockCount(storeId, branchId ?? undefined),
+        isCashier ? Promise.resolve(0) : this.expiryAlertsCount(storeId, branchId ?? undefined),
+        isCashier ? Promise.resolve(0) : this.customerDebt(storeId),
       ]);
 
-    const grossProfitEstimate = await this.grossProfit(storeId, query.branchId, range);
-    const previousGrossProfit = await this.grossProfit(storeId, query.branchId, previousRange);
+    const grossProfitEstimate = isCashier ? 0 : await this.grossProfit(storeId, branchId ?? undefined, range);
+    const previousGrossProfit = isCashier ? 0 : await this.grossProfit(storeId, branchId ?? undefined, previousRange);
     const netSales = sales - returns;
     await this.activityLogs.log({
       storeId,
-      branchId: query.branchId ?? user.branchId,
+      branchId: branchId ?? user.branchId,
       userId: user.id,
       action: "dashboard.viewed",
       entityType: "Dashboard",
-      metadata: { date: toDateKey(date), branchId: query.branchId },
+      metadata: { date: toDateKey(date), branchId, cashierScoped: isCashier },
     });
 
     return {
@@ -96,10 +100,10 @@ export class DashboardService {
     return Number(result._sum.amount ?? 0);
   }
 
-  private async paymentTotals(storeId: string, branchId: string | undefined, createdAt: Prisma.DateTimeFilter) {
+  private async paymentTotals(storeId: string, branchId: string | undefined, createdAt: Prisma.DateTimeFilter, cashierId?: string) {
     const rows = await this.prisma.payment.groupBy({
       by: ["method"],
-      where: { storeId, branchId: branchId || undefined, createdAt },
+      where: { storeId, branchId: branchId || undefined, createdAt, invoice: cashierId ? { cashierId } : undefined },
       _sum: { amount: true },
     });
     return rows.reduce(
@@ -122,10 +126,10 @@ export class DashboardService {
     );
   }
 
-  private async topSellingProducts(storeId: string, branchId: string | undefined, createdAt: Prisma.DateTimeFilter, take: number) {
+  private async topSellingProducts(storeId: string, branchId: string | undefined, createdAt: Prisma.DateTimeFilter, take: number, cashierId?: string) {
     const rows = await this.prisma.invoiceItem.groupBy({
       by: ["productId", "productName"],
-      where: { storeId, branchId: branchId || undefined, invoice: { status: { in: salesStatuses }, createdAt } },
+      where: { storeId, branchId: branchId || undefined, invoice: { status: { in: salesStatuses }, createdAt, cashierId } },
       _sum: { quantity: true, lineTotal: true },
       orderBy: { _sum: { quantity: "desc" } },
       take,
@@ -133,10 +137,10 @@ export class DashboardService {
     return rows.map((row) => ({ productId: row.productId, productName: row.productName, quantity: Number(row._sum.quantity ?? 0), sales: Number(row._sum.lineTotal ?? 0) }));
   }
 
-  private recentInvoices(storeId: string, branchId?: string) {
+  private recentInvoices(storeId: string, branchId?: string, cashierId?: string) {
     return this.prisma.invoice
       .findMany({
-        where: { storeId, branchId: branchId || undefined },
+        where: { storeId, branchId: branchId || undefined, cashierId },
         include: { cashier: { select: { id: true, name: true } } },
         orderBy: { createdAt: "desc" },
         take: 6,
@@ -144,10 +148,10 @@ export class DashboardService {
       .then((items) => items.map((item) => ({ id: item.id, invoiceNumber: item.invoiceNumber, total: Number(item.total), status: item.status, cashier: item.cashier, createdAt: item.createdAt })));
   }
 
-  private async cashierPerformance(storeId: string, branchId: string | undefined, createdAt: Prisma.DateTimeFilter) {
+  private async cashierPerformance(storeId: string, branchId: string | undefined, createdAt: Prisma.DateTimeFilter, cashierId?: string) {
     const rows = await this.prisma.invoice.groupBy({
       by: ["cashierId"],
-      where: { storeId, branchId: branchId || undefined, status: { in: salesStatuses }, createdAt },
+      where: { storeId, branchId: branchId || undefined, cashierId, status: { in: salesStatuses }, createdAt },
       _sum: { total: true },
       _count: { id: true },
       orderBy: { _sum: { total: "desc" } },

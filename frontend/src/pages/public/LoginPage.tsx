@@ -25,6 +25,8 @@ export function LoginPage() {
       const response = await login(identity.trim(), password.trim());
       if (response.role?.name === "super_admin") {
         navigate("/super-admin");
+      } else if (response.permissions.includes("pos.access") && !response.permissions.includes("dashboard.view")) {
+        navigate("/pos");
       } else {
         navigate("/dashboard");
       }

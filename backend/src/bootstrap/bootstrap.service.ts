@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { PrismaService } from "../prisma/prisma.service";
-import { seedCoreReferenceData, rolePermissions } from "./bootstrap-core";
+import { rolePermissions, seedCoreReferenceData, syncSystemRolePermissions } from "./bootstrap-core";
 import { BootstrapSetupDto } from "./bootstrap.dto";
 import * as bcrypt from "bcryptjs";
 import { getLogsDir } from "../common/runtime/runtime-paths";
@@ -30,6 +30,7 @@ export class BootstrapService implements OnApplicationBootstrap {
     await this.writeLog("bootstrap.start", "Starting local bootstrap checks.");
     await this.prisma.$queryRaw`SELECT 1`;
     await seedCoreReferenceData(this.prisma);
+    await syncSystemRolePermissions(this.prisma);
     const status = await this.getStatus();
     if (status.ownerCount === 0) {
       await this.writeLog("bootstrap.setup.required", "No owner/admin exists. Setup wizard required.");

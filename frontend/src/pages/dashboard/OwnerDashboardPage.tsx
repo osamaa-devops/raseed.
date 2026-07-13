@@ -15,6 +15,7 @@ export function OwnerDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const branchId = auth?.branch?.id ?? auth?.user.branchId ?? undefined;
+  const isCashier = auth?.role?.name === "cashier";
 
   useEffect(() => {
     if (!hasPermission("dashboard.view")) {
@@ -37,7 +38,7 @@ export function OwnerDashboardPage() {
     <div>
       <PageHeader
         title="لوحة التحكم"
-        description={`ملخص تشغيل ${auth?.store?.name ?? "المتجر"} ليوم ${new Date(overview.date).toLocaleDateString("ar-EG")} بطريقة سريعة ومفهومة.`}
+        description={isCashier ? `ملخص مبيعاتك وشيفتك ليوم ${new Date(overview.date).toLocaleDateString("ar-EG")}.` : `ملخص تشغيل ${auth?.store?.name ?? "المتجر"} ليوم ${new Date(overview.date).toLocaleDateString("ar-EG")} بطريقة سريعة ومفهومة.`}
         actions={<AppButton icon={ShoppingCart} onClick={() => (window.location.href = "/pos")}>فتح الكاشير</AppButton>}
       />
 
@@ -50,9 +51,9 @@ export function OwnerDashboardPage() {
               <p className="mt-2 text-sm text-muted-foreground">إجمالي المبيعات اليوم من {overview.invoicesCount} فاتورة، بمتوسط {formatMoney(overview.averageInvoiceValue)} للفاتورة.</p>
             </div>
             <div className="rounded-2xl border border-primary/20 bg-background/75 p-4">
-              <p className="text-xs text-muted-foreground">صافي الربح التقديري</p>
-              <p className="mt-1 text-2xl font-extrabold text-foreground">{formatMoney(overview.netProfitEstimate)}</p>
-              <p className={`mt-2 text-xs font-semibold ${overview.profitChangePercent >= 0 ? "text-success" : "text-danger"}`}>{formatSignedPercent(overview.profitChangePercent)} عن أمس</p>
+              <p className="text-xs text-muted-foreground">{isCashier ? "مرتجعاتك اليوم" : "صافي الربح التقديري"}</p>
+              <p className="mt-1 text-2xl font-extrabold text-foreground">{formatMoney(isCashier ? overview.todayReturns : overview.netProfitEstimate)}</p>
+              <p className={`mt-2 text-xs font-semibold ${isCashier || overview.profitChangePercent >= 0 ? "text-success" : "text-danger"}`}>{isCashier ? `${overview.returnsCount} عملية مرتجع` : `${formatSignedPercent(overview.profitChangePercent)} عن أمس`}</p>
             </div>
           </div>
         </AppCard>
@@ -60,19 +61,19 @@ export function OwnerDashboardPage() {
           <h2 className="text-sm font-bold text-foreground">إجراءات سريعة</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <QuickLink to="/pos" icon={ShoppingCart} title="بيع جديد" description="افتح شاشة الكاشير مباشرة" />
-            <QuickLink to="/products" icon={Package} title="إضافة منتج" description="أضف صنفًا أو راجع الكتالوج" />
-            <QuickLink to="/inventory" icon={AlertTriangle} title="فحص المخزون" description="راجع النواقص والحركات" />
-            <QuickLink to="/reports" icon={BarChart3} title="عرض التقارير" description="راجع المبيعات والربح" />
+            <QuickLink to="/sales" icon={Receipt} title="فواتيري" description="راجع الفواتير والطباعة" />
+            {isCashier ? <QuickLink to="/returns" icon={Wallet} title="مرتجع" description="ابحث برقم الفاتورة" /> : <QuickLink to="/products" icon={Package} title="إضافة منتج" description="أضف صنفًا أو راجع الكتالوج" />}
+            {!isCashier && <QuickLink to="/reports" icon={BarChart3} title="عرض التقارير" description="راجع المبيعات والربح" />}
           </div>
         </AppCard>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Kpi title="مبيعات اليوم" value={overview.todaySales} suffix="ج" hint={formatSignedPercent(overview.salesChangePercent, "مقارنة بأمس")} icon={TrendingUp} tone="primary" />
-        <Kpi title="صافي الربح" value={overview.netProfitEstimate} suffix="ج" hint={formatSignedPercent(overview.profitChangePercent, "مقارنة بأمس")} icon={Wallet} tone="success" />
+        {!isCashier && <Kpi title="صافي الربح" value={overview.netProfitEstimate} suffix="ج" hint={formatSignedPercent(overview.profitChangePercent, "مقارنة بأمس")} icon={Wallet} tone="success" />}
         <Kpi title="عدد الفواتير" value={overview.invoicesCount} hint={`المتوسط ${formatMoney(overview.averageInvoiceValue)}`} icon={Receipt} tone="info" />
-        <Kpi title="المخزون المنخفض" value={overview.lowStockCount} hint={`${overview.expiryAlertsCount} دفعات بصلاحية قريبة`} icon={AlertTriangle} tone="warning" />
-        <Kpi title="المصاريف" value={overview.todayExpenses} suffix="ج" hint={`المرتجعات ${formatMoney(overview.todayReturns)}`} icon={Wallet} tone="danger" />
+        {!isCashier && <Kpi title="المخزون المنخفض" value={overview.lowStockCount} hint={`${overview.expiryAlertsCount} دفعات بصلاحية قريبة`} icon={AlertTriangle} tone="warning" />}
+        {!isCashier && <Kpi title="المصاريف" value={overview.todayExpenses} suffix="ج" hint={`المرتجعات ${formatMoney(overview.todayReturns)}`} icon={Wallet} tone="danger" />}
         <Kpi title="أفضل المنتجات" value={overview.topSellingProducts.length} hint={overview.topSellingProducts[0] ? `الأعلى: ${overview.topSellingProducts[0].productName}` : "لا توجد مبيعات بعد"} icon={Package} tone="muted" />
       </div>
 
@@ -95,7 +96,7 @@ export function OwnerDashboardPage() {
             <StateItem icon={Wallet} label="مدفوعات نقدية" value={formatMoney(overview.cashPayments)} />
             <StateItem icon={Wallet} label="بطاقات" value={formatMoney(overview.cardPayments)} />
             <StateItem icon={Wallet} label="محافظ" value={formatMoney(overview.walletPayments)} />
-            <StateItem icon={Wallet} label="ديون العملاء" value={formatMoney(overview.totalCustomerDebt ?? 0)} />
+            {!isCashier && <StateItem icon={Wallet} label="ديون العملاء" value={formatMoney(overview.totalCustomerDebt ?? 0)} />}
           </div>
         </AppCard>
       </div>
@@ -118,8 +119,8 @@ export function OwnerDashboardPage() {
         <AppCard>
           <h2 className="mb-4 flex items-center gap-2 font-bold"><Package size={18} /> ملخص التشغيل</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <StateItem icon={AlertTriangle} label="منتجات قليلة المخزون" value={overview.lowStockCount} />
-            <StateItem icon={AlertTriangle} label="تنبيهات صلاحية" value={overview.expiryAlertsCount} />
+            {!isCashier && <StateItem icon={AlertTriangle} label="منتجات قليلة المخزون" value={overview.lowStockCount} />}
+            {!isCashier && <StateItem icon={AlertTriangle} label="تنبيهات صلاحية" value={overview.expiryAlertsCount} />}
             <StateItem icon={Receipt} label="مرتجعات" value={overview.returnsCount} />
             <StateItem icon={Wallet} label="إجمالي المدفوعات" value={formatMoney(overview.cashPayments + overview.cardPayments + overview.walletPayments)} />
           </div>
@@ -129,7 +130,7 @@ export function OwnerDashboardPage() {
       <div className="mt-6">
         <AppCard>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-bold">أداء الكاشيرين</h2>
+            <h2 className="font-bold">{isCashier ? "أداؤك اليوم" : "أداء الكاشيرين"}</h2>
             <Link to="/sales" className="inline-flex items-center gap-1 text-sm font-semibold text-primary">عرض المبيعات <ArrowLeft size={16} /></Link>
           </div>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

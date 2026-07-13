@@ -15,6 +15,7 @@ const returnInclude = {
 
 const invoiceWithItemsInclude = {
   items: true,
+  payments: true,
   returns: true,
 } as const;
 
@@ -69,14 +70,28 @@ export class ReturnsService {
     if (!user.permissions.includes("returns.create") && !user.permissions.includes("invoices.refund")) {
       throw new ForbiddenException("Missing return permissions.");
     }
+    if (user.roleName === "cashier" && user.branchId && dto.branchId !== user.branchId) {
+      throw new ForbiddenException("Cashiers can only create returns in their assigned branch.");
+    }
     await this.assertBranch(storeId, dto.branchId);
     const invoice = await this.prisma.invoice.findUnique({ where: { id: dto.invoiceId }, include: invoiceWithItemsInclude });
     if (!invoice || invoice.storeId !== storeId || invoice.branchId !== dto.branchId) throw new NotFoundException("Invoice not found.");
     if (!["PAID", "PARTIALLY_REFUNDED"].includes(invoice.status)) throw new BadRequestException("Invoice is not returnable.");
-    if (!this.canViewAll(user) && invoice.cashierId !== user.id) throw new ForbiddenException("Cannot return this invoice.");
-    if (dto.shiftId) await this.validateShift(storeId, dto.branchId, user, dto.shiftId);
+    if (!this.canViewAll(user) && invoice.cashierId !== user.id && !user.permissions.includes("returns.create")) {
+      throw new ForbiddenException("Cannot return this invoice.");
+    }
+    const shiftId = await this.resolveReturnShift(storeId, dto.branchId, user, dto.shiftId);
+
+    if (!this.canViewAll(user)) {
+      const originalMethods = Array.from(new Set(invoice.payments.filter((payment) => payment.amount.greaterThan(0)).map((payment) => payment.method)));
+      if (originalMethods.length !== 1 || originalMethods[0] !== dto.refundMethod) {
+        throw new ForbiddenException("Mixed payments or a different refund method require owner or manager approval.");
+      }
+    }
 
     const itemById = new Map(invoice.items.map((item) => [item.id, item]));
+    const invoiceLinesTotal = invoice.items.reduce((sum, item) => sum.plus(item.lineTotal), new Prisma.Decimal(0));
+    const netRatio = invoiceLinesTotal.greaterThan(0) ? invoice.total.div(invoiceLinesTotal) : new Prisma.Decimal(0);
     let refundTotal = new Prisma.Decimal(0);
     const calculatedItems = dto.items.map((item) => {
       const invoiceItem = itemById.get(item.invoiceItemId);
@@ -84,7 +99,7 @@ export class ReturnsService {
       const quantity = new Prisma.Decimal(item.quantity);
       const returnable = invoiceItem.quantity.minus(invoiceItem.returnedQuantity);
       if (quantity.greaterThan(returnable)) throw new BadRequestException("Return quantity exceeds remaining returnable quantity.");
-      const proportionalRefund = invoiceItem.lineTotal.div(invoiceItem.quantity).mul(quantity);
+      const proportionalRefund = invoiceItem.lineTotal.div(invoiceItem.quantity).mul(quantity).mul(netRatio);
       refundTotal = refundTotal.plus(proportionalRefund);
       return {
         input: item,
@@ -103,7 +118,7 @@ export class ReturnsService {
           branchId: dto.branchId,
           invoiceId: invoice.id,
           cashierId: user.id,
-          shiftId: dto.shiftId,
+          shiftId,
           returnNumber,
           reason: dto.reason.trim(),
           refundTotal,
@@ -129,10 +144,13 @@ export class ReturnsService {
             restocked: row.restocked,
           },
         });
-        await tx.invoiceItem.update({
-          where: { id: row.invoiceItem.id },
+        const updatedItem = await tx.invoiceItem.updateMany({
+          where: { id: row.invoiceItem.id, returnedQuantity: row.invoiceItem.returnedQuantity },
           data: { returnedQuantity: nextReturnedQuantity },
         });
+        if (updatedItem.count !== 1) {
+          throw new BadRequestException("The invoice return quantities changed. Reload the invoice and try again.");
+        }
         if (row.restocked) {
           const stock = await tx.inventoryStock.upsert({
             where: { storeId_branchId_productId: { storeId, branchId: dto.branchId, productId: row.invoiceItem.productId } },
@@ -235,6 +253,20 @@ export class ReturnsService {
       throw new BadRequestException("Shift is not open for this branch.");
     }
     if (shift.cashierId !== user.id && !this.canViewAll(user)) throw new ForbiddenException("This shift does not belong to the current cashier.");
+  }
+
+  private async resolveReturnShift(storeId: string, branchId: string, user: AuthenticatedUser, requestedShiftId?: string) {
+    if (requestedShiftId) {
+      await this.validateShift(storeId, branchId, user, requestedShiftId);
+      return requestedShiftId;
+    }
+    if (user.roleName !== "cashier") return undefined;
+    const shift = await this.prisma.cashierShift.findFirst({
+      where: { storeId, branchId, cashierId: user.id, status: "OPEN" },
+      orderBy: { openedAt: "desc" },
+    });
+    if (!shift) throw new BadRequestException("Open a cashier shift before creating a return.");
+    return shift.id;
   }
 
   private canViewAll(user: AuthenticatedUser) {

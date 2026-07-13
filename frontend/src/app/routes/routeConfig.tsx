@@ -63,7 +63,7 @@ export const routeConfig: RouteObject[] = [
       {
         element: <DashboardLayout />,
         children: [
-          { path: "/dashboard", element: <OwnerDashboardPage /> },
+          { path: "/dashboard", element: <ProtectedRoute path="/dashboard"><OwnerDashboardPage /></ProtectedRoute> },
           { path: "/shifts", element: <ProtectedRoute path="/shifts"><ShiftManagementPage /></ProtectedRoute> },
           { path: "/closing", element: <ProtectedRoute path="/closing"><EndOfDayClosingPage /></ProtectedRoute> },
           { path: "/products", element: <ProtectedRoute path="/products"><ProductsPage /></ProtectedRoute> },
