@@ -15,6 +15,7 @@ param(
   [string]$RoleName = "raseed_app",
   [string]$Port = "5432",
   [string]$PostgresServiceName = "",
+  [string]$PostgresPassword = "",
   [switch]$PreventSleep
 )
 
@@ -60,6 +61,10 @@ if ($postgresService.Status -ne "Running") {
   Start-Service -Name $postgresService.Name
 }
 
+if ($PostgresPassword) {
+  $env:PGPASSWORD = $PostgresPassword
+}
+
 # Restart the database service after a crash. The first two retries are one minute apart.
 & sc.exe failure $postgresService.Name reset= 86400 actions= restart/60000/restart/60000/restart/60000 | Out-Null
 & sc.exe failureflag $postgresService.Name 1 | Out-Null
@@ -82,6 +87,7 @@ if ($dbExists -ne "1") {
 }
 
 & $psql -v ON_ERROR_STOP=1 -U postgres -p $Port -d $DatabaseName -c "GRANT ALL ON SCHEMA public TO `"$escapedRole`";"
+$env:PGPASSWORD = $null
 
 $configDirectory = Join-Path $env:APPDATA "Raseed"
 New-Item -ItemType Directory -Force -Path $configDirectory | Out-Null

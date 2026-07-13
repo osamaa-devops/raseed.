@@ -6,7 +6,7 @@ const isWin = process.platform === "win32";
 const npmCmd = isWin ? "npm.cmd" : "npm";
 const electronBuilder = path.join(root, "node_modules", ".bin", isWin ? "electron-builder.cmd" : "electron-builder");
 
-if (isWin && process.env.RASEED_ALLOW_UNSIGNED_RELEASE !== "true" && !process.env.CSC_LINK) {
+if (process.env.RASEED_ALLOW_UNSIGNED_RELEASE !== "true" && !process.env.CSC_LINK) {
   throw new Error("A commercial Windows release requires code signing. Set CSC_LINK and CSC_KEY_PASSWORD, or explicitly set RASEED_ALLOW_UNSIGNED_RELEASE=true for a non-commercial test build.");
 }
 
@@ -27,5 +27,7 @@ function run(command, args) {
 
 run(npmCmd, ["run", "backend:build"]);
 run(npmCmd, ["run", "frontend:build"]);
+run(process.execPath, [path.join(root, "scripts", "fetch-postgresql-installer.cjs")]);
 run(electronBuilder, ["--win", "nsis"]);
 run(process.execPath, [path.join(root, "scripts", "create-release-checksum.cjs")]);
+run(process.execPath, [path.join(root, "scripts", "verify-desktop-release.cjs")]);

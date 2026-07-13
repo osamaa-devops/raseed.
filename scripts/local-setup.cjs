@@ -14,7 +14,7 @@ async function main() {
   console.log(result.created ? `تم إنشاء قاعدة البيانات ${info.databaseName}` : `قاعدة البيانات ${info.databaseName} موجودة بالفعل`);
 
   run(process.platform === "win32" ? "npx.cmd" : "npx", ["prisma", "validate", "--schema", "backend/prisma/schema.prisma"]);
-  run(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "db:migrate"]);
+  run(process.platform === "win32" ? "npx.cmd" : "npx", ["prisma", "migrate", "deploy", "--schema", "backend/prisma/schema.prisma"]);
 
   const ownerCount = await countExistingOwners();
   if (ownerCount === 0) {

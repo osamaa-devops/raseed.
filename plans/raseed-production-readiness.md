@@ -45,22 +45,17 @@ Raseed حاليًا **Release Candidate جيد وديمو قوي، لكنه غي
 
 ### هل يكفي نقل `release` إلى جهاز عليه PostgreSQL؟
 
-**لا، النسخة الحالية لا تضمن التشغيل.** حتى لو PostgreSQL مثبت ويعمل، التطبيق يحتاج حاليًا إلى الآتي يدويًا:
+هذه كانت حالة نسخة RC1 القديمة بتاريخ 8 يوليو. مسار الـ installer تم إصلاحه في المصدر: النسخة التالية تضم PostgreSQL 17.7 وتجهزه تلقائيًا على جهاز Windows نظيف. لا تعتبر النسخة داخل `release` صالحة للبيع إلا بعد إعادة بنائها على Windows واختبارها في Windows نظيف والتوقيع الرقمي.
 
-1. PostgreSQL Server وخدماته وأدوات CLI على `PATH`: `createdb`, `pg_dump`, `psql`.
-2. مستخدم PostgreSQL باسم `raseed` وكلمة مرور متفق عليها وصلاحية إنشاء قاعدة، أو قاعدة ومستخدم يتم تحديدهما في إعداد آمن.
-3. قاعدة `raseed_dev` أو آلية إنشاء تلقائي موثوقة.
-4. قيم production لـ `DATABASE_URL`, `JWT_SECRET`, `LICENSE_SECRET`, `FRONTEND_URL` وخصائص cookie.
-5. تشغيل Prisma migrations قبل تشغيل الـ backend.
-6. اختبار طابعة الإيصالات وتعريفها ومقاس 58/80mm، وتعريف قارئ/طابعة الباركود إن وجدا.
+على الجهاز الجديد لا يحتاج العميل إلى Terminal أو إعداد متغيرات بيئة أو إنشاء user/database يدويًا. ما زال يحتاج فقط إلى صلاحية Administrator، مساحة كافية، ثم اختبار الطابعة والسكانر بعد التثبيت.
 
-### لماذا الـ installer الحالي سيفشل على جهاز نظيف؟
+### ما الذي أُصلح مقارنةً بـ RC1؟
 
-- Electron يشغل الـ backend بـ `NODE_ENV=production` لكنه لا يولد أو يمرر `DATABASE_URL` و`JWT_SECRET`.
-- ملفات `.env.production.example` تدخل الحزمة، أما `.env.production` الحقيقية فلا تدخلها، وهذا صحيح أمنيًا لكن لا توجد آلية بديلة لإنشاء config آمن.
-- migrations موجودة داخل `app.asar` لكن لا يوجد مسار يشغل `prisma migrate deploy` عند أول تشغيل أو بعد التحديث.
-- الكود يحاول إنشاء قاعدة مفقودة فقط، ولا ينشئ مستخدم PostgreSQL ولا يضمن وجود `createdb` على `PATH`.
-- واجهة Electron تفتح من `file://` بينما إعداد CORS/الـ API والـ cookies يحتاج اختبارًا صريحًا في وضع packaged.
+- تم إصلاح مسار backend المعبأ إلى `backend/dist/src/main.js`.
+- تم جعل Prisma CLI production dependency وفحص وجوده داخل `app.asar` قبل قبول Release.
+- تم تضمين PostgreSQL 17.7 pinned مع manifest للحجم وSHA-256، ورفض أي تنزيل ناقص أو معدل.
+- الـ NSIS installer يعمل per-machine بصلاحية Admin، وينشئ PostgreSQL service وuser/database محدود الصلاحيات تلقائيًا على جهاز جديد.
+- التطبيق يولد أسرار التشغيل محليًا، ويشغل migrations ثم يتحقق من `/api/health` قبل فتح الواجهة.
 
 ### شكل الفلاشة الصحيح بعد إغلاق P0
 
@@ -68,8 +63,8 @@ Raseed حاليًا **Release Candidate جيد وديمو قوي، لكنه غي
 
 - `RaseedSetup.exe` موقع رقميًا.
 - `SHA256SUMS.txt` للتحقق من سلامة الملف.
-- مثبت PostgreSQL الرسمي أو رابط/نسخة معتمدة حسب الترخيص، أو اختيار أفضل: تضمين PostgreSQL portable/service بشكل مُدار داخل المثبت.
-- `Install-Raseed.ps1` أو bootstrap installer بصلاحيات Admin يثبت الخدمة، ينشئ user/database، يولد الأسرار، يشغل migrations، ثم يجري health check.
+- PostgreSQL الرسمي المثبت داخل الـ installer، وليس رابط تنزيل وقت العميل.
+- bootstrap installer مدمج، يثبت الخدمة وينشئ user/database ويولّد الأسرار ويشغّل migrations وhealth check.
 - دليل عميل PDF قصير: التثبيت، الطابعة، النسخ الاحتياطي، الاستعادة، والدعم.
 - ملف إصدار `RELEASE-NOTES.txt` ورقم build واضح.
 
@@ -79,13 +74,14 @@ Raseed حاليًا **Release Candidate جيد وديمو قوي، لكنه غي
 
 ### P0.1 مثبت Windows ذاتي التهيئة
 
-- [ ] إنشاء Setup bootstrap موحد يكتشف PostgreSQL ويثبت/يهيئ المطلوب.
-- [ ] توليد password قاعدة البيانات و`JWT_SECRET` و`LICENSE_SECRET` عشوائيًا لكل جهاز.
-- [ ] حفظ الأسرار باستخدام Windows Credential Manager أو DPAPI، وليس ملفًا نصيًا بجانب التطبيق.
-- [ ] إنشاء database/user بأقل صلاحيات لازمة.
-- [ ] تشغيل `prisma migrate deploy` قبل بدء الخدمة، مع lock ومنع تشغيل نسختين معًا.
-- [ ] تقديم شاشة خطأ عربية فيها سبب قابل للتنفيذ ورقم دعم، من دون كشف secrets.
-- [ ] دعم uninstall من دون حذف بيانات العميل افتراضيًا.
+- [x] إنشاء Setup bootstrap موحد وتضمين PostgreSQL pinned في النسخة.
+- [x] توليد password قاعدة البيانات و`JWT_SECRET` و`LICENSE_SECRET` عشوائيًا لكل جهاز.
+- [x] حفظ أسرار التطبيق باستخدام Electron safeStorage/DPAPI بعد استيراد one-time connection.
+- [x] إنشاء database/user بأقل صلاحيات لازمة.
+- [x] تشغيل `prisma migrate deploy` قبل بدء backend ومنع تشغيل نسختين من التطبيق.
+- [x] إظهار شاشة خطأ للتشغيل وتسجيل installer log من دون طباعة كلمات المرور.
+- [x] uninstall لا يحذف PostgreSQL أو بيانات العميل افتراضيًا.
+- [ ] اختبار Windows 10/11 نظيف فعليًا وتوقيع installer قبل التسليم للعميل.
 
 معيار القبول: جهاز Windows 10/11 نظيف يتم تثبيته وتشغيله وإنشاء أول متجر خلال 10 دقائق من دون Terminal أو تعديل ملفات.
 

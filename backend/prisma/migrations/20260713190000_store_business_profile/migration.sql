@@ -1,0 +1,2 @@
+-- Intentionally empty migration.
+-- The store business profile setup is handled by the current application schema.

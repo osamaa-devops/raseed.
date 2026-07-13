@@ -70,10 +70,12 @@ async function main() {
   await waitFor("http://localhost:5173");
 
   const electron = spawnProcess(electronCmd, ["."], {
-    env: {
-      ...process.env,
-      RASEED_DEV_SERVER_URL: "http://localhost:5173",
-    },
+    env: (() => {
+      const env = { ...process.env };
+      delete env.ELECTRON_RUN_AS_NODE;
+      env.RASEED_DEV_SERVER_URL = "http://localhost:5173";
+      return env;
+    })(),
   });
 
   electron.on("exit", (code) => {

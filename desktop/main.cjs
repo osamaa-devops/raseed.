@@ -117,7 +117,7 @@ function backendCommand() {
 
   return {
     command: process.execPath,
-    args: [path.join(root, "backend", "dist", "main.js")],
+    args: [path.join(root, "backend", "dist", "src", "main.js")],
   };
 }
 
@@ -145,6 +145,18 @@ function decryptRuntimeValue(value) {
   return safeStorage.decryptString(Buffer.from(value.value, "base64"));
 }
 
+function readRuntimeSecret(storedValue, name) {
+  try {
+    return decryptRuntimeValue(storedValue);
+  } catch (error) {
+    if (app.isPackaged) throw error;
+    // Linux development sessions may switch keychain backends between launches.
+    // Regenerate development-only values instead of preventing local testing.
+    void writeLog(`runtime.secret.reset name=${name}`);
+    return null;
+  }
+}
+
 async function loadDesktopRuntime() {
   const configPath = path.join(app.getPath("userData"), "desktop-runtime.json");
   const stagedDatabasePath = path.join(app.getPath("userData"), "database-connection.txt");
@@ -161,15 +173,15 @@ async function loadDesktopRuntime() {
   } catch {
     stagedDatabaseUrl = null;
   }
-  const databaseUrl = decryptRuntimeValue(stored?.databaseUrl)
+  const databaseUrl = readRuntimeSecret(stored?.databaseUrl, "databaseUrl")
     || stagedDatabaseUrl
     || process.env.DATABASE_URL
     || (!app.isPackaged ? "postgresql://raseed:raseed_password@127.0.0.1:5432/raseed_dev?schema=public" : null);
   if (!databaseUrl) {
     throw new Error("Raseed needs its local database connection. Run Initialize-Raseed.ps1, then launch Raseed again.");
   }
-  const jwtSecret = decryptRuntimeValue(stored?.jwtSecret) || process.env.JWT_SECRET || createSecret();
-  const licenseSecret = decryptRuntimeValue(stored?.licenseSecret) || process.env.LICENSE_SECRET || createSecret();
+  const jwtSecret = readRuntimeSecret(stored?.jwtSecret, "jwtSecret") || process.env.JWT_SECRET || createSecret();
+  const licenseSecret = readRuntimeSecret(stored?.licenseSecret, "licenseSecret") || process.env.LICENSE_SECRET || createSecret();
   // The packaged frontend targets this loopback port. Keep both sides fixed together.
   const port = 4000;
 

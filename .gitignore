@@ -4,6 +4,7 @@ coverage/
 runtime/
 logs/
 release/
+build/prerequisites/
 backend/runtime/
 .env
 .env.*
